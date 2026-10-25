@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from odin.agents.thor import Thor
 from odin.config import load_config
-from odin.ingest.loader import ingest_document
+from odin.ingest.upload import ingest_file
 from odin.llm import LLMClient
 from odin.state.store import StateStore
 
@@ -178,8 +178,15 @@ async def upload_contract(file: UploadFile = File(...)):
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_text(text, encoding="utf-8")
 
-    # Ingest & segment
-    ingest_res = ingest_document(store, dest_path, f"contracts/{doc_id}.txt", title=Path(name).stem, source="upload")
+    # Ingest & segment using upload pipeline
+    upload_res = ingest_file(
+        content if name.lower().endswith(".txt") else text.encode("utf-8"),
+        f"{doc_id}.txt",
+        store=store,
+        cfg=cfg,
+        extract=False,
+        title=Path(name).stem,
+    )
 
     llm = get_llm()
     thor = Thor(store, llm, cfg)
@@ -216,11 +223,11 @@ async def upload_contract(file: UploadFile = File(...)):
         "status": "success",
         "doc_id": doc_id,
         "filename": name,
-        "clauses": ingest_res.clauses,
+        "clauses": upload_res.clauses,
         "extractions": len(report_data.get("extractions", [])),
         "extraction_status": extraction_status,
         "report": report_data,
-        "warnings": ingest_res.warnings,
+        "warnings": upload_res.warnings,
     }
 
 @app.post("/api/reextract")
