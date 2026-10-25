@@ -180,6 +180,14 @@ export default function ThorPage() {
             <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
             <p>Loading contractual intelligence and verified evidence for {selectedDocId}...</p>
           </div>
+        ) : !selectedDocId ? (
+          <div className="p-16 text-center font-mono text-xs text-secondary-olive space-y-3 bg-ivory rounded-xl border border-border-subtle">
+            <FileText className="w-8 h-8 text-primary/40 mx-auto" />
+            <h3 className="font-sans text-base font-bold text-dark-olive">No Contract Selected</h3>
+            <p className="max-w-md mx-auto text-secondary-olive text-[11px]">
+              Upload a commercial PDF or plain text agreement above, or select an existing contract from the strip to inspect strictly extracted parties, durations, renewal terms, payment schedules, obligations, penalties, compliance, and termination conditions.
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column (8 cols): Findings List */}

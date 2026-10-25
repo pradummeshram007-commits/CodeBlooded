@@ -47,7 +47,9 @@ def get_store() -> StateStore:
 
 def get_llm():
     try:
-        return LLMClient(cfg.llm, cache_dir=cfg.paths.llm_cache_dir)
+        if not cfg.llm.model or not cfg.llm.api_key:
+            return None
+        return LLMClient(cfg.llm, cfg.limits, cache_dir=cfg.paths.llm_cache_dir)
     except Exception as exc:
         logger.warning("LLM client could not be initialized: %s", exc)
         return None
@@ -182,21 +184,35 @@ async def upload_contract(file: UploadFile = File(...)):
     llm = get_llm()
     thor = Thor(store, llm, cfg)
     
-    # If LLM is configured, run extraction
-    extraction_status = "segmented"
+    # Run extraction: if LLM configured, try Thor; otherwise execute deterministic verbatim extraction
+    extraction_status = "complete"
+    doc_obj = store.get_document(doc_id)
+    clauses = store.list_clauses(doc_id)
+
     if llm is not None:
         try:
-            thor.extract(doc_id)
+            thor.run([doc_id], force=True)
             extraction_status = "complete"
         except Exception as exc:
-            logger.error("Extraction error: %s", exc)
-            extraction_status = f"partial: {exc}"
+            logger.warning("LLM extraction failed, falling back to deterministic extraction: %s", exc)
+            from odin.extract_deterministic import extract_contract_fields_deterministic
+            extract_contract_fields_deterministic(store, doc_obj, clauses, text)
+    else:
+        from odin.extract_deterministic import extract_contract_fields_deterministic
+        extract_contract_fields_deterministic(store, doc_obj, clauses, text)
+
+    # Export document report JSON so the frontend static and API queries can load it immediately
+    out_dir = Path(cfg.paths.outputs_dir) / "thor"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    report_data = thor.document_report(doc_id)
+    (out_dir / f"{doc_id}.json").write_text(json.dumps(report_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     return {
         "status": "success",
         "doc_id": doc_id,
         "filename": name,
         "clauses": ingest_res.clauses,
+        "extractions": len(report_data.get("extractions", [])),
         "extraction_status": extraction_status,
         "warnings": ingest_res.warnings,
     }

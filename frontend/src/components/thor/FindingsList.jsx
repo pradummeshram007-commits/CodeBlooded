@@ -13,11 +13,14 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_MAP = {
-  overview: ['party', 'effective_date', 'term', 'governing_law', 'liability_cap'],
+  parties: ['party'],
+  durations: ['term', 'effective_date'],
   renewals: ['renewal'],
-  payments: ['payment', 'penalty'],
-  obligations: ['obligation', 'compliance', 'indemnity'],
-  termination: ['termination', 'cross_reference'],
+  payments: ['payment'],
+  obligations: ['obligation'],
+  penalties: ['penalty'],
+  compliance: ['compliance'],
+  termination: ['termination'],
 };
 
 export default function FindingsList({
@@ -238,12 +241,15 @@ export default function FindingsList({
       {/* Category Section Navigation Tabs */}
       <div className="flex border-b border-border-subtle space-x-6 px-2 overflow-x-auto font-mono text-xs no-scrollbar">
         {[
-          { id: 'all', label: 'All Categories' },
-          { id: 'overview', label: 'Contract Overview' },
-          { id: 'renewals', label: 'Renewals & Deadlines' },
-          { id: 'payments', label: 'Payment & Financials' },
-          { id: 'obligations', label: 'Obligations & Compliance' },
-          { id: 'termination', label: 'Termination & Remedies' },
+          { id: 'all', label: 'All Fields' },
+          { id: 'parties', label: '1. Parties' },
+          { id: 'durations', label: '2. Durations' },
+          { id: 'renewals', label: '3. Renewal Dates' },
+          { id: 'payments', label: '4. Payment Schedules' },
+          { id: 'obligations', label: '5. Obligations' },
+          { id: 'penalties', label: '6. Penalty Clauses' },
+          { id: 'compliance', label: '7. Compliance' },
+          { id: 'termination', label: '8. Termination' },
         ].map((tab) => (
           <button
             key={tab.id}
