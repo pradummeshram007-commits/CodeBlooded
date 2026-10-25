@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ODIN: Multi-Agent Contract Intelligence Platform</title>
+<!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS Play CDN with container queries & forms -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#66734A",
+            "primary-dark": "#303B28",
+            "sage": "#A4B18A",
+            "accent-gold": "#B79A59",
+            "cream": "#F5F1E6",
+            "ivory": "#FCFAF3",
+            "dark-olive": "#252B20",
+            "secondary-olive": "#727665",
+            "border-subtle": "#DCDCCB",
+            "border-olive": "#A4B18A",
+            "on-surface": "#252B20",
+            "on-surface-variant": "#727665",
+            "surface": "#F5F1E6",
+            "surface-card": "#FCFAF3"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-mobile": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            "margin": "2rem",
+            "space-lg": "1.5rem",
+            "gutter": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin-mobile": "1rem"
+          },
+          "fontFamily": {
+            "label-md": ["JetBrains Mono"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "display-lg-mobile": ["Plus Jakarta Sans"],
+            "label-sm": ["JetBrains Mono"],
+            "body-sm": ["Plus Jakarta Sans"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "code-inline": ["JetBrains Mono"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-sm": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "label-md": ["0.8125rem", { "lineHeight": "1.125rem", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-lg": ["1.0625rem", { "lineHeight": "1.65rem", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "display-lg-mobile": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "body-sm": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "headline-xl": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "code-inline": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["0.9375rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "display-lg": ["3.5rem", { "lineHeight": "4.25rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Warm Archival Subtle Technical Grid Pattern */
+    .bg-grid-matrix {
+      background-size: 28px 28px;
+      background-image: radial-gradient(circle, rgba(102, 115, 74, 0.12) 1px, transparent 1px);
+    }
+    
+    .glow-olive-box {
+      box-shadow: 0 0 28px -4px rgba(102, 115, 74, 0.28), 0 0 10px rgba(183, 154, 89, 0.15);
+    }
+    
+    .glow-gold-box {
+      box-shadow: 0 0 26px -4px rgba(183, 154, 89, 0.3);
+    }
+
+    /* Marquee animation */
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: flex;
+      width: 200%;
+      animation: marquee 28s linear infinite;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+
+    /* Node pulse ring animation */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulsing-ring {
+      transform-origin: center;
+      animation: pulse-ring 4s ease-in-out infinite;
+    }
+
+    /* Pulse dash array for interactive flow */
+    @keyframes dash-flow {
+      to {
+        stroke-dashoffset: -40;
+      }
+    }
+    .flow-line {
+      stroke-dasharray: 6 6;
+      animation: dash-flow 2s linear infinite;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-cream text-dark-olive font-body-md antialiased selection:bg-sage/40 selection:text-dark-olive relative min-h-screen overflow-x-hidden">
+<!-- Ambient Background Atmosphere -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<div class="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-sage/20 rounded-full blur-[140px]"></div>
+<div class="absolute top-1/3 -right-20 w-[500px] h-[500px] bg-accent-gold/10 rounded-full blur-[160px]"></div>
+<div class="absolute bottom-10 left-10 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[180px]"></div>
+<div class="absolute inset-0 bg-grid-matrix opacity-70"></div>
+</div>
+<!-- 1. SLIM TRANSLUCENT NAVIGATION (Warm Cream & Olive Border) -->
+<header class="docked full-width top-0 fixed w-full z-50 bg-[#F5F1E6]/90 backdrop-blur-md border-b border-border-subtle">
+<div class="w-full max-w-7xl mx-auto flex items-center justify-between px-gutter py-space-sm">
+<!-- Brand Logo Anchor -->
+<a class="flex items-center gap-space-sm group" href="#hero">
+<div class="relative w-8 h-8 flex items-center justify-center rounded-lg bg-ivory border border-border-subtle group-hover:border-primary transition-colors shadow-sm">
+<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle class="fill-primary/20" cx="12" cy="12" r="3"></circle>
+<path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+<circle class="text-sage" cx="12" cy="12" r="9" stroke="currentColor" stroke-dasharray="2 3"></circle>
+</svg>
+<span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-accent-gold animate-ping"></span>
+</div>
+<span class="font-headline-sm text-headline-sm font-semibold tracking-wider text-dark-olive">ODIN</span>
+<span class="hidden lg:inline-block font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-ivory text-primary-dark font-medium border border-border-subtle">v2.4-CORP</span>
+</a>
+<!-- Desktop Nav Links -->
+<nav aria-label="Main Navigation" class="hidden md:flex items-center gap-space-lg">
+<a class="nav-link font-label-sm text-label-sm text-primary font-semibold transition-colors duration-150" data-nav="Overview" href="#hero">Overview</a>
+<a class="nav-link font-label-sm text-label-sm text-secondary-olive hover:text-dark-olive transition-colors duration-150" data-nav="Agent Network" href="#agents">Agent Network</a>
+<a class="nav-link font-label-sm text-label-sm text-secondary-olive hover:text-dark-olive transition-colors duration-150" data-nav="How It Works" href="#how-it-works">How It Works</a>
+<a class="nav-link font-label-sm text-label-sm text-secondary-olive hover:text-dark-olive transition-colors duration-150" data-nav="Evidence &amp; Trust" href="#evidence-trust">Evidence &amp; Trust</a>
+</nav>
+<!-- Trailing Action -->
+<div class="flex items-center gap-space-sm">
+<a class="inline-flex items-center justify-center font-label-sm text-label-sm font-semibold px-4 py-2 rounded-lg bg-primary-dark text-cream transition-all duration-200 active:scale-95 hover:bg-dark-olive shadow-sm hover:shadow-[0_2px_12px_rgba(48,59,40,0.3)]" href="/thor">
+          Launch ODIN →
+        </a>
+<!-- Mobile Menu Toggle Button -->
+<button aria-label="Toggle Navigation Menu" class="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-ivory border border-border-subtle text-dark-olive" id="mobile-toggle">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+</div>
+</div>
+<!-- Mobile Slideout Menu -->
+<div class="hidden md:hidden border-t border-border-subtle bg-ivory px-gutter py-space-md space-y-3" id="mobile-menu">
+<a class="block font-label-sm text-label-sm text-primary font-semibold py-1.5" href="#hero" onclick="toggleMobileNav()">Overview</a>
+<a class="block font-label-sm text-label-sm text-secondary-olive py-1.5" href="#agents" onclick="toggleMobileNav()">Agent Network</a>
+<a class="block font-label-sm text-label-sm text-secondary-olive py-1.5" href="#how-it-works" onclick="toggleMobileNav()">How It Works</a>
+<a class="block font-label-sm text-label-sm text-secondary-olive py-1.5" href="#evidence-trust" onclick="toggleMobileNav()">Evidence &amp; Trust</a>
+<div class="pt-2 border-t border-border-subtle">
+<a class="w-full text-center block font-label-sm text-label-sm py-2 rounded bg-primary-dark text-cream" href="/thor">Launch ODIN →</a>
+</div>
+</div>
+</header>
+<main class="relative z-10 pt-20">
+<!-- 2. CINEMATIC HERO SECTION (#hero) Warm Cream (#F5F1E6) with Contract Image Underlayer -->
+<section class="min-h-[calc(100vh-5rem)] flex items-center py-space-xl lg:py-24 max-w-7xl mx-auto px-gutter relative" id="hero">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full">
+<!-- Left Column: Editorial & Value Proposition -->
+<div class="lg:col-span-6 space-y-6">
+<!-- Eyebrow Pill -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ivory border border-primary/30 shadow-xs">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-primary font-semibold">MULTI-AGENT CONTRACT INTELLIGENCE</span>
+</div>
+<!-- Headline -->
+<h1 class="font-display-lg text-display-lg font-bold tracking-tight text-dark-olive leading-[1.08]">
+            Contracts don't just contain terms.<br/>
+<span class="bg-gradient-to-r from-primary-dark via-primary to-accent-gold bg-clip-text text-transparent">They contain future consequences.</span>
+</h1>
+<!-- Supporting Copy -->
+<p class="font-body-lg text-body-lg text-secondary-olive max-w-xl">
+            Meet ODIN: a coordinated intelligence system that turns contractual language into traceable obligations, time-aware risks, and evidence-backed actions.
+          </p>
+<!-- CTAs -->
+<div class="pt-2 flex flex-wrap items-center gap-4">
+<a class="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-primary-dark text-cream font-label-md text-label-md font-semibold transition-all duration-200 active:scale-95 shadow-md hover:bg-dark-olive hover:shadow-[0_4px_18px_rgba(48,59,40,0.35)]" href="/thor">
+<span>Launch ODIN</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="north_east">north_east</span>
+</a>
+<a class="inline-flex items-center gap-2 px-5 py-3.5 rounded-lg bg-ivory border border-primary/40 text-dark-olive font-label-md text-label-md font-medium hover:border-primary hover:bg-cream transition-all shadow-xs" href="#agents">
+<span>Explore the Agent Network</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="south">south</span>
+</a>
+</div>
+<!-- Restrained Descriptor -->
+<p class="font-label-sm text-label-sm tracking-wide text-secondary-olive flex items-center gap-2 pt-2">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="verified">verified</span>
+<span>Evidence-linked. Time-aware. Built for accountable decisions.</span>
+</p>
+<!-- Micro Architecture Badges -->
+<div class="pt-6 border-t border-border-subtle flex flex-wrap gap-4 items-center">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ivory border border-border-subtle shadow-xs">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-sm text-label-sm text-dark-olive font-medium">6 Specialized Agents</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ivory border border-border-subtle shadow-xs">
+<span class="w-2 h-2 rounded-full bg-sage"></span>
+<span class="font-label-sm text-label-sm text-dark-olive font-medium">Determinism Engine</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-ivory border border-border-subtle shadow-xs">
+<span class="w-2 h-2 rounded-full bg-accent-gold"></span>
+<span class="font-label-sm text-label-sm text-dark-olive font-medium">Full Lineage Audit</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Integrated Real Contract Photography + Living Geometric Agent Network Visualization -->
+<div class="lg:col-span-6 relative">
+<!-- Subtle Archival Contract Image Underlayer Backdrop -->
+<div class="absolute -top-6 -right-6 w-full h-full rounded-2xl overflow-hidden border border-border-subtle/80 shadow-lg pointer-events-none hidden sm:block opacity-65 transform rotate-1 scale-[0.98]">
+<img alt="Top-down architectural still life of layered legal contract documents on fine ivory archival paper" class="w-full h-full object-cover filter contrast-[1.03] sepia-[0.1]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgAcQ0W0WbIAhyXA7DtM9JWvaUP07k6QHZbSAIV4tby07JfOiUWZ3U3eoQniRYYVe3ji7fgPYk-lKJivCRAdr1otHcklmTX4E4ex5l2tSW2lXHj6gJ4VQqZZNsK5tQbN0GYRjxp0pwz_yhoKA22nIu4yYHFCZ2BhsskKPuvyR1_XqnAfeMbuQvPGHaKNoGfZOlfe3ihXt6Ur0-vX3Ue_0gOdBs-ki-DH7rD4U8fL1yqdBbaS0p5eI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-cream via-transparent to-transparent opacity-80"></div>
+</div>
+<!-- Housing Container in Deep Forest Olive for high-contrast legible graph -->
+<div class="relative w-full aspect-square max-w-[560px] mx-auto rounded-xl bg-[#263020] border border-[#3D4B33] p-4 backdrop-blur-xl shadow-2xl overflow-hidden group glow-olive-box">
+<!-- Atmospheric Inner Spotlights -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(164,177,138,0.12),transparent_70%)] pointer-events-none"></div>
+<!-- SVG Living Graph -->
+<svg class="w-full h-full" fill="none" id="agent-graph-svg" viewbox="0 0 500 500">
+<defs>
+<!-- Gradients -->
+<radialgradient cx="50%" cy="50%" id="odin-core" r="50%">
+<stop offset="0%" stop-color="#A4B18A" stop-opacity="0.9"></stop>
+<stop offset="60%" stop-color="#66734A" stop-opacity="0.7"></stop>
+<stop offset="100%" stop-color="#1B2217" stop-opacity="0"></stop>
+</radialgradient>
+<lineargradient id="thor-edge-grad" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#FCFAF3"></stop>
+<stop offset="100%" stop-color="#66734A"></stop>
+</lineargradient>
+</defs>
+<!-- Central Orbital Coordinates / Concentric Rings -->
+<circle cx="250" cy="250" r="190" stroke="rgba(220,220,203,0.12)" stroke-width="1"></circle>
+<circle class="pulsing-ring" cx="250" cy="250" r="145" stroke="rgba(164,177,138,0.25)" stroke-dasharray="3 6"></circle>
+<circle cx="250" cy="250" r="95" stroke="rgba(183,154,89,0.3)" stroke-width="1.5"></circle>
+<!-- Shared Evidence Bus (Central repository ring) -->
+<circle cx="250" cy="250" r="50" stroke="#A4B18A" stroke-dasharray="2 4" stroke-opacity="0.5" stroke-width="1.5"></circle>
+<!-- Dynamic Traveling Particle Lines (Connecting ODIN to Orbiters) -->
+<!-- To THOR (top left: 120, 110) -->
+<path class="flow-line" d="M 250 250 Q 180 180 120 110" id="path-thor" stroke="#FCFAF3" stroke-opacity="0.8" stroke-width="1.8"></path>
+<!-- To NORNS (top right: 380, 110) -->
+<path class="flow-line" d="M 250 250 Q 320 170 380 110" id="path-norns" stroke="#A4B18A" stroke-opacity="0.65" stroke-width="1.3"></path>
+<!-- To LOKI (mid right: 410, 260) -->
+<path class="flow-line" d="M 250 250 Q 340 260 410 260" id="path-loki" stroke="#B79A59" stroke-opacity="0.65" stroke-width="1.3"></path>
+<!-- To HEIMDALL (bottom right: 360, 400) -->
+<path class="flow-line" d="M 250 250 Q 310 330 360 400" id="path-heimdall" stroke="#A4B18A" stroke-opacity="0.65" stroke-width="1.3"></path>
+<!-- To TYR (bottom left: 140, 390) -->
+<path class="flow-line" d="M 250 250 Q 190 320 140 390" id="path-tyr" stroke="#DCDCCB" stroke-opacity="0.6" stroke-width="1.3"></path>
+<!-- To Evidence Bus Node (mid left: 90, 240) -->
+<path class="flow-line" d="M 250 250 Q 170 250 90 240" id="path-bus" stroke="#B79A59" stroke-opacity="0.55" stroke-width="1.3"></path>
+<!-- Flow Edge Annotations -->
+<text class="font-label-sm text-[9px] tracking-wider font-mono" fill="#FCFAF3" opacity="0.85" x="160" y="160">EXTRACT</text>
+<text class="font-label-sm text-[9px] tracking-wider font-mono" fill="#A4B18A" opacity="0.85" x="325" y="165">PROJECT</text>
+<text class="font-label-sm text-[9px] tracking-wider font-mono" fill="#B79A59" opacity="0.85" x="330" y="250">CHALLENGE</text>
+<text class="font-label-sm text-[9px] tracking-wider font-mono" fill="#A4B18A" opacity="0.85" x="305" y="345">VERIFY</text>
+<text class="font-label-sm text-[9px] tracking-wider font-mono" fill="#DCDCCB" opacity="0.85" x="175" y="340">RESOLVE</text>
+<!-- Central Node: ODIN Orchestrator -->
+<g class="cursor-pointer group/odin" onclick="scrollToCard('agent-odin')">
+<circle cx="250" cy="250" fill="url(#odin-core)" r="38"></circle>
+<circle cx="250" cy="250" fill="#1B2217" r="32" stroke="#66734A" stroke-width="2"></circle>
+<circle class="animate-pulse" cx="250" cy="250" fill="#FCFAF3" r="10"></circle>
+<text class="font-label-md text-[11px] font-bold tracking-widest font-mono" fill="#F5F1E6" text-anchor="middle" x="250" y="275">ODIN</text>
+<text class="font-label-sm text-[8px] font-mono uppercase tracking-wider" fill="#A4B18A" text-anchor="middle" x="250" y="292">Orchestrator</text>
+</g>
+<!-- 1. THOR (Node with Operational Spotlight) -->
+<g class="cursor-pointer group/node" data-agent="thor" onclick="scrollToCard('agent-thor')">
+<circle class="filter drop-shadow-[0_0_10px_rgba(183,154,89,0.5)]" cx="120" cy="110" fill="#1B2217" r="32" stroke="url(#thor-edge-grad)" stroke-width="2.5"></circle>
+<circle cx="120" cy="110" fill="#263020" r="26"></circle>
+<text class="font-label-md text-[11px] font-bold font-mono" fill="#FCFAF3" text-anchor="middle" x="120" y="108">THOR</text>
+<text class="font-label-sm text-[7.5px] font-mono" fill="#A4B18A" text-anchor="middle" x="120" y="122">EXTRACTION</text>
+<!-- Focus marker -->
+<circle cx="140" cy="90" fill="#B79A59" r="4.5"></circle>
+</g>
+<!-- 2. NORNS (Node) -->
+<g class="cursor-pointer group/node" data-agent="norns" onclick="scrollToCard('agent-norns')">
+<circle cx="380" cy="110" fill="#1B2217" r="28" stroke="#A4B18A" stroke-width="1.5"></circle>
+<text class="font-label-md text-[10px] font-bold font-mono" fill="#DCDCCB" text-anchor="middle" x="380" y="108">NORNS</text>
+<text class="font-label-sm text-[7.5px] font-mono" fill="#A4B18A" text-anchor="middle" x="380" y="122">TIMELINE</text>
+</g>
+<!-- 3. LOKI (Node) -->
+<g class="cursor-pointer group/node" data-agent="loki" onclick="scrollToCard('agent-loki')">
+<circle cx="410" cy="260" fill="#1B2217" r="28" stroke="#B79A59" stroke-width="1.5"></circle>
+<text class="font-label-md text-[10px] font-bold font-mono" fill="#B79A59" text-anchor="middle" x="410" y="258">LOKI</text>
+<text class="font-label-sm text-[7.5px] font-mono" fill="#DCDCCB" text-anchor="middle" x="410" y="272">ADVERSARIAL</text>
+</g>
+<!-- 4. HEIMDALL (Node) -->
+<g class="cursor-pointer group/node" data-agent="heimdall" onclick="scrollToCard('agent-heimdall')">
+<circle cx="360" cy="400" fill="#1B2217" r="28" stroke="#66734A" stroke-width="1.5"></circle>
+<text class="font-label-md text-[10px] font-bold font-mono" fill="#A4B18A" text-anchor="middle" x="360" y="398">HEIMDALL</text>
+<text class="font-label-sm text-[7.5px] font-mono" fill="#DCDCCB" text-anchor="middle" x="360" y="412">WATCHER</text>
+</g>
+<!-- 5. TYR (Node) -->
+<g class="cursor-pointer group/node" data-agent="tyr" onclick="scrollToCard('agent-tyr')">
+<circle cx="140" cy="390" fill="#1B2217" r="28" stroke="#DCDCCB" stroke-width="1.5"></circle>
+<text class="font-label-md text-[10px] font-bold font-mono" fill="#FCFAF3" text-anchor="middle" x="140" y="388">TYR</text>
+<text class="font-label-sm text-[7.5px] font-mono" fill="#A4B18A" text-anchor="middle" x="140" y="402">ARBITER</text>
+</g>
+<!-- 6. Shared Evidence Bus (Node) -->
+<g class="cursor-pointer group/node" data-agent="bus" onclick="scrollToCard('evidence-trust')">
+<circle cx="90" cy="240" fill="#1B2217" r="26" stroke="#B79A59" stroke-dasharray="3 2" stroke-width="1.5"></circle>
+<text class="font-label-sm text-[8px] font-bold font-mono" fill="#B79A59" text-anchor="middle" x="90" y="238">EVIDENCE</text>
+<text class="font-label-sm text-[7px] font-mono" fill="#DCDCCB" text-anchor="middle" x="90" y="250">SHARED BUS</text>
+</g>
+</svg>
+<!-- Dynamic Tooltip Canvas inside HUD -->
+<div class="absolute bottom-4 left-4 right-4 bg-[#1B2217]/95 border border-[#3D4B33] rounded-lg p-3 backdrop-blur-md transition-all duration-200 opacity-95 shadow-lg flex items-center justify-between pointer-events-auto" id="graph-tooltip">
+<div class="flex items-center gap-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-accent-gold animate-pulse" id="tooltip-dot"></span>
+<div>
+<div class="font-label-sm text-label-sm font-semibold text-cream flex items-center gap-1.5" id="tooltip-title">
+<span>THOR: Extraction Engine</span>
+<span class="text-[9px] px-1 py-0.2 rounded bg-primary/40 text-cream font-mono">Active</span>
+</div>
+<div class="font-body-sm text-body-sm text-[#DCDCCB] line-clamp-1" id="tooltip-desc">
+                    Identifies clauses, parties, penalties &amp; uncertainty flags with exact verbatim anchors.
+                  </div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-accent-gold hover:underline cursor-pointer" onclick="scrollToCard('agent-thor')">Inspect ↓</span>
+</div>
+<!-- Operational Focus Badge for THOR -->
+<div class="absolute top-4 right-4 px-2.5 py-1 rounded bg-ivory/10 border border-primary/40 text-cream font-label-sm text-label-sm flex items-center gap-1.5 backdrop-blur-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-gold"></span>
+<span>THOR OPERATIONAL FOCUS</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. SECTION TRANSITION & CONTINUOUS TYPOGRAPHIC RIBBON (Deep Forest Olive: #303B28) -->
+<section class="border-y border-[#3D4B33] bg-primary-dark text-cream relative overflow-hidden py-10">
+<div class="max-w-7xl mx-auto px-gutter mb-6">
+<div class="max-w-3xl space-y-2">
+<p class="font-headline-lg text-headline-lg font-bold text-cream tracking-tight">
+            A contract is signed once. Its consequences unfold every day.
+          </p>
+<p class="font-body-md text-body-md text-[#DCDCCB]">
+            Renewal windows close. Payment obligations mature. Clauses collide. External events change what matters. ODIN is designed to help teams understand these moving relationships instead of relying on a forgotten PDF.
+          </p>
+</div>
+</div>
+<!-- Marquee Ribbon -->
+<div class="border-t border-[#3D4B33] pt-4 pb-2 bg-[#252E1F]">
+<div class="relative w-full overflow-hidden whitespace-nowrap flex">
+<div class="animate-marquee font-label-md text-label-md font-semibold tracking-widest text-[#DCDCCB] select-none">
+<span class="mx-6 flex items-center gap-3">EXTRACT <span class="text-sage">→</span> PROJECT <span class="text-cream">→</span> CHALLENGE <span class="text-accent-gold">→</span> VERIFY <span class="text-sage">→</span> RESOLVE <span class="text-cream">→</span></span>
+<span class="mx-6 flex items-center gap-3">EXTRACT <span class="text-sage">→</span> PROJECT <span class="text-cream">→</span> CHALLENGE <span class="text-accent-gold">→</span> VERIFY <span class="text-sage">→</span> RESOLVE <span class="text-cream">→</span></span>
+<span class="mx-6 flex items-center gap-3">EXTRACT <span class="text-sage">→</span> PROJECT <span class="text-cream">→</span> CHALLENGE <span class="text-accent-gold">→</span> VERIFY <span class="text-sage">→</span> RESOLVE <span class="text-cream">→</span></span>
+<span class="mx-6 flex items-center gap-3">EXTRACT <span class="text-sage">→</span> PROJECT <span class="text-cream">→</span> CHALLENGE <span class="text-accent-gold">→</span> VERIFY <span class="text-sage">→</span> RESOLVE <span class="text-cream">→</span></span>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. THE AGENT ECOSYSTEM SECTION (#agents) (Warm Cream & Soft Ivory Cards) -->
+<section class="py-space-xl max-w-7xl mx-auto px-gutter" id="agents">
+<!-- Section Header -->
+<div class="mb-12 space-y-3">
+<span class="font-label-sm text-label-sm tracking-widest uppercase text-primary font-bold">ONE SYSTEM. SIX SPECIALIZED RESPONSIBILITIES.</span>
+<h2 class="font-headline-xl text-headline-xl font-bold tracking-tight text-dark-olive">Different perspectives. One contractual reality.</h2>
+<p class="font-body-md text-body-md text-secondary-olive max-w-2xl">
+          ODIN coordinates specialized agents that work on different parts of the same problem, sharing structured evidence rather than relying on isolated summaries.
+        </p>
+</div>
+<!-- 6-Card Responsive Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- 1. ODIN - The Coordinator -->
+<div class="agent-card rounded-xl bg-ivory border border-border-subtle p-6 flex flex-col justify-between hover:border-primary transition-all duration-300 relative group overflow-hidden shadow-sm" id="agent-odin">
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-sage/15 rounded-full blur-xl group-hover:bg-sage/25 transition-all"></div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-cream border border-border-subtle text-secondary-olive">Coordinator</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1">ODIN</h3>
+<p class="font-label-sm text-label-sm text-primary font-medium mb-3">The Autonomous Coordinator</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Plans contract-specific and cross-contract workstreams, tracks progress, and coordinates the final synthesis across all specialized sub-agents.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between font-label-sm text-label-sm text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Synthesis Mode</span>
+<span>ORD-001</span>
+</div>
+</div>
+<!-- 2. THOR - The Extractor (SPOTLIGHT CARD) -->
+<div class="agent-card rounded-xl bg-ivory border-2 border-primary p-6 flex flex-col justify-between glow-olive-box transition-all duration-300 relative group overflow-hidden shadow-md" id="agent-thor">
+<div class="absolute top-0 right-0 bg-gradient-to-l from-primary to-primary-dark text-cream font-label-sm text-label-sm font-bold px-3 py-1 rounded-bl-lg tracking-wider">
+            Initial Focus
+          </div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-primary/40 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="data_object">data_object</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary/10 text-primary-dark font-medium border border-primary/30">Core Extractor</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1 flex items-center gap-2">
+<span>THOR</span>
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+</h3>
+<p class="font-label-sm text-label-sm text-primary font-semibold mb-3">The Fact &amp; Obligation Extractor</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Identifies parties, deadlines, renewal terms, payment schedules, obligations, penalties, compliance requirements, and termination conditions, with clause-level evidence and uncertainty flags.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-primary/20 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-primary font-medium flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Verbatim Anchored</span>
+<a class="text-primary-dark font-bold hover:underline flex items-center gap-0.5" href="/thor">Launch THOR ↗</a>
+</div>
+</div>
+<!-- 3. NORNS - The Timeline Intelligence -->
+<div class="agent-card rounded-xl bg-ivory border border-border-subtle p-6 flex flex-col justify-between hover:border-primary transition-all duration-300 relative group overflow-hidden shadow-sm" id="agent-norns">
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all"></div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary-dark">
+<span class="material-symbols-outlined text-[20px]" data-icon="timelapse">timelapse</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-cream border border-border-subtle text-secondary-olive">Temporal</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1">NORNS</h3>
+<p class="font-label-sm text-label-sm text-primary font-medium mb-3">Timeline &amp; Exposure Simulator</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Projects obligations through time, simulates future dates, and estimates supported financial exposure when contractual numbers are available.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between font-label-sm text-label-sm text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Date Graph Simulation</span>
+<span>TEMP-003</span>
+</div>
+</div>
+<!-- 4. LOKI - The Adversarial Reviewer -->
+<div class="agent-card rounded-xl bg-ivory border border-border-subtle p-6 flex flex-col justify-between hover:border-accent-gold transition-all duration-300 relative group overflow-hidden shadow-sm" id="agent-loki">
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-accent-gold/15 rounded-full blur-xl group-hover:bg-accent-gold/25 transition-all"></div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-accent-gold/40 flex items-center justify-center text-accent-gold">
+<span class="material-symbols-outlined text-[20px]" data-icon="policy">policy</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-accent-gold/10 text-dark-olive border border-accent-gold/30">Adversarial</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1">LOKI</h3>
+<p class="font-label-sm text-label-sm text-accent-gold font-semibold mb-3">The Ambiguity &amp; Conflict Reviewer</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Investigates ambiguous terms, one-sided clauses, and conflicting commitments across multiple agreements with counter-factual probing.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between font-label-sm text-label-sm text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-accent-gold"></span>Conflict Spotter</span>
+<span>ADV-004</span>
+</div>
+</div>
+<!-- 5. HEIMDALL - The Event Watcher -->
+<div class="agent-card rounded-xl bg-ivory border border-border-subtle p-6 flex flex-col justify-between hover:border-sage transition-all duration-300 relative group overflow-hidden shadow-sm" id="agent-heimdall">
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-sage/20 rounded-full blur-xl group-hover:bg-sage/30 transition-all"></div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-sage/40 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="radar">radar</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-sage/20 text-dark-olive border border-sage/30">Continuous</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1">HEIMDALL</h3>
+<p class="font-label-sm text-label-sm text-primary font-medium mb-3">The Real-World Event Watcher</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Maps relevant events to contracts and clauses, verifies findings against external factual data, and identifies changes in potential legal exposure.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between font-label-sm text-label-sm text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-sage"></span>Dynamic Watchdog</span>
+<span>EVT-005</span>
+</div>
+</div>
+<!-- 6. TYR - The Arbiter -->
+<div class="agent-card rounded-xl bg-ivory border border-border-subtle p-6 flex flex-col justify-between hover:border-primary-dark transition-all duration-300 relative group overflow-hidden shadow-sm" id="agent-tyr">
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all"></div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-10 h-10 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary-dark">
+<span class="material-symbols-outlined text-[20px]" data-icon="gavel">gavel</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-cream border border-border-subtle text-secondary-olive">Resolution</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-dark-olive mb-1">TYR</h3>
+<p class="font-label-sm text-label-sm text-primary-dark font-medium mb-3">The Arbiter &amp; Action Drafter</p>
+<p class="font-body-sm text-body-sm text-secondary-olive leading-relaxed">
+              Records resolutions between competing findings and drafts evidence-linked actions for formal human review and legal approval.
+            </p>
+</div>
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between font-label-sm text-label-sm text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary-dark"></span>Human-Gated</span>
+<span>ARB-006</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. HOW ODIN WORKS — (Deep Forest Olive: #303B28 for Dramatic Contrast) -->
+<section class="py-space-xl border-t border-[#3D4B33] bg-primary-dark text-cream" id="how-it-works">
+<div class="max-w-7xl mx-auto px-gutter">
+<div class="mb-14 space-y-3">
+<span class="font-label-sm text-label-sm tracking-widest uppercase text-sage font-semibold">DETERMINISTIC PIPELINE EXECUTION</span>
+<h2 class="font-headline-xl text-headline-xl font-bold tracking-tight text-cream">How ODIN Operates</h2>
+<p class="font-body-md text-body-md text-[#DCDCCB] max-w-2xl">
+            A continuous loop from raw text ingestion to verified legal action. Every stage preserves a cryptographic lineage back to verbatim contractual text.
+          </p>
+</div>
+<!-- 4-Step Progressive Timeline Workflow -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+<!-- Step 1 -->
+<div class="rounded-xl bg-[#252E1F] border border-[#3D4B33] p-6 flex flex-col justify-between relative group hover:border-sage transition-all">
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-mono text-cream px-2 py-1 rounded bg-[#35422D] border border-sage/30">01</span>
+<span class="font-label-sm text-label-sm text-[#A4B18A] font-mono">INGESTION</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-cream">Read the Contract</h3>
+<p class="font-body-sm text-body-sm text-[#DCDCCB]">
+                THOR identifies contractual facts and retains the language supporting each extraction with sentence-level coordinates.
+              </p>
+<!-- Diagram Preview: Syntax Tree Fragment -->
+<div class="mt-4 p-3 rounded bg-[#1B2217] border border-[#3D4B33] font-label-sm text-label-sm text-[#DCDCCB] space-y-1 font-mono">
+<div class="text-sage flex items-center gap-1 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-sage"></span>
+<span>§ 14.3 Termination</span>
+</div>
+<div class="pl-3 border-l border-[#3D4B33] text-[11px]">
+                  → Window: [90 Days Prior]
+                </div>
+<div class="pl-3 border-l border-[#3D4B33] text-[11px] text-accent-gold">
+                  ✓ Verbatim Linked
+                </div>
+</div>
+</div>
+<div class="mt-6 pt-3 border-t border-[#3D4B33] font-label-sm text-label-sm text-sage">
+              Step 01 Pipeline Complete
+            </div>
+</div>
+<!-- Step 2 -->
+<div class="rounded-xl bg-[#252E1F] border border-[#3D4B33] p-6 flex flex-col justify-between relative group hover:border-sage transition-all">
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-mono text-cream px-2 py-1 rounded bg-[#35422D] border border-sage/30">02</span>
+<span class="font-label-sm text-label-sm text-[#A4B18A] font-mono">SIMULATION</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-cream">Model the Consequences</h3>
+<p class="font-body-sm text-body-sm text-[#DCDCCB]">
+                NORNS maps obligations and deadlines onto a timeline, including supported worst-case financial projections.
+              </p>
+<!-- Diagram Preview: Timeline Milestones -->
+<div class="mt-4 p-3 rounded bg-[#1B2217] border border-[#3D4B33] font-label-sm text-label-sm text-[#DCDCCB] space-y-1 font-mono">
+<div class="text-cream flex items-center justify-between text-[11px]">
+<span>T+0: Execution</span>
+<span>OCT 2024</span>
+</div>
+<div class="w-full bg-[#35422D] h-1 rounded-full overflow-hidden">
+<div class="bg-sage h-full w-2/3"></div>
+</div>
+<div class="text-accent-gold text-[11px] flex items-center justify-between">
+<span>T+270: Notice Deadline</span>
+<span>JUL 2025</span>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-3 border-t border-[#3D4B33] font-label-sm text-label-sm text-sage">
+              Step 02 Timeline Synced
+            </div>
+</div>
+<!-- Step 3 -->
+<div class="rounded-xl bg-[#252E1F] border border-[#3D4B33] p-6 flex flex-col justify-between relative group hover:border-accent-gold transition-all">
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-mono text-accent-gold px-2 py-1 rounded bg-accent-gold/15 border border-accent-gold/30">03</span>
+<span class="font-label-sm text-label-sm text-[#A4B18A] font-mono">COLLISION</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-cream">Challenge Interpretation</h3>
+<p class="font-body-sm text-body-sm text-[#DCDCCB]">
+                LOKI investigates ambiguities and cross-clause conflicts; HEIMDALL evaluates relevant external events and evidence.
+              </p>
+<!-- Diagram Preview: Collision Detection -->
+<div class="mt-4 p-3 rounded bg-[#1B2217] border border-[#3D4B33] font-label-sm text-label-sm text-[#DCDCCB] space-y-1.5 font-mono">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-accent-gold">Overlap Clash: §4 vs §18</span>
+<span class="text-[#FF8D7A] font-semibold">Flagged</span>
+</div>
+<div class="text-[10px] text-[#A4B18A]">
+                  Indemnification scope exceeds liability cap.
+                </div>
+</div>
+</div>
+<div class="mt-6 pt-3 border-t border-[#3D4B33] font-label-sm text-label-sm text-accent-gold">
+              Step 03 Adversarial Review
+            </div>
+</div>
+<!-- Step 4 -->
+<div class="rounded-xl bg-[#252E1F] border border-[#3D4B33] p-6 flex flex-col justify-between relative group hover:border-sage transition-all">
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-mono text-cream px-2 py-1 rounded bg-[#35422D] border border-sage/30">04</span>
+<span class="font-label-sm text-label-sm text-[#A4B18A] font-mono">ARBITRATION</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-cream">Resolve and Recommend</h3>
+<p class="font-body-sm text-body-sm text-[#DCDCCB]">
+                TYR records the reasoning behind a resolution and prepares actions for human review, while ODIN coordinates workflow.
+              </p>
+<!-- Diagram Preview: Human-in-the-loop Checkpoint -->
+<div class="mt-4 p-3 rounded bg-[#1B2217] border border-[#3D4B33] font-label-sm text-label-sm text-[#DCDCCB] space-y-1 font-mono">
+<div class="text-cream flex items-center justify-between text-[11px]">
+<span>Action: Formal Cure Notice</span>
+<span class="text-sage font-bold">READY</span>
+</div>
+<div class="text-[10px] text-[#A4B18A]">
+                  Requires Partner Counsel Signature [e-Sign]
+                </div>
+</div>
+</div>
+<div class="mt-6 pt-3 border-t border-[#3D4B33] font-label-sm text-label-sm text-sage">
+              Step 04 Human-Gated Approval
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. EVIDENCE & TRUST ARCHITECTURE (#evidence-trust) (Soft Ivory & Warm Cream with Real Document Contract Photo) -->
+<section class="py-space-xl max-w-7xl mx-auto px-gutter" id="evidence-trust">
+<!-- Section Header -->
+<div class="mb-14 space-y-3">
+<span class="font-label-sm text-label-sm tracking-widest uppercase text-primary font-bold">PROOF BEFORE CONFIDENCE</span>
+<h2 class="font-headline-xl text-headline-xl font-bold tracking-tight text-dark-olive">Every finding should have a reason.</h2>
+<p class="font-body-md text-body-md text-secondary-olive max-w-2xl">
+          ODIN does not hallucinate authority. Every assertion maps directly to verbatim language with unambiguous uncertainty tracking.
+        </p>
+</div>
+<!-- 4 Core Pillar Panels -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<div class="p-6 rounded-xl bg-ivory border border-border-subtle space-y-3 shadow-sm hover:border-primary transition-all">
+<div class="w-9 h-9 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="format_quote">format_quote</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-dark-olive">Clause-Level Citations</h3>
+<p class="font-body-sm text-body-sm text-secondary-olive">
+            Users can trace a finding back to its supporting contractual language with exact paragraph, line, and sentence provenance.
+          </p>
+</div>
+<div class="p-6 rounded-xl bg-ivory border border-border-subtle space-y-3 shadow-sm hover:border-accent-gold transition-all">
+<div class="w-9 h-9 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-accent-gold">
+<span class="material-symbols-outlined text-[18px]" data-icon="help_outline">help_outline</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-dark-olive">Explicit Uncertainty</h3>
+<p class="font-body-sm text-body-sm text-secondary-olive">
+            Ambiguous, missing, or contradictory information is surfaced openly as structured risk tags rather than silently guessed.
+          </p>
+</div>
+<div class="p-6 rounded-xl bg-ivory border border-border-subtle space-y-3 shadow-sm hover:border-primary transition-all">
+<div class="w-9 h-9 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary-dark">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-dark-olive">Time-Aware Reasoning</h3>
+<p class="font-body-sm text-body-sm text-secondary-olive">
+            Deadlines and risk projections dynamically recalculate with the simulated clock and verifiable external events.
+          </p>
+</div>
+<div class="p-6 rounded-xl bg-ivory border border-border-subtle space-y-3 shadow-sm hover:border-sage transition-all">
+<div class="w-9 h-9 rounded-lg bg-cream border border-border-subtle flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified_user">verified_user</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-dark-olive">Human-Reviewed Actions</h3>
+<p class="font-body-sm text-body-sm text-secondary-olive">
+            Recommended notices and other consequential legal actions remain strictly subject to human partner authorization.
+          </p>
+</div>
+</div>
+<!-- High-Fidelity Visual Artifact: Real Contract Evidence Document + Verification Pipeline Side-by-Side -->
+<div class="rounded-xl bg-ivory border border-border-subtle p-6 lg:p-8 backdrop-blur-md shadow-md">
+<div class="flex items-center justify-between pb-6 border-b border-border-subtle mb-6">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-label-md text-label-md text-dark-olive font-mono font-semibold">ODIN TRUTH VERIFICATION PIPELINE [AUDIT SPEC]</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary-olive font-mono">ISO-27001 &amp; SOC2 READY</span>
+</div>
+<!-- Integrated Side-by-Side Layout: Real Contract Photo with Section 14.3 + Cryptographic Tri-column Data -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+<!-- Left: Realistic Close-up Contract Image showing § 14.3 with Olive Highlight -->
+<div class="lg:col-span-5 relative group overflow-hidden rounded-xl border border-border-subtle shadow-md bg-cream">
+<div class="relative overflow-hidden aspect-[4/3]">
+<img alt="Editorial close-up photograph of commercial master services agreement Section 14.3 with olive highlight" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnD__Vqd48cJOJauDGDDaAFLeHixJx_HXIh_UX0Np7APa67sXkgNDV3kjRxf-JPXcWw8R8f5-Q5spGibqtnIIWTyohE-Y1ENRowgGlW898FJYJcGoHkUHABzZXVWb0IQi8nfs-jrp8Qoe_60-xbWEIfRZn9tF0SZEyi_-xJw5iaeJ7DZMQrb3zk2DfPl4739Cy9Ztq01nstw6UYAikrboMMFrBqk-aVI2wabbPomqvJvwZfoiLeO4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-dark-olive/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-cream font-mono text-[11px] bg-dark-olive/80 px-3 py-1.5 rounded backdrop-blur-sm border border-sage/30">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-gold"></span>
+<span class="font-semibold text-cream">ANCHORED SOURCE CLAUSE</span>
+</span>
+<span class="text-sage">§ 14.3 Term &amp; Renewal</span>
+</div>
+</div>
+</div>
+<!-- Right: Cryptographic Verification Pillars -->
+<div class="lg:col-span-7 space-y-4">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<!-- Col 1 -->
+<div class="space-y-2 p-3.5 rounded-lg bg-cream border border-border-subtle">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-dark font-mono font-semibold">SOURCED FACTS</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-primary/15 text-primary-dark font-medium">100% Verbatim</span>
+</div>
+<p class="font-body-sm text-[12px] text-secondary-olive leading-snug">
+                  Zero generative speculation. Ingested clauses are cryptographically hashed and tied directly to the original file bytes.
+                </p>
+<div class="font-code-inline text-code-inline text-[10px] p-1.5 rounded bg-ivory text-primary-dark font-mono border border-border-subtle">
+                  sha256:7f83b165... §21.4
+                </div>
+</div>
+<!-- Col 2 -->
+<div class="space-y-2 p-3.5 rounded-lg bg-cream border border-border-subtle">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-dark font-mono font-semibold">TIMELINES</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-sage/25 text-dark-olive font-medium">Deterministic</span>
+</div>
+<p class="font-body-sm text-[12px] text-secondary-olive leading-snug">
+                  Mathematical date offsets based on ISO 8601 calendar logic, accounting for non-business days and holidays.
+                </p>
+<div class="font-code-inline text-code-inline text-[10px] p-1.5 rounded bg-ivory text-primary font-mono border border-border-subtle">
+                  calc: Exec + 90d = 2025-04-18
+                </div>
+</div>
+<!-- Col 3 -->
+<div class="space-y-2 p-3.5 rounded-lg bg-cream border border-border-subtle">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-accent-gold font-mono font-semibold">INTERPRETATIONS</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-accent-gold/20 text-dark-olive font-medium">Scored</span>
+</div>
+<p class="font-body-sm text-[12px] text-secondary-olive leading-snug">
+                  Heuristic adversarial reviews are explicitly labeled with confidence scores and cross-examined by LOKI before display.
+                </p>
+<div class="font-code-inline text-code-inline text-[10px] p-1.5 rounded bg-ivory text-dark-olive font-mono border border-border-subtle">
+                  conf: 0.94 | challenger: LOKI
+                </div>
+</div>
+</div>
+<!-- Sub-banner: Provenance summary -->
+<div class="p-3 rounded-lg bg-cream/70 border border-border-subtle flex items-center justify-between font-mono text-[11px] text-secondary-olive">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sage"></span>Physical Paper Citation Lineage</span>
+<span class="text-dark-olive font-semibold">DOC-ID: #MSA-2024-EXP9</span>
+</div>
+</div>
+</div>
+<!-- Disclaimer Banner -->
+<div class="mt-6 pt-4 border-t border-border-subtle flex items-start gap-3 text-secondary-olive">
+<span class="material-symbols-outlined text-[18px] text-accent-gold shrink-0 mt-0.5" data-icon="info">info</span>
+<p class="font-body-sm text-body-sm text-secondary-olive">
+<strong class="text-dark-olive font-semibold">Legal Intelligence Notice:</strong> ODIN provides assistive intelligence and structured analysis; it does not replace professional legal counsel or guarantee judicial outcomes.
+          </p>
+</div>
+</div>
+</section>
+<!-- 7. FINAL CONVERGING CTA SECTION (Deep Forest Olive: #303B28) -->
+<section class="py-space-xl relative overflow-hidden border-t border-[#3D4B33] bg-primary-dark text-cream">
+<!-- Convergent Visual Grid Lines (Perspective Ray Illusion) -->
+<div class="absolute inset-0 pointer-events-none opacity-20">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 1000 400">
+<path d="M 0 400 L 500 0 L 1000 400" fill="none" stroke="#A4B18A" stroke-width="0.8"></path>
+<path d="M 150 400 L 500 0 L 850 400" fill="none" stroke="#B79A59" stroke-width="0.8"></path>
+<path d="M 300 400 L 500 0 L 700 400" fill="none" stroke="#A4B18A" stroke-width="0.8"></path>
+<circle cx="500" cy="0" fill="url(#odin-core)" opacity="0.4" r="120"></circle>
+</svg>
+</div>
+<div class="max-w-4xl mx-auto px-gutter text-center relative z-10 space-y-6">
+<div class="w-12 h-12 mx-auto rounded-xl bg-[#252E1F] border border-sage/40 flex items-center justify-center text-sage shadow-md">
+<svg class="w-6 h-6 text-sage" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle class="fill-sage/20" cx="12" cy="12" r="3"></circle>
+<path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+</svg>
+</div>
+<h2 class="font-display-lg text-display-lg font-bold tracking-tight text-cream">
+          See the risk before it becomes a surprise.
+        </h2>
+<p class="font-body-lg text-body-lg text-[#DCDCCB] max-w-2xl mx-auto">
+          Turn disconnected contractual obligations into a clearer, evidence-backed view of what needs attention next.
+        </p>
+<div class="pt-4 flex flex-wrap items-center justify-center gap-4">
+<a class="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-cream text-dark-olive font-label-md text-label-md font-bold transition-all duration-200 active:scale-95 shadow-md hover:bg-ivory hover:shadow-[0_4px_20px_rgba(252,250,243,0.35)]" href="/thor">
+<span>Launch ODIN</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="north_east">north_east</span>
+</a>
+<a class="inline-flex items-center gap-2 px-6 py-4 rounded-lg bg-[#252E1F] border border-[#3D4B33] text-cream font-label-md text-label-md font-medium hover:border-sage hover:bg-[#303B28] transition-all" href="#how-it-works">
+<span>Explore How It Works</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_downward">arrow_downward</span>
+</a>
+</div>
+<p class="font-label-sm text-label-sm text-[#A4B18A] pt-4">
+          Strict Enterprise Data Isolation • Human-in-the-Loop Safeguards
+        </p>
+</div>
+</section>
+</main>
+<!-- 8. FOOTER (Deep Forest Olive: #303B28) -->
+<footer class="docked full-width bg-primary-dark border-t border-[#3D4B33] text-cream">
+<div class="w-full max-w-7xl mx-auto px-gutter py-space-xl flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<!-- Left Anchor & Tagline -->
+<div class="space-y-2 text-center md:text-left">
+<div class="flex items-center justify-center md:justify-start gap-2">
+<div class="w-6 h-6 rounded bg-[#252E1F] border border-[#3D4B33] flex items-center justify-center">
+<svg class="w-3.5 h-3.5 text-sage" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+</div>
+<span class="font-headline-sm text-headline-sm font-semibold tracking-wider text-cream">ODIN</span>
+</div>
+<p class="font-body-sm text-body-sm text-[#DCDCCB] max-w-sm">
+          Contract intelligence for decisions that stand up to scrutiny. Autonomous legal determinism engine.
+        </p>
+<p class="font-label-sm text-label-sm text-[#A4B18A]">
+          © 2025 ODIN Systems Inc. Autonomous Legal Intelligence. High-stakes determinism engine.
+        </p>
+</div>
+<!-- Footer Navigation Links from JSON Anchor -->
+<div class="flex flex-col items-center md:items-end space-y-3">
+<div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+<a class="font-label-sm text-label-sm text-[#DCDCCB] hover:text-cream transition-colors" href="#">Architecture Spec</a>
+<a class="font-label-sm text-label-sm text-[#DCDCCB] hover:text-cream transition-colors" href="#">Privacy Protocol</a>
+<a class="font-label-sm text-label-sm text-[#DCDCCB] hover:text-cream transition-colors" href="#">Security &amp; Audit</a>
+<a class="font-label-sm text-label-sm text-[#DCDCCB] hover:text-cream transition-colors" href="#">Model Ethics Disclaimer</a>
+<a class="font-label-sm text-label-sm text-[#DCDCCB] hover:text-cream transition-colors" href="#">Terms of Service</a>
+</div>
+<div class="font-label-sm text-label-sm text-[#A4B18A] flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-sage"></span>
+<span>Multi-agent contract risk intelligence • Air-gapped deployment available</span>
+</div>
+</div>
+</div>
+</footer>
+<!-- Vanilla JavaScript for Micro-Interactions, HUD Tooltips, and Smooth Anchor Scroll -->
+<script>
+    // Mobile navigation drawer toggle
+    function toggleMobileNav() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+    document.getElementById('mobile-toggle').addEventListener('click', toggleMobileNav);
+
+    // Agent Network Graph Interactive Tooltips & Card Scrolling
+    const agentDetails = {
+      thor: {
+        title: "THOR: Extraction Engine",
+        desc: "Identifies parties, deadlines, renewal terms, obligations, and penalties with verbatim clause anchors.",
+        dotColor: "#FCFAF3",
+        targetId: "agent-thor"
+      },
+      norns: {
+        title: "NORNS: Timeline Intelligence",
+        desc: "Simulates forward-looking obligation dates and calculates deterministic exposure graphs.",
+        dotColor: "#A4B18A",
+        targetId: "agent-norns"
+      },
+      loki: {
+        title: "LOKI: Adversarial Reviewer",
+        desc: "Probes cross-clause contradictions, one-sided commitments, and latent contractual ambiguities.",
+        dotColor: "#B79A59",
+        targetId: "agent-loki"
+      },
+      heimdall: {
+        title: "HEIMDALL: Event Watcher",
+        desc: "Monitors real-world events and maps shifting obligations back to specific contract terms.",
+        dotColor: "#66734A",
+        targetId: "agent-heimdall"
+      },
+      tyr: {
+        title: "TYR: Resolution & Arbiter",
+        desc: "Harmonizes conflicting agent analyses into evidence-linked draft actions for human counsel.",
+        dotColor: "#DCDCCB",
+        targetId: "agent-tyr"
+      },
+      bus: {
+        title: "Shared Evidence Bus",
+        desc: "Central append-only ledger storing token-level citations, hashes, and lineage proofs.",
+        dotColor: "#B79A59",
+        targetId: "evidence-trust"
+      }
+    };
+
+    const tooltip = document.getElementById('graph-tooltip');
+    const tooltipTitle = document.getElementById('tooltip-title');
+    const tooltipDesc = document.getElementById('tooltip-desc');
+    const tooltipDot = document.getElementById('tooltip-dot');
+
+    // Attach hover listeners to SVG agent nodes
+    document.querySelectorAll('[data-agent]').forEach(node => {
+      const key = node.getAttribute('data-agent');
+      const data = agentDetails[key];
+
+      if (data) {
+        node.addEventListener('mouseenter', () => {
+          tooltipTitle.innerHTML = `<span>${data.title}</span><span class="text-[9px] px-1 py-0.2 rounded bg-primary/40 border border-sage/30 text-cream font-mono">Active</span>`;
+          tooltipDesc.textContent = data.desc;
+          tooltipDot.style.backgroundColor = data.dotColor;
+          tooltip.classList.remove('opacity-90');
+          tooltip.classList.add('opacity-100', 'border-accent-gold');
+        });
+
+        node.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('border-accent-gold');
+          tooltip.classList.add('opacity-90');
+        });
+      }
+    });
+
+    // Smooth Scroll Helper that handles high-contrast target highlight
+    function scrollToCard(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Pulse highlight effect on card
+        el.classList.add('ring-2', 'ring-primary');
+        setTimeout(() => {
+          el.classList.remove('ring-2', 'ring-primary');
+        }, 1800);
+      }
+    }
+
+    // Scrollspy to dynamically update active navigation links in TopNavBar
+    window.addEventListener('scroll', () => {
+      const sections = ['hero', 'agents', 'how-it-works', 'evidence-trust'];
+      const scrollY = window.pageYOffset;
+
+      sections.forEach(current => {
+        const sectionHeight = document.getElementById(current)?.offsetHeight || 0;
+        const sectionTop = (document.getElementById(current)?.offsetTop || 0) - 100;
+
+        if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+          document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.getAttribute('href') === `#${current}`) {
+              link.classList.remove('text-secondary-olive');
+              link.classList.add('text-primary', 'font-semibold');
+            } else {
+              link.classList.remove('text-primary', 'font-semibold');
+              link.classList.add('text-secondary-olive');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body></html>

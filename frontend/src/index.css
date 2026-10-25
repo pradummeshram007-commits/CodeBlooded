@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-cream: #F5F1E6;
+  --color-ivory: #FCFAF3;
+  --color-primary: #66734A;
+  --color-primary-dark: #303B28;
+  --color-sage: #A4B18A;
+  --color-dark-olive: #252B20;
+  --color-secondary-olive: #727665;
+  --color-border-subtle: #DCDCCB;
+  --color-gold: #B79A59;
+}
+
+/* Warm Archival Subtle Technical Grid Pattern */
+.bg-grid-matrix {
+  background-size: 28px 28px;
+  background-image: radial-gradient(circle, rgba(102, 115, 74, 0.12) 1px, transparent 1px);
+}
+
+/* Flow line dash array for interactive flow */
+.flow-line {
+  stroke-dasharray: 6 6;
+  animation: dash-flow 2.2s linear infinite;
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* Pulsing concentric ring */
+.pulsing-ring {
+  transform-origin: center;
+  animation: pulse-ring 4s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.96); opacity: 0.8; }
+  50% { transform: scale(1.06); opacity: 0.35; }
+  100% { transform: scale(0.96); opacity: 0.8; }
+}
+
+/* Controlled organic wobble for agent icons */
+.wobble-organic-1 {
+  animation: wobble-1 6.5s ease-in-out infinite;
+}
+
+.wobble-organic-2 {
+  animation: wobble-2 7.8s ease-in-out infinite;
+}
+
+.wobble-organic-3 {
+  animation: wobble-3 5.8s ease-in-out infinite;
+}
+
+/* Reduced motion preference override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .flow-line,
+  .pulsing-ring,
+  .animate-marquee,
+  .wobble-organic-1,
+  .wobble-organic-2,
+  .wobble-organic-3 {
+    animation: none !important;
+  }
+}
+
+/* Hide scrollbars cleanly */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
