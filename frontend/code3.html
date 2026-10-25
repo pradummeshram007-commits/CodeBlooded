@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NORNS — Timeline Intelligence &amp; Contractual Alert Center · ODIN</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-container": "#004858",
+            "on-surface": "#252B20",
+            "surface-bright": "#FCFAF3",
+            "surface-variant": "#EAE6D8",
+            "surface-container": "#F5F1E6",
+            "error-container": "#F7E8E4",
+            "primary-container": "#303B28",
+            "tertiary-fixed": "#77fac7",
+            "on-tertiary-fixed": "#002115",
+            "error": "#C83D3D",
+            "on-tertiary-fixed-variant": "#00513a",
+            "secondary": "#66734A",
+            "surface-dim": "#EDE8DA",
+            "on-primary-fixed": "#23005c",
+            "on-primary": "#FFFFFF",
+            "surface-container-highest": "#E4DEC9",
+            "surface-container-lowest": "#FFFFFF",
+            "secondary-fixed-dim": "#40d7fd",
+            "inverse-primary": "#66734A",
+            "inverse-on-surface": "#FCFAF3",
+            "on-primary-fixed-variant": "#5516be",
+            "tertiary-container": "#527A54",
+            "tertiary": "#527A54",
+            "primary-fixed-dim": "#A4B18A",
+            "surface": "#FCFAF3",
+            "tertiary-fixed-dim": "#527A54",
+            "on-surface-variant": "#727665",
+            "primary": "#303B28",
+            "on-secondary-fixed-variant": "#004e5e",
+            "outline": "#DCDCCB",
+            "on-error-container": "#8F2929",
+            "surface-container-high": "#EFEBDD",
+            "secondary-container": "#E3E7D3",
+            "background": "#F5F1E6",
+            "surface-tint": "#303B28",
+            "on-primary-container": "#FFFFFF",
+            "secondary-fixed": "#b2ebff",
+            "on-tertiary": "#FFFFFF",
+            "outline-variant": "#DCDCCB",
+            "surface-container-low": "#FAF6EC",
+            "on-secondary": "#FFFFFF",
+            "on-background": "#252B20",
+            "on-tertiary-container": "#FFFFFF",
+            "primary-fixed": "#e9ddff",
+            "on-error": "#FFFFFF",
+            "on-secondary-fixed": "#001f27",
+            "inverse-surface": "#252B20"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2.5rem",
+            "gutter": "1.5rem",
+            "gutter-mobile": "1rem",
+            "margin": "2rem",
+            "margin-mobile": "1rem"
+          },
+          fontFamily: {
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["JetBrains Mono", "monospace"],
+            "label-md": ["JetBrains Mono", "monospace"],
+            "code-inline": ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "body-sm": ["0.8125rem", { lineHeight: "1.25rem", letterSpacing: "0.005em", fontWeight: "400" }],
+            "body-md": ["0.9375rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+            "body-lg": ["1.0625rem", { lineHeight: "1.65rem", letterSpacing: "-0.005em", fontWeight: "400" }],
+            "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "headline-xl": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "display-lg": ["3.5rem", { lineHeight: "4.25rem", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.04em", fontWeight: "500" }],
+            "label-md": ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.02em", fontWeight: "500" }],
+            "code-inline": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0em", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Technical Grid background */
+    .bg-grid-dots {
+      background-image: radial-gradient(rgba(48, 59, 40, 0.12) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #EDE8DA;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #A4B18A;
+      border-radius: 2px;
+    }
+    .highlighter-olive {
+      background-color: rgba(164, 177, 138, 0.35);
+      border-bottom: 2px solid #66734A;
+      padding: 1px 4px;
+    }
+    .worst-case-active {
+      box-shadow: 0 0 0 2px #C83D3D, 0 10px 25px -5px rgba(200, 61, 61, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col antialiased bg-grid-dots selection:bg-secondary/20 selection:text-primary">
+<!-- TOP APP BAR -->
+<header class="bg-surface/90 backdrop-blur-md sticky top-0 z-40 border-b border-outline/60 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+<div class="w-full max-w-7xl mx-auto flex items-center justify-between px-gutter py-space-sm">
+<!-- Left: Logo & Breadcrumb -->
+<div class="flex items-center space-x-space-md">
+<a class="flex items-center space-x-space-xs group" href="#">
+<div class="w-7 h-7 bg-primary text-on-primary flex items-center justify-center rounded font-headline-sm font-bold text-sm tracking-tighter">
+            Ω
+          </div>
+<span class="font-headline-sm text-headline-sm font-bold tracking-wider text-primary">ODIN</span>
+</a>
+<span class="text-outline text-sm">/</span>
+<div class="flex items-center space-x-2">
+<span class="text-xs font-label-sm uppercase tracking-wider text-on-surface-variant">Agent 02</span>
+<span class="text-sm font-semibold text-primary">NORNS · Timeline Intelligence</span>
+</div>
+</div>
+<!-- Center: Navigation Links -->
+<nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#">Overview</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#">Contracts</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150 flex items-center space-x-1" href="#">
+<span>THOR — Extraction</span>
+<span class="text-[10px] text-on-surface-variant/70 font-label-sm">↗</span>
+</a>
+<a class="text-primary font-semibold border-b-2 border-primary pb-0.5" href="#">NORNS — Timeline</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#">Agent Activity</a>
+</nav>
+<!-- Right: Agent State & Return Link -->
+<div class="flex items-center space-x-space-md">
+<div class="hidden sm:flex items-center space-x-2 bg-surface-container-high px-2.5 py-1 rounded border border-outline">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">NORNS v2.4-CORP · Operational</span>
+</div>
+<a class="text-xs font-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-xs leading-none">arrow_back</span>
+<span>ODIN System</span>
+</a>
+</div>
+</div>
+</header>
+<!-- MAIN CANVAS -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-gutter py-space-md space-y-space-lg">
+<!-- HERO HEADER & SIMULATED CLOCK BAR -->
+<div class="bg-surface rounded border border-outline p-space-lg shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pb-space-md border-b border-outline">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="bg-secondary-container text-primary font-label-sm text-label-sm uppercase px-2 py-0.5 rounded font-bold tracking-wider">
+              ODIN AGENT 02 · TIMELINE INTELLIGENCE
+            </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Determinism Engine active</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-primary font-bold tracking-tight">
+            Know what is due before it becomes a risk.
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+            NORNS maps contract-derived obligations across time, tracks available payment and commitment records, and deterministically projects upcoming deadlines, renewals, and penalty triggers.
+          </p>
+</div>
+<!-- Prominent Danger Action: Worst-Case Timeline -->
+<div class="flex flex-col items-start lg:items-end gap-2 shrink-0">
+<button class="bg-error text-on-error hover:bg-on-error-container px-4 py-2.5 rounded font-headline-sm text-sm font-semibold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-sm" id="worstCaseBtn">
+<span class="material-symbols-outlined text-base">warning</span>
+<span>⚠ Worst-Case Timeline ↗</span>
+</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cascading failure counterfactual</span>
+</div>
+</div>
+<!-- Interactive Simulated Clock Controller -->
+<div class="pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md text-xs font-label-sm bg-surface-container-low px-4 py-3 rounded border border-outline">
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="flex items-center gap-1.5 text-primary font-bold">
+<span class="material-symbols-outlined text-base text-secondary">schedule</span>
+<span>Simulated Date:</span>
+<span class="bg-surface border border-outline px-2 py-0.5 rounded text-primary" id="currentSimDate">2025-05-15 (T+45d)</span>
+</div>
+<div class="h-4 w-[1px] bg-outline hidden sm:block"></div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 bg-surface border border-outline rounded hover:bg-surface-variant transition text-on-surface-variant">Past Commitments</button>
+<button class="px-2 py-1 bg-surface border border-outline rounded hover:bg-surface-variant transition text-on-surface-variant">Today (2025-03-31)</button>
+<button class="px-2 py-1 bg-primary text-on-primary rounded font-semibold transition">Next 30 Days</button>
+<button class="px-2 py-1 bg-surface border border-outline rounded hover:bg-surface-variant transition text-on-surface-variant">Next 90 Days</button>
+</div>
+</div>
+<!-- Interactive Slider & Reset -->
+<div class="flex items-center gap-3 w-full md:w-auto justify-end">
+<span class="text-on-surface-variant">Offset:</span>
+<input class="w-32 accent-primary cursor-pointer" max="90" min="0" type="range" value="45"/>
+<button class="text-secondary hover:text-primary underline flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-xs">restart_alt</span>
+<span>Reset to Actual</span>
+</button>
+</div>
+</div>
+</div>
+<!-- PORTFOLIO URGENCY SUMMARY ROW -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+<!-- Metric 1 -->
+<div class="bg-surface p-space-md rounded border border-outline flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase">Overdue Obligations</span>
+<span class="w-2 h-2 rounded-full bg-error"></span>
+</div>
+<div class="mt-2">
+<div class="font-headline-lg text-headline-lg font-bold text-error">2</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-0.5">$64,200 exposure</div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface p-space-md rounded border border-outline flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase">Due This Week</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="mt-2">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">3</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-0.5">Commitments scheduled</div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface p-space-md rounded border border-outline flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase">Upcoming 30d</span>
+<span class="w-2 h-2 rounded-full bg-primary-fixed-dim"></span>
+</div>
+<div class="mt-2">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">8</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-0.5">Milestones pending</div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface p-space-md rounded border border-outline flex flex-col justify-between col-span-2 md:col-span-1">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase">Financial Exposure</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant">payments</span>
+</div>
+<div class="mt-2">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">$148,700</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant font-mono mt-0.5">Conf: $42.5k · Cond: $106.2k</div>
+</div>
+</div>
+<!-- Metric 5 -->
+<div class="bg-surface p-space-md rounded border border-outline flex flex-col justify-between col-span-2 md:col-span-1">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase">Renewals in Window</span>
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</div>
+<div class="mt-2">
+<div class="font-headline-lg text-headline-lg font-bold text-primary">2</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-0.5">Active notice periods</div>
+</div>
+</div>
+</div>
+<!-- CONTRACTUAL ATTENTION / PRIORITY ALERT STRIP -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-lg">priority_high</span>
+<span>Needs Attention · Priority Alerts</span>
+</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Prioritize upcoming commitments, overdue obligations, renewal windows, and potential penalty triggers.
+          </p>
+</div>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-2 py-1 rounded border border-outline text-primary">
+          4 High-Priority Triggers
+        </span>
+</div>
+<!-- 4 Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+<!-- Card 1: Critical Overdue -->
+<div class="bg-error-container/60 border border-error/40 rounded p-3 flex flex-col justify-between space-y-3 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div>
+<div class="flex items-center justify-between text-xs mb-1">
+<span class="bg-error text-on-error font-label-sm text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                Critical Overdue
+              </span>
+<span class="font-label-sm text-error font-semibold">+4 days late</span>
+</div>
+<h3 class="font-headline-sm text-sm font-bold text-primary leading-tight">
+              Quarterly SLA True-Up Payment
+            </h3>
+<p class="font-body-sm text-xs text-on-surface-variant mt-1">CloudScale Enterprise MLA</p>
+<div class="mt-2 pt-2 border-t border-error/20 font-label-sm text-xs space-y-0.5">
+<div class="flex justify-between font-bold text-primary">
+<span>Amount:</span>
+<span>$42,500.00 USD</span>
+</div>
+<div class="text-[11px] text-error font-sans">
+                Penalty: 1.5% compounding fee/month (§ 18.2)
+              </div>
+</div>
+</div>
+<button class="w-full mt-2 py-1.5 bg-surface text-primary border border-outline hover:border-error text-xs font-semibold rounded flex items-center justify-center gap-1 transition">
+<span>View Obligation</span>
+<span class="material-symbols-outlined text-xs">arrow_outward</span>
+</button>
+</div>
+<!-- Card 2: Renewal Notice Window -->
+<div class="bg-surface rounded border border-outline p-3 flex flex-col justify-between space-y-3 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div>
+<div class="flex items-center justify-between text-xs mb-1">
+<span class="bg-secondary-container text-primary font-label-sm text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                Renewal Window
+              </span>
+<span class="font-label-sm text-secondary font-semibold">12 days left</span>
+</div>
+<h3 class="font-headline-sm text-sm font-bold text-primary leading-tight">
+              MSA Convenience Termination Notice
+            </h3>
+<p class="font-body-sm text-xs text-on-surface-variant mt-1">Apex Global Logistics</p>
+<div class="mt-2 pt-2 border-t border-outline font-label-sm text-xs space-y-0.5">
+<div class="flex justify-between text-primary">
+<span>Deadline:</span>
+<span class="font-semibold">2025-04-12</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-sans">
+                Consequence: Auto-renew 12m @ +6.5% (§ 14.3)
+              </div>
+</div>
+</div>
+<button class="w-full mt-2 py-1.5 bg-surface-container-high text-primary border border-outline hover:bg-surface-variant text-xs font-semibold rounded flex items-center justify-center gap-1 transition">
+<span>View Evidence</span>
+<span class="material-symbols-outlined text-xs">visibility</span>
+</button>
+</div>
+<!-- Card 3: Due Today -->
+<div class="bg-surface rounded border border-outline p-3 flex flex-col justify-between space-y-3 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div>
+<div class="flex items-center justify-between text-xs mb-1">
+<span class="bg-surface-container-highest text-primary font-label-sm text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                Due Today
+              </span>
+<span class="font-label-sm text-primary font-semibold">2025-03-31</span>
+</div>
+<h3 class="font-headline-sm text-sm font-bold text-primary leading-tight">
+              Security Audit Compliance Attestation
+            </h3>
+<p class="font-body-sm text-xs text-on-surface-variant mt-1">FinGuard Services</p>
+<div class="mt-2 pt-2 border-t border-outline font-label-sm text-xs space-y-0.5">
+<div class="flex justify-between text-primary">
+<span>Requirement:</span>
+<span>ISO27001 Proof</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-sans">
+                Contract clause: Mandatory § 9.4 attestation
+              </div>
+</div>
+</div>
+<button class="w-full mt-2 py-1.5 bg-surface-container-high text-primary border border-outline hover:bg-surface-variant text-xs font-semibold rounded flex items-center justify-center gap-1 transition">
+<span>Inspect Obligation</span>
+<span class="material-symbols-outlined text-xs">arrow_outward</span>
+</button>
+</div>
+<!-- Card 4: Potential Penalty -->
+<div class="bg-surface rounded border border-outline p-3 flex flex-col justify-between space-y-3 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
+<div>
+<div class="flex items-center justify-between text-xs mb-1">
+<span class="bg-secondary-container text-primary font-label-sm text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                Cure Window
+              </span>
+<span class="font-label-sm text-on-surface-variant font-semibold">9 days remaining</span>
+</div>
+<h3 class="font-headline-sm text-sm font-bold text-primary leading-tight">
+              Notice of Milestone 2 Variance
+            </h3>
+<p class="font-body-sm text-xs text-on-surface-variant mt-1">DataWeave Systems</p>
+<div class="mt-2 pt-2 border-t border-outline font-label-sm text-xs space-y-0.5">
+<div class="flex justify-between text-primary">
+<span>Exposure:</span>
+<span class="font-bold">$15,000.00 / week</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-sans">
+                Remedy period expires: 2025-04-09 (§ 22.1)
+              </div>
+</div>
+</div>
+<button class="w-full mt-2 py-1.5 bg-surface-container-high text-primary border border-outline hover:bg-surface-variant text-xs font-semibold rounded flex items-center justify-center gap-1 transition">
+<span>Review Redline</span>
+<span class="material-symbols-outlined text-xs">history_edu</span>
+</button>
+</div>
+</div>
+</section>
+<!-- HORIZONTAL CHRONOLOGICAL CONTRACT TIMELINE -->
+<section class="bg-surface rounded border border-outline p-space-md space-y-3">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg">linear_scale</span>
+<span>Contractual Milestone Horizon</span>
+</h2>
+<p class="font-body-sm text-xs text-on-surface-variant">Deterministic timeline derived from Section 14.3, 18.2, 9.4 and 22.1 stipulations.</p>
+</div>
+<div class="flex items-center gap-3 text-xs font-label-sm">
+<div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-error"></span> Overdue</div>
+<div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span> Notice Deadline</div>
+<div class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span> Settled</div>
+</div>
+</div>
+<!-- Timeline Rail -->
+<div class="overflow-x-auto custom-scroll py-6 px-4 bg-surface-container-low rounded border border-outline">
+<div class="relative min-w-[850px] h-28 flex items-center">
+<!-- Horizon Base Bar -->
+<div class="absolute left-0 right-0 h-1 bg-outline/70"></div>
+<!-- Today Vertical Line Marker -->
+<div class="absolute left-[35%] top-0 bottom-0 w-0.5 bg-primary flex flex-col items-center z-10">
+<span class="bg-primary text-on-primary text-[10px] font-label-sm px-1.5 py-0.5 rounded mb-1">TODAY (Mar 31)</span>
+<div class="w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-primary/20"></div>
+</div>
+<!-- Event 1: Past Due (Mar 27) -->
+<div class="absolute left-[15%] flex flex-col items-center group cursor-pointer">
+<span class="text-[10px] font-label-sm text-error font-bold mb-1">Mar 27 (-4d)</span>
+<div class="w-4 h-4 rounded-full bg-error border-2 border-surface flex items-center justify-center text-white text-[9px] shadow-sm">!</div>
+<div class="absolute top-7 w-36 bg-surface p-2 rounded border border-error/50 shadow-sm text-center">
+<p class="font-label-sm text-[10px] text-error font-bold leading-tight">SLA Payment Due</p>
+<p class="font-body-sm text-[10px] text-on-surface-variant">$42,500 CloudScale</p>
+</div>
+</div>
+<!-- Event 2: Due Today (Mar 31) -->
+<div class="absolute left-[35%] flex flex-col items-center group cursor-pointer pt-12">
+<div class="w-3.5 h-3.5 rounded-full bg-primary border-2 border-surface shadow-sm"></div>
+<div class="absolute top-16 w-36 bg-surface p-2 rounded border border-outline shadow-sm text-center">
+<p class="font-label-sm text-[10px] text-primary font-bold leading-tight">ISO Attestation</p>
+<p class="font-body-sm text-[10px] text-on-surface-variant">FinGuard Services</p>
+</div>
+</div>
+<!-- Event 3: Cure Expiry (Apr 09) -->
+<div class="absolute left-[52%] flex flex-col items-center group cursor-pointer">
+<span class="text-[10px] font-label-sm text-primary mb-1">Apr 09 (+9d)</span>
+<div class="w-3.5 h-3.5 rounded-full bg-secondary border-2 border-surface shadow-sm"></div>
+<div class="absolute top-7 w-36 bg-surface p-2 rounded border border-outline shadow-sm text-center">
+<p class="font-label-sm text-[10px] text-primary font-bold leading-tight">Variance Cure Period</p>
+<p class="font-body-sm text-[10px] text-on-surface-variant">DataWeave Systems</p>
+</div>
+</div>
+<!-- Event 4: Renewal Notice Deadline (Apr 12) -->
+<div class="absolute left-[66%] flex flex-col items-center group cursor-pointer pt-12">
+<div class="w-4 h-4 rounded-full bg-secondary border-2 border-surface flex items-center justify-center text-white text-[9px] shadow-sm">R</div>
+<div class="absolute top-16 w-40 bg-surface p-2 rounded border border-secondary shadow-sm text-center">
+<p class="font-label-sm text-[10px] text-secondary font-bold leading-tight">Notice Deadline (§ 14.3)</p>
+<p class="font-body-sm text-[10px] text-on-surface-variant">Apex Logistics Termination</p>
+</div>
+</div>
+<!-- Event 5: Contract Expiry / Auto-renew (Jul 11) -->
+<div class="absolute left-[88%] flex flex-col items-center group cursor-pointer">
+<span class="text-[10px] font-label-sm text-on-surface-variant mb-1">Jul 11 (+102d)</span>
+<div class="w-3.5 h-3.5 rounded-full bg-outline border-2 border-surface"></div>
+<div class="absolute top-7 w-36 bg-surface p-2 rounded border border-outline shadow-sm text-center">
+<p class="font-label-sm text-[10px] text-on-surface-variant font-bold leading-tight">Term Expiration</p>
+<p class="font-body-sm text-[10px] text-on-surface-variant">Auto-Lock Sequence</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- WORKSPACE 2-COLUMN SPLIT: LEDGER + EVIDENCE INSPECTOR -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- LEFT 8 COLS: PAYMENTS & COMMITMENTS LEDGER -->
+<section class="lg:col-span-8 space-y-space-md">
+<!-- Table Frame & Filters -->
+<div class="bg-surface rounded border border-outline shadow-sm overflow-hidden">
+<div class="p-space-md border-b border-outline flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Obligations &amp; Commitments Ledger</h2>
+<p class="font-body-sm text-xs text-on-surface-variant">Indexed contract clauses cross-referenced with simulated banking and ledger feeds.</p>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center gap-2">
+<div class="relative">
+<input class="bg-surface-container-low border border-outline rounded px-2.5 py-1 text-xs font-label-sm text-primary placeholder-on-surface-variant/50 focus:outline-none focus:border-secondary w-44" placeholder="Search (§ section, vendor)..." type="text"/>
+</div>
+<button class="p-1.5 rounded border border-outline hover:bg-surface-variant text-on-surface-variant" title="Filter columns">
+<span class="material-symbols-outlined text-sm leading-none">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Operational Tabs -->
+<div class="flex items-center border-b border-outline px-space-md overflow-x-auto text-xs font-label-sm bg-surface-container-low">
+<button class="py-2.5 px-3 border-b-2 border-primary font-bold text-primary whitespace-nowrap">All Obligations (16)</button>
+<button class="py-2.5 px-3 border-b-2 border-transparent hover:border-outline text-on-surface-variant whitespace-nowrap">Payments Due (5)</button>
+<button class="py-2.5 px-3 border-b-2 border-transparent hover:border-outline text-on-surface-variant whitespace-nowrap">Recorded Payments (4)</button>
+<button class="py-2.5 px-3 border-b-2 border-transparent hover:border-outline text-error font-semibold whitespace-nowrap">Past Due (2)</button>
+<button class="py-2.5 px-3 border-b-2 border-transparent hover:border-outline text-secondary whitespace-nowrap">Renewals (3)</button>
+<button class="py-2.5 px-3 border-b-2 border-transparent hover:border-outline text-on-surface-variant whitespace-nowrap">Potential Penalties (2)</button>
+</div>
+<!-- Table View -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="bg-surface-container-high border-b border-outline font-label-sm text-on-surface-variant uppercase text-[10px]">
+<th class="py-2.5 px-3">Due Date</th>
+<th class="py-2.5 px-3">Obligation / Action</th>
+<th class="py-2.5 px-3">Contract &amp; Entity</th>
+<th class="py-2.5 px-3">Value / Exposure</th>
+<th class="py-2.5 px-3">Status</th>
+<th class="py-2.5 px-3">Evidence Ref</th>
+<th class="py-2.5 px-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline">
+<!-- Row 1: Overdue True-up -->
+<tr class="bg-error-container/30 hover:bg-error-container/50 transition">
+<td class="py-2.5 px-3 font-label-sm text-error font-bold whitespace-nowrap">
+                    2025-03-27 <span class="text-[9px] block text-error/80">(-4d late)</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="font-bold text-primary block">Quarterly SLA True-Up</span>
+<span class="text-on-surface-variant text-[11px]">Direct wire transfer obligation</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-primary font-medium block">CloudScale Corp</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">MLA-2023-V8</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm font-bold text-primary">
+                    $42,500.00
+                  </td>
+<td class="py-2.5 px-3">
+<span class="bg-error text-on-error font-label-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">Overdue</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-secondary underline cursor-pointer">
+                    § 18.2 (p. 24)
+                  </td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 rounded border border-outline hover:bg-surface text-primary font-semibold text-[11px]">Inspect</button>
+</td>
+</tr>
+<!-- Row 2: Selected Item (Section 14.3 Renewal) -->
+<tr class="bg-secondary-container/40 border-l-4 border-l-secondary">
+<td class="py-2.5 px-3 font-label-sm text-secondary font-bold whitespace-nowrap">
+                    2025-04-12 <span class="text-[9px] block text-on-surface-variant">(12d notice)</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="font-bold text-primary block">Non-Renewal Written Notice</span>
+<span class="text-on-surface-variant text-[11px]">Mandatory 90d prior notification</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-primary font-medium block">Apex Global Logistics</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">AGL-MSA-2022</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-primary">
+                    $128,400.00 <span class="text-[10px] text-on-surface-variant block font-sans">12m auto-lock</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="bg-secondary text-on-secondary font-label-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">Notice Window</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-secondary underline font-bold cursor-pointer">
+                    § 14.3 (p. 18)
+                  </td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 rounded bg-primary text-on-primary font-semibold text-[11px]">Active</button>
+</td>
+</tr>
+<!-- Row 3: Due Today Attestation -->
+<tr class="hover:bg-surface-variant/30 transition">
+<td class="py-2.5 px-3 font-label-sm text-primary font-bold whitespace-nowrap">
+                    2025-03-31 <span class="text-[9px] block text-primary">(Today)</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="font-bold text-primary block">ISO27001 Compliance Proof</span>
+<span class="text-on-surface-variant text-[11px]">Annual audit deliverable</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-primary font-medium block">FinGuard Services</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">FIN-SEC-41</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-on-surface-variant">
+                    N/A (Breach risk)
+                  </td>
+<td class="py-2.5 px-3">
+<span class="bg-surface-container-highest text-primary font-label-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">Scheduled</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-secondary underline cursor-pointer">
+                    § 9.4 (p. 11)
+                  </td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 rounded border border-outline hover:bg-surface text-primary font-semibold text-[11px]">Inspect</button>
+</td>
+</tr>
+<!-- Row 4: Penalty Trigger / Cure -->
+<tr class="hover:bg-surface-variant/30 transition">
+<td class="py-2.5 px-3 font-label-sm text-primary whitespace-nowrap">
+                    2025-04-09 <span class="text-[9px] block text-on-surface-variant">(9d cure)</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="font-bold text-primary block">Delivery Milestone 2 Remedy</span>
+<span class="text-on-surface-variant text-[11px]">Penalty clause triggered if uncured</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-primary font-medium block">DataWeave Systems</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">DWS-SOW-03</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-error font-semibold">
+                    $15,000.00 / wk
+                  </td>
+<td class="py-2.5 px-3">
+<span class="bg-secondary-container text-primary font-label-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">Cure Window</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-secondary underline cursor-pointer">
+                    § 22.1 (p. 31)
+                  </td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 rounded border border-outline hover:bg-surface text-primary font-semibold text-[11px]">Inspect</button>
+</td>
+</tr>
+<!-- Row 5: Settled Past Payment -->
+<tr class="hover:bg-surface-variant/30 transition opacity-80">
+<td class="py-2.5 px-3 font-label-sm text-on-surface-variant whitespace-nowrap">
+                    2025-03-15 <span class="text-[9px] block text-tertiary">Verified</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="font-medium text-primary block">Infrastructure Retainer Q1</span>
+<span class="text-on-surface-variant text-[11px]">Confirmed ledger transaction</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-primary font-medium block">Apex Global Logistics</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">AGL-MSA-2022</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-on-surface-variant">
+                    $31,250.00
+                  </td>
+<td class="py-2.5 px-3">
+<span class="bg-tertiary/20 text-tertiary font-label-sm text-[10px] px-1.5 py-0.5 rounded font-semibold">Recorded Paid</span>
+</td>
+<td class="py-2.5 px-3 font-label-sm text-on-surface-variant">
+                    § 6.1 (p. 7)
+                  </td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 rounded border border-outline text-on-surface-variant text-[11px]">Receipt</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Navigation -->
+<div class="p-space-sm border-t border-outline flex items-center justify-between text-xs font-label-sm text-on-surface-variant bg-surface-container-low">
+<span>Showing 5 of 16 obligations</span>
+<div class="flex items-center gap-2">
+<button class="px-2 py-0.5 border border-outline rounded bg-surface text-primary hover:bg-surface-variant">← Prev</button>
+<button class="px-2 py-0.5 border border-outline rounded bg-surface text-primary hover:bg-surface-variant">Next →</button>
+</div>
+</div>
+</div>
+<!-- WORST-CASE COUNTERFACTUAL PROJECTION PANEL -->
+<div class="bg-surface rounded border border-error/50 p-space-md space-y-3 bg-gradient-to-r from-error-container/20 to-transparent" id="worstCaseSection">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-error animate-ping"></span>
+<h3 class="font-headline-sm text-sm font-bold text-error uppercase tracking-wider">
+                Counterfactual Projection: Default &amp; Worst-Case Cascade
+              </h3>
+</div>
+<span class="font-label-sm text-xs text-error font-semibold">T+45d Inaction Simulation</span>
+</div>
+<p class="font-body-sm text-xs text-on-surface-variant">
+            Explore how contractual deadlines and financial exposure compound if mandatory responses are neglected.
+          </p>
+<!-- Stepped Sequence of Consequences -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+<div class="p-2.5 bg-surface rounded border border-outline space-y-1">
+<div class="flex justify-between font-label-sm text-[11px] text-error">
+<span>Day 0 (Apr 12)</span>
+<span>Missed Notice</span>
+</div>
+<p class="font-bold text-xs text-primary">Apex MSA Renewal Window Closes</p>
+<p class="text-[11px] text-on-surface-variant">Forfeits convenience termination right under § 14.3.</p>
+</div>
+<div class="p-2.5 bg-surface rounded border border-outline space-y-1">
+<div class="flex justify-between font-label-sm text-[11px] text-error">
+<span>Day +30 (May 12)</span>
+<span>+$128.4k Exposure</span>
+</div>
+<p class="font-bold text-xs text-primary">Automatic 12-Month Lock-in</p>
+<p class="text-[11px] text-on-surface-variant">+6.5% standard inflation escalator applied irrevocably.</p>
+</div>
+<div class="p-2.5 bg-surface rounded border border-error/40 space-y-1">
+<div class="flex justify-between font-label-sm text-[11px] text-error font-bold">
+<span>Day +45 (May 27)</span>
+<span>Breach &amp; Penalties</span>
+</div>
+<p class="font-bold text-xs text-error">Compounded True-Up Penalties</p>
+<p class="text-[11px] text-on-surface-variant">CloudScale penalty reaches 4.5% cumulative ($1,912.50 fee).</p>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT 4 COLS: EVIDENCE INSPECTOR & CONTRACT DRILL-DOWN -->
+<section class="lg:col-span-4 space-y-space-md">
+<div class="bg-surface rounded border border-outline shadow-sm overflow-hidden sticky top-20">
+<!-- Inspector Header -->
+<div class="p-space-md border-b border-outline bg-surface-container-high flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">fact_check</span>
+<span class="font-label-sm text-xs font-bold text-primary">Clause Evidence Inspector</span>
+</div>
+<span class="bg-surface border border-outline text-primary font-label-sm text-[10px] px-1.5 py-0.5 rounded">
+              AGL-MSA-2022
+            </span>
+</div>
+<!-- Clause Document Card (Editorial Style) -->
+<div class="p-space-md space-y-space-md bg-surface-bright">
+<!-- Document Meta -->
+<div class="flex items-center justify-between text-xs pb-2 border-b border-outline">
+<span class="font-semibold text-primary">Master Services Agreement</span>
+<span class="font-label-sm text-on-surface-variant">Page 18 of 54</span>
+</div>
+<!-- Verbatim Excerpt styled like typed legal paper -->
+<div class="p-4 bg-surface rounded border border-outline shadow-inner font-serif text-sm leading-relaxed text-on-surface space-y-3">
+<div class="font-bold font-sans text-xs uppercase tracking-wider text-on-surface-variant pb-1 border-b border-outline/50">
+                Section 14.3 Term and Renewal
+              </div>
+<p class="text-xs">
+                1.1 The contract multi continues to route our services, master services agreement is the expiration of the open-ended master plan for accurate terms of renewals...
+              </p>
+<!-- Verbatim with highlighter-olive class matching prompt image -->
+<p class="text-xs">
+                1.2 The renewal clauses require written notice that
+                <span class="highlighter-olive font-sans font-medium text-primary">
+                  either party must provide ninety (90) calendar days prior written notice of non-renewal
+                </span>
+                to the other party, failing which this Agreement shall automatically renew for an additional twelve (12) month period subject to an escalation.
+              </p>
+<div class="font-sans text-[11px] font-semibold text-primary pt-1">
+                Renewal Obligations:
+              </div>
+<p class="text-xs text-on-surface-variant">
+                The notification shall be sent to the principal office with certified delivery confirmation...
+              </p>
+</div>
+<!-- Calculation Lineage Block -->
+<div class="bg-surface-container-low p-3 rounded border border-outline space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-xs font-bold text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-secondary">calculate</span>
+                  Deterministic Calculation Lineage
+                </span>
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</div>
+<div class="font-label-sm text-[11px] space-y-1 text-on-surface-variant">
+<div class="flex justify-between">
+<span>Contract Term Expiry:</span>
+<span class="font-bold text-primary">2025-07-11</span>
+</div>
+<div class="flex justify-between">
+<span>Required Notice Interval:</span>
+<span class="font-bold text-primary">-90 calendar days</span>
+</div>
+<div class="h-[1px] bg-outline my-1"></div>
+<div class="flex justify-between text-secondary font-bold">
+<span>Calculated Deadline:</span>
+<span>2025-04-12</span>
+</div>
+</div>
+</div>
+<!-- Cryptographic Verification & Agent Trust -->
+<div class="space-y-2 pt-1 font-label-sm text-[11px]">
+<div class="flex justify-between text-on-surface-variant">
+<span>OCR Engine Confidence:</span>
+<span class="font-bold text-tertiary">99.84% (Deterministic)</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Proof Hash:</span>
+<span class="font-mono text-[10px] text-primary truncate w-32">0x89f2a77b...ec01</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Extracted By:</span>
+<span class="font-semibold text-primary">THOR v2.2 Parsing Pipeline</span>
+</div>
+</div>
+<!-- Inspector Action Triggers -->
+<div class="pt-2 flex items-center gap-2">
+<button class="flex-1 py-2 bg-primary text-on-primary font-semibold text-xs rounded hover:bg-secondary transition flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-sm">schedule_send</span>
+<span>Draft Notice Letter</span>
+</button>
+<button class="px-3 py-2 border border-outline bg-surface hover:bg-surface-variant text-primary rounded text-xs flex items-center justify-center" title="Re-extract with THOR">
+<span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- FOOTER -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/20 mt-space-xl">
+<div class="w-full max-w-7xl mx-auto px-gutter py-space-xl flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<div class="space-y-1 text-center md:text-left">
+<div class="font-headline-sm text-headline-sm font-semibold tracking-wider text-on-surface">ODIN</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          © 2025 ODIN Systems Inc. Autonomous Legal Intelligence. High-stakes determinism engine.
+        </p>
+</div>
+<div class="flex flex-wrap justify-center gap-6 text-sm font-label-sm">
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Architecture Spec</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Protocol</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Security &amp; Audit</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Model Ethics Disclaimer</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+<!-- Vanilla Interaction Script for Worst-case Simulation Toggle -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const worstCaseBtn = document.getElementById('worstCaseBtn');
+      const worstCaseSection = document.getElementById('worstCaseSection');
+      const simDateTag = document.getElementById('currentSimDate');
+
+      let isWorstCaseActive = false;
+
+      worstCaseBtn.addEventListener('click', () => {
+        isWorstCaseActive = !isWorstCaseActive;
+
+        if (isWorstCaseActive) {
+          worstCaseSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          worstCaseSection.classList.add('worst-case-active');
+          worstCaseBtn.classList.add('ring-4', 'ring-error/40');
+          simDateTag.innerText = '2025-05-27 (T+57d Projected Inaction)';
+          simDateTag.classList.add('text-error', 'font-bold');
+        } else {
+          worstCaseSection.classList.remove('worst-case-active');
+          worstCaseBtn.classList.remove('ring-4', 'ring-error/40');
+          simDateTag.innerText = '2025-05-15 (T+45d)';
+          simDateTag.classList.remove('text-error', 'font-bold');
+        }
+      });
+    });
+  </script>
+</body></html>

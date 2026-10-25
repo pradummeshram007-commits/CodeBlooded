@@ -87,14 +87,22 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-3">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/norns')}
+            className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-2 rounded-lg border border-border-subtle text-secondary-olive hover:text-dark-olive hover:border-primary transition-all duration-200 focus:outline-none"
+            id="nav-norns"
+          >
+            <span>NORNS</span>
+            <ArrowUpRight className="w-3 h-3" />
+          </button>
           <button
             onClick={() => navigate('/thor')}
             className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold px-4 py-2 rounded-lg bg-primary-dark text-cream hover:bg-dark-olive transition-all duration-200 active:scale-95 shadow-sm hover:shadow-[0_2px_12px_rgba(48,59,40,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             id="nav-launch-odin"
           >
-            <span>Launch ODIN</span>
+            <span>THOR</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
 
@@ -126,7 +134,7 @@ export default function Navbar() {
               {item.label}
             </button>
           ))}
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col gap-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -134,7 +142,17 @@ export default function Navbar() {
               }}
               className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2.5 rounded-lg bg-primary-dark text-cream font-semibold"
             >
-              <span>Launch ODIN</span>
+              <span>THOR — Contract Extraction</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/norns');
+              }}
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2.5 rounded-lg border border-border-subtle text-dark-olive font-semibold"
+            >
+              <span>NORNS — Timeline Intelligence</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>

@@ -1,10 +1,11 @@
-"""ODIN / THOR HTTP API Server.
+"""ODIN / THOR / NORNS HTTP API Server.
 
 Exposes REST endpoints for:
 - Document listing & inspection
 - Contract uploading & segmentation (TXT / PDF)
 - Clause-level evidence retrieval
 - Targeted re-extraction via Thor.reextract
+- NORNS timeline, obligations ledger, and worst-case projection
 """
 from __future__ import annotations
 
@@ -13,10 +14,11 @@ import json
 import logging
 import os
 import re
+from datetime import date, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -273,3 +275,179 @@ def run_reextract(req: ReextractRequest):
     except Exception as exc:
         logger.exception("Re-extraction failed")
         raise HTTPException(status_code=500, detail=f"Re-extraction error: {exc}")
+
+
+# ============================================================
+# NORNS — Timeline & Obligations API
+# ============================================================
+
+def get_norns(contracts: list[str] | None = None):
+    """Build a Norns agent instance for the given contracts (or all configured)."""
+    try:
+        from odin.norns.engine import Norns
+        store = get_store()
+        llm = get_llm()
+        return Norns(store, llm, cfg, contracts=contracts)
+    except Exception as exc:
+        logger.error("Could not instantiate NORNS: %s", exc)
+        raise HTTPException(status_code=503, detail=f"NORNS engine unavailable: {exc}")
+
+
+@app.get("/api/norns/documents")
+def norns_documents():
+    """List all documents that NORNS can process (have THOR extractions)."""
+    store = get_store()
+    docs = store.list_documents()
+    result = []
+    for d in docs:
+        exs = store.current_extractions(d.doc_id, "thor")
+        if exs or d.status in ("complete", "done"):
+            result.append({
+                "doc_id": d.doc_id,
+                "title": d.title or f"Contract {d.doc_id}",
+                "status": d.status,
+                "coverage": d.coverage or 0.0,
+                "extraction_count": len(exs),
+                "clause_count": len(store.list_clauses(d.doc_id)),
+            })
+    return result
+
+
+@app.get("/api/norns/timeline")
+def norns_timeline(
+    as_of: Optional[str] = Query(None, description="ISO date YYYY-MM-DD; defaults to today"),
+    doc_id: Optional[str] = Query(None, description="Restrict to a single document"),
+):
+    """Compute the NORNS timeline for the given date and optional document filter."""
+    try:
+        target_date = date.fromisoformat(as_of) if as_of else date.today()
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date: {as_of}")
+
+    contracts = [doc_id] if doc_id else None
+    norns = get_norns(contracts)
+    try:
+        norns.load()
+        timeline = norns.compute(target_date)
+        summary = timeline.summary(due_soon_days=7)
+        # Enrich with all instances serialized
+        summary["all_instances"] = [i.view() for i in timeline.instances]
+        summary["penalty_triggers"] = timeline.penalty_triggers
+        return summary
+    except Exception as exc:
+        logger.warning("NORNS timeline failed, returning empty: %s", exc)
+        return {
+            "as_of": str(target_date),
+            "contracts": contracts or [],
+            "status_counts": {},
+            "overdue": [],
+            "due_now": [],
+            "next_deadlines": [],
+            "renewal_deadlines": {},
+            "penalty_triggers": [],
+            "unmatched_ledger": [],
+            "out_of_scope_ledger": [],
+            "flags": ["NORNS engine could not load. Ensure THOR extractions exist for configured contracts."],
+            "all_instances": [],
+            "_error": str(exc),
+        }
+
+
+@app.get("/api/norns/obligations")
+def norns_obligations(
+    as_of: Optional[str] = Query(None),
+    doc_id: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(None, description="overdue|upcoming|paid|all"),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """Return paginated obligation instances, optionally filtered by status."""
+    try:
+        target_date = date.fromisoformat(as_of) if as_of else date.today()
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date: {as_of}")
+
+    contracts = [doc_id] if doc_id else None
+    norns = get_norns(contracts)
+    try:
+        norns.load()
+        timeline = norns.compute(target_date)
+        instances = [i.view() for i in timeline.instances]
+        # Filter by status
+        if status_filter and status_filter != "all":
+            if status_filter == "overdue":
+                instances = [i for i in instances if i["status"] in ("unpaid", "partial", "missed") and i["due"] and i["due"] < str(target_date)]
+            elif status_filter == "upcoming":
+                instances = [i for i in instances if i["status"] == "upcoming"]
+            elif status_filter == "paid":
+                instances = [i for i in instances if i["status"] in ("paid_on_time", "paid_late")]
+        total = len(instances)
+        return {
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "as_of": str(target_date),
+            "obligations": instances[offset:offset + limit],
+        }
+    except Exception as exc:
+        logger.warning("NORNS obligations failed: %s", exc)
+        return {"total": 0, "offset": offset, "limit": limit, "as_of": str(target_date), "obligations": [], "_error": str(exc)}
+
+
+@app.get("/api/norns/worst-case")
+def norns_worst_case(
+    as_of: Optional[str] = Query(None),
+    doc_id: Optional[str] = Query(None),
+    projection_months: int = Query(12, ge=1, le=60),
+):
+    """Compute worst-case financial exposure projection."""
+    try:
+        target_date = date.fromisoformat(as_of) if as_of else date.today()
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date: {as_of}")
+
+    contracts = [doc_id] if doc_id else None
+    norns = get_norns(contracts)
+    try:
+        norns.load()
+        from odin.norns.worst_case import WorstCaseEngine
+        engine = WorstCaseEngine(norns)
+        wc = engine.compute(target_date, projection_months=projection_months)
+        return {
+            "as_of": str(target_date),
+            "projection_end": str(wc.projection_end),
+            "worst_case_total": str(wc.total("worst_case")),
+            "on_time_total": str(wc.total("on_time")),
+            "avoidable_exposure": str(wc.avoidable),
+            "accruals": [
+                {
+                    "scenario": a.scenario,
+                    "contract": a.contract,
+                    "category": a.category,
+                    "description": a.description,
+                    "formula": a.formula,
+                    "amount": str(a.amount),
+                    "at": str(a.at),
+                    "end": str(a.end) if a.end else None,
+                    "citations": a.citations,
+                }
+                for a in wc.accruals
+            ],
+            "unquantified": wc.unquantified,
+            "deadlines": wc.deadlines,
+            "flags": wc.flags,
+        }
+    except Exception as exc:
+        logger.warning("Worst-case engine failed: %s", exc)
+        return {
+            "as_of": str(target_date),
+            "projection_end": str(target_date + timedelta(days=30 * projection_months)),
+            "worst_case_total": "0.00",
+            "on_time_total": "0.00",
+            "avoidable_exposure": "0.00",
+            "accruals": [],
+            "unquantified": [],
+            "deadlines": [],
+            "flags": [f"Worst-case engine unavailable: {exc}"],
+            "_error": str(exc),
+        }

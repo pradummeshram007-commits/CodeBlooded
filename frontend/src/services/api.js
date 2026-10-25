@@ -135,3 +135,97 @@ export async function reextractClause(docId, clauseId, question) {
 
   return await res.json();
 }
+
+// ========================================================
+// NORNS — Timeline Intelligence API
+// ========================================================
+
+/** Fetch list of documents eligible for NORNS timeline processing. */
+export async function fetchNornsDocuments() {
+  try {
+    const data = await safeFetchJson(`${API_BASE}/norns/documents`);
+    if (Array.isArray(data)) return data;
+  } catch (err) {
+    console.warn('NORNS documents unreachable:', err.message);
+  }
+  // Fallback: use THOR documents list
+  const docs = await fetchDocuments().catch(() => []);
+  return docs.map((d) => ({
+    doc_id: d.doc_id,
+    title: d.title || `Contract ${d.doc_id}`,
+    status: d.status,
+    coverage: d.coverage || 0,
+    extraction_count: d.extraction_count || 0,
+    clause_count: d.clause_count || 0,
+  }));
+}
+
+/** Compute NORNS timeline for a given date and optional doc filter. */
+export async function fetchNornsTimeline(asOf, docId) {
+  const params = new URLSearchParams();
+  if (asOf) params.set('as_of', asOf);
+  if (docId) params.set('doc_id', docId);
+
+  try {
+    const data = await safeFetchJson(`${API_BASE}/norns/timeline?${params}`);
+    if (data) return data;
+  } catch (err) {
+    console.warn('NORNS timeline API unreachable:', err.message);
+  }
+  // Return empty scaffold so UI can render gracefully
+  return {
+    as_of: asOf || new Date().toISOString().split('T')[0],
+    contracts: [],
+    status_counts: {},
+    overdue: [],
+    due_now: [],
+    next_deadlines: [],
+    renewal_deadlines: {},
+    penalty_triggers: [],
+    all_instances: [],
+    flags: ['Backend not connected. Start: uvicorn odin.api:app --port 8000'],
+  };
+}
+
+/** Fetch paginated obligation instances with optional status filter. */
+export async function fetchNornsObligations(asOf, docId, statusFilter, limit = 50, offset = 0) {
+  const params = new URLSearchParams();
+  if (asOf) params.set('as_of', asOf);
+  if (docId) params.set('doc_id', docId);
+  if (statusFilter && statusFilter !== 'all') params.set('status_filter', statusFilter);
+  params.set('limit', String(limit));
+  params.set('offset', String(offset));
+
+  try {
+    const data = await safeFetchJson(`${API_BASE}/norns/obligations?${params}`);
+    if (data) return data;
+  } catch (err) {
+    console.warn('NORNS obligations API unreachable:', err.message);
+  }
+  return { total: 0, offset, limit, obligations: [] };
+}
+
+/** Compute worst-case financial exposure projection. */
+export async function fetchNornsWorstCase(asOf, docId, projectionMonths = 12) {
+  const params = new URLSearchParams();
+  if (asOf) params.set('as_of', asOf);
+  if (docId) params.set('doc_id', docId);
+  params.set('projection_months', String(projectionMonths));
+
+  try {
+    const data = await safeFetchJson(`${API_BASE}/norns/worst-case?${params}`);
+    if (data) return data;
+  } catch (err) {
+    console.warn('NORNS worst-case API unreachable:', err.message);
+  }
+  return {
+    as_of: asOf || new Date().toISOString().split('T')[0],
+    worst_case_total: '0.00',
+    on_time_total: '0.00',
+    avoidable_exposure: '0.00',
+    accruals: [],
+    unquantified: [],
+    deadlines: [],
+    flags: ['Worst-case engine requires backend connection.'],
+  };
+}
