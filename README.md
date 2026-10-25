@@ -188,3 +188,86 @@ store.pending_messages("loki", "clarification_response")
 New agents subclass `odin.agents.base.Agent` (name, `prompt_files`, `self.log(...)`,
 `self.call_json(...)`), write `source_kind="analysis"` extractions, and use
 `odin.citations.verify_citation` for any quote they surface.
+
+---
+
+## Project Status & Implemented Features (Current Progress)
+
+### 1. What's Done So Far
+- **Core Multi-Agent Architecture**:
+  - `odin/agents/base.py`: Extensible base agent architecture with structured logging, prompt rendering (`prompts/`), token-budget accounting, and hookable LLM orchestration.
+  - `odin/agents/thor.py`: Production-grade **Thor (Extraction & Grounding Agent)** capable of clause segmentation, field extraction, rigorous citation verification, versioned overwrites, and message-driven query handling.
+- **Contract Ingestion & Deterministic Segmentation**:
+  - `odin/ingest/loader.py`: Bundle ingestion for contracts, company background, event drops, payment ledgers, holidays, and simulated clocks.
+  - `odin/ingest/segmenter.py`: Deterministic parser segmenting contracts into hierarchical clauses/sections with character-exact offsets.
+- **Resilient Dual-Engine LLM Wrapper**:
+  - `odin/llm.py`: Unified adapter for Anthropic Claude SDK and OpenAI-compatible endpoints (Gemini, Groq, OpenRouter, etc.). Includes disk caching (`.cache/llm/`), retry logic with exponential backoff, rate-limit window handling, and Pydantic schema validation.
+- **Shared Relational State Store (SQLite + JSON Export)**:
+  - `odin/state/store.py` & `odin/state/models.py`: Enterprise relational schema tracking `documents`, `clauses`, `extractions`, `citations`, `flags`, `doc_relations`, `messages`, `workstreams`, and audit `trace`.
+  - Export system: Dumps complete multi-agent relational state into `outputs/state_export.json` (30,000+ lines).
+- **Automated Clause Citation Verification**:
+  - `odin/citations.py`: Code-level grounding preventing LLM hallucination. Quotes must match clause text with offset mapping; unverified quotes are flagged and confidence-capped.
+- **Comprehensive Test Suite**:
+  - `tests/`: 66 unit tests validating segmenter accuracy, citation normalization, LLM retry mechanisms, and Thor multi-pass extraction pipelines.
+
+### 2. Thor Execution & Extraction Benchmark
+
+The Thor extraction pipeline was executed over the Quillhub contract bundle with the following results:
+
+| Document | Type / Role | Clauses | Extracted Fields | Citations Verified | Status |
+|---|---|:---:|:---:|:---:|:---:|
+| **STD** | Standard Terms of Service | 92 | 70 | 67 | **Complete** (100% coverage) |
+| **A1** | Primary Service Agreement | 16 | 22 | 22 | **Complete** (100% coverage) |
+| **A2** | Service Level Agreement (SLA) | 25 | 19 | 19 | **Complete** (100% coverage) |
+| **A3** | SLA Amendment 1 | 7 | 15 | 13 | **Complete** (100% coverage) |
+| **B1** | Enterprise Addendum | 29 | 31 | 33 | **Complete** (100% coverage) |
+| **B2** | Data Processing Addendum (DPA) | 32 | 48 | 48 | **Complete** (100% coverage) |
+| **C1** | Schedule C (Pricing & Billing) | 20 | 19 | 20 | **Complete** (100% coverage) |
+| **D1** | Master Professional Services Agreement | 55 | - | - | *Pending rerun (hit provider daily TPD limit)* |
+
+- **Outputs Generated**:
+  - Individual document extraction outputs: `outputs/thor/<doc_id>.json`
+  - High-level pipeline execution audit: `outputs/thor/_run_summary.json`
+  - Complete state database export: `outputs/state_export.json`
+
+### 3. Agent Workflow & Next Phase Roadmap
+
+```
++-----------------------------------------------------------------------------------+
+|                                 ODIN ORCHESTRATOR                                 |
++-----------------------------------------------------------------------------------+
+       |                                |                             |
+       v                                v                             v
++--------------+               +------------------+           +---------------+
+|     THOR     | <---msgs--->  |       LOKI       |           |     NORNS     |
+| (Extraction) |               |  (Cross-Contract |           |  (Timeline &  |
+|   [ACTIVE]   |               | Conflicts/Audit) |           |  Sim Clock)   |
++--------------+               +------------------+           +---------------+
+       |                                |                             |
+       +--------------------------------+-----------------------------+
+                                        |
+                                        v
+                       +----------------------------------+
+                       |    SHARED STATE (odin.db)        |
+                       |  - documents    - extractions    |
+                       |  - clauses      - citations      |
+                       |  - flags        - relations      |
+                       +----------------------------------+
+                                        |
+                       +----------------+----------------+
+                       |                                 |
+                       v                                 v
+               +---------------+                 +---------------+
+               |   HEIMDALL    |                 |      TYR      |
+               | (Event Drops  |                 | (Arbitration &|
+               |  Monitoring)  |                 | Notice Draft) |
+               +---------------+                 +---------------+
+```
+
+- **Phase 1 (Complete)**: Thor extraction, document segmentation, citation verification, shared state store, LLM caching & rate-limit resilience.
+- **Phase 2 (Upcoming)**:
+  - **Loki**: Adversarial cross-contract audit to identify superseding terms, conflicting liability caps, and silent amendments.
+  - **Norns**: Timeline engine that simulates the contract clock and calculates absolute deadlines from relative rules.
+  - **Heimdall**: Dynamic event processor reacting to incoming drops (`events_drop1.jsonl`, `events_drop2.jsonl`).
+  - **Tyr**: Automated dispute resolution, arbitration decision engine, and legal notice generation.
+
