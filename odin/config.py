@@ -79,6 +79,16 @@ class NornsSettings(BaseModel):
     writeup_max_words: int = 250
 
 
+class LokiSettings(BaseModel):
+    """Adversarial review agent. Reads Thor's output only; the LLM finds, code checks every finding."""
+
+    max_findings_per_doc: int = 8
+    max_input_tokens: int = 6000          # per call (estimated); a larger document is split by top-level section
+    chars_per_token: float = 4.0          # estimate for that split; Thor's logged calls measured 4.3 (gpt-oss-20b)
+    context_tokens: int = 600             # company/context.txt is trimmed to about this
+    max_llm_calls: int = 5                # real API calls per run_loki.py process (cache hits are free)
+
+
 class StateSettings(BaseModel):
     """Where shared state and uploaded files live. sqlite = local file; supabase = Postgres + Storage."""
 
@@ -124,6 +134,7 @@ class OdinConfig(BaseModel):
     loops: LoopLimits = LoopLimits()
     thor: ThorSettings = ThorSettings()
     norns: NornsSettings = NornsSettings()
+    loki: LokiSettings = LokiSettings()
     state: StateSettings = StateSettings()
     upload: UploadSettings = UploadSettings()
     paths: Paths = Paths()

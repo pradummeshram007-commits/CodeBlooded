@@ -45,6 +45,13 @@ norns:                         # timeline agent (deterministic dates and money)
   writeup_min_words: 150
   writeup_max_words: 250
 
+loki:                          # adversarial review agent (reads Thor's output; code checks every finding)
+  max_findings_per_doc: 8
+  max_input_tokens: 6000       # per call, estimated; larger documents are split by top-level section
+  chars_per_token: 4.0         # estimate for that split (Thor's logged calls: 4.3 chars per token)
+  context_tokens: 600          # company/context.txt is trimmed to about this
+  max_llm_calls: 5             # real API calls per run_loki.py process (cache hits are free)
+
 state:                         # shared state + uploaded originals
   backend: sqlite              # sqlite | supabase   (env STATE_BACKEND)
   bucket: contracts            # private Supabase Storage bucket (env SUPABASE_BUCKET)

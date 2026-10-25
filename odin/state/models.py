@@ -618,3 +618,73 @@ class Writeup(BaseModel):
     check_passed: bool | None = None
     meta: dict[str, Any] = {}
     created_at: str = Field(default_factory=utcnow)
+
+
+# --------------------------------------------------------------------------- Loki (adversarial review)
+
+FindingType = Literal["ambiguity", "one_sided", "hidden_liability"]
+Severity = Literal["critical", "high", "medium", "low"]
+Likelihood = Literal["high", "medium", "low"]
+FindingStatus = Literal["accepted", "rejected"]
+
+
+class FindingCitation(BaseModel):
+    doc_id: str
+    clause_id: str | None
+    clause_ref: str | None = None
+    quote: str                          # exact substring of the .txt when verified
+    char_start: int | None = None
+    char_end: int | None = None
+    verified: bool = False
+    match_method: str = "none"          # exact | normalized | reattributed | none (odin.citations)
+    llm_quote: str | None = None
+    llm_clause_id: str | None = None
+
+
+class FindingReading(BaseModel):
+    reading: str
+    counterparty_argues: bool = False   # the reading the counterparty would argue
+
+
+class FindingImpact(BaseModel):
+    """The Norns exposure item that cites one of the finding's clauses at the same as_of (copied, never computed)."""
+
+    exposure_item_id: int
+    amount: Decimal | None = None       # Norns' amount; None when Norns could not quantify the item
+    status: Literal["quantified", "unquantified"]
+    scenario: str
+    category: str
+    clause_id: str                      # the clause both cite
+    other_exposure_ids: list[int] = []
+
+
+class LokiFinding(BaseModel):
+    """One adversarial-review finding. Accepted findings passed every code check; rejected ones say why.
+
+    type, severity and likelihood are None only on a rejected finding whose value was not on the scale.
+    """
+
+    id: int | None = None
+    doc_id: str                         # the reviewed document
+    as_of: str
+    run_id: str | None = None
+    model: str | None = None
+    source_kind: SourceKind = "analysis"
+    type: FindingType | None = None
+    title: str = ""
+    exploited_by: str | None = None     # the counterparty's name
+    citations: list[FindingCitation] = []
+    readings: list[FindingReading] = []  # ambiguity only
+    attack_path: list[str] = []
+    severity: Severity | None = None
+    severity_reason: str = ""
+    likelihood: Likelihood | None = None
+    likelihood_reason: str = ""
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    impact: FindingImpact | Literal["unquantified"] = "unquantified"
+    status: FindingStatus
+    rejection_reason: str | None = None
+    part: str | None = None             # review part that produced it, e.g. "2/3"
+    rank: int = 0                       # order within the document: accepted first, most severe first
+    notes: list[str] = []               # what the code checks changed (dropped citations, merged duplicates)
+    created_at: str = Field(default_factory=utcnow)

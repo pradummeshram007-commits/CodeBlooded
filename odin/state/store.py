@@ -40,6 +40,7 @@ from odin.state.models import (
     Flag,
     Holiday,
     LedgerEntry,
+    LokiFinding,
     Message,
     ObligationInstance,
     ObligationRule,
@@ -51,14 +52,14 @@ from odin.state.models import (
     utcnow,
 )
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Every table, in dependency order (export, row counts, test cleanup).
 TABLES = (
     "documents", "document_files", "clauses", "extractions", "citations", "flags", "doc_relations", "messages",
     "workstreams", "trace", "resources", "events", "ledger_entries", "holidays", "clock_checkpoints",
     "obligation_rules", "obligation_instances", "clock_state", "clock_history", "timeline_snapshots",
-    "exposure_items", "writeups",
+    "exposure_items", "writeups", "loki_findings",
 )
 
 SQLITE_SCHEMA = """
@@ -402,6 +403,35 @@ CREATE TABLE IF NOT EXISTS writeups (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_writeups_asof ON writeups(as_of, id);
+
+-- Loki (supabase/migrations/003_loki.sql)
+CREATE TABLE IF NOT EXISTS loki_findings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    doc_id TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    run_id TEXT,
+    model TEXT,
+    source_kind TEXT NOT NULL DEFAULT 'analysis',
+    type TEXT CHECK (type IN ('ambiguity','one_sided','hidden_liability')),
+    title TEXT NOT NULL,
+    exploited_by TEXT,
+    citations TEXT NOT NULL DEFAULT '[]',
+    readings TEXT NOT NULL DEFAULT '[]',
+    attack_path TEXT NOT NULL DEFAULT '[]',
+    severity TEXT CHECK (severity IN ('critical','high','medium','low')),
+    severity_reason TEXT NOT NULL DEFAULT '',
+    likelihood TEXT CHECK (likelihood IN ('high','medium','low')),
+    likelihood_reason TEXT NOT NULL DEFAULT '',
+    confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    impact TEXT NOT NULL DEFAULT '"unquantified"',
+    status TEXT NOT NULL CHECK (status IN ('accepted','rejected')),
+    rejection_reason TEXT,
+    part TEXT,
+    rank INTEGER NOT NULL DEFAULT 0,
+    notes TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_loki_findings_doc ON loki_findings(doc_id, as_of, status);
 """
 
 # Columns added after the first SQLite release; older state/odin.db files are upgraded in place.
@@ -432,6 +462,7 @@ _JSON_COLUMNS = {
     "timeline_snapshots": ("summary", "chart_data"),
     "exposure_items": ("inputs", "citations"),
     "writeups": ("meta",),
+    "loki_findings": ("citations", "readings", "attack_path", "impact", "notes"),
 }
 _BOOL_COLUMNS = {
     "extractions": ("is_current",),
@@ -985,6 +1016,24 @@ class StateStore:
     def latest_writeup(self, as_of: str) -> Writeup | None:
         row = self._one("SELECT * FROM writeups WHERE as_of=? ORDER BY id DESC LIMIT 1", (as_of,))
         return Writeup.model_validate(self._row("writeups", row)) if row else None
+
+    # ------------------------------------------------------------------ Loki: adversarial review findings
+
+    def replace_loki_findings(self, doc_id: str, as_of: str, findings: Iterable[LokiFinding]) -> int:
+        """A re-run for the same document and as_of replaces its findings, in one transaction."""
+        with self.transaction():
+            self._write("DELETE FROM loki_findings WHERE doc_id=? AND as_of=?", (doc_id, as_of))
+            return self._insert_many("loki_findings", (f.model_dump(exclude={"id"}) for f in findings))
+
+    def list_loki_findings(self, doc_id: str | None = None, as_of: str | None = None,
+                           status: str | None = None) -> list[LokiFinding]:
+        sql, args = "SELECT * FROM loki_findings WHERE 1=1", []
+        for col, value in (("doc_id", doc_id), ("as_of", as_of), ("status", status)):
+            if value:
+                sql += f" AND {col}=?"
+                args.append(value)
+        rows = self._query(sql + " ORDER BY doc_id, as_of, rank, id", args)
+        return [LokiFinding.model_validate(r) for r in self._rows("loki_findings", rows)]
 
     # ------------------------------------------------------------------ summaries
 
