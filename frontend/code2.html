@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ODIN / THOR · Contract Extraction &amp; Evidence Intelligence</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-on-surface": "#2d3038",
+            "inverse-surface": "#e0e2ed",
+            "surface": "#10131b",
+            "tertiary": "#57ddac",
+            "inverse-primary": "#6d3bd7",
+            "on-error": "#690005",
+            "secondary": "#48d9ff",
+            "surface-container-lowest": "#0b0e15",
+            "on-tertiary-fixed": "#002115",
+            "on-surface": "#e0e2ed",
+            "tertiary-fixed-dim": "#57ddac",
+            "secondary-fixed-dim": "#40d7fd",
+            "on-secondary": "#003642",
+            "surface-container-low": "#181b23",
+            "on-secondary-container": "#004858",
+            "primary-fixed": "#e9ddff",
+            "surface-container": "#1d2027",
+            "on-tertiary-container": "#003121",
+            "on-primary-fixed": "#23005c",
+            "outline-variant": "#494454",
+            "surface-bright": "#363941",
+            "on-primary-fixed-variant": "#5516be",
+            "tertiary-fixed": "#77fac7",
+            "surface-container-high": "#272a32",
+            "on-secondary-fixed": "#001f27",
+            "secondary-container": "#00bee3",
+            "background": "#10131b",
+            "tertiary-container": "#00a579",
+            "on-tertiary-fixed-variant": "#00513a",
+            "error-container": "#93000a",
+            "primary-fixed-dim": "#d0bcff",
+            "on-error-container": "#ffdad6",
+            "surface-dim": "#10131b",
+            "on-primary": "#3c0091",
+            "surface-tint": "#d0bcff",
+            "on-primary-container": "#340080",
+            "surface-variant": "#32353d",
+            "on-surface-variant": "#cbc3d7",
+            "primary": "#d0bcff",
+            "on-tertiary": "#003827",
+            "surface-container-highest": "#32353d",
+            "primary-container": "#a078ff",
+            "outline": "#958ea0",
+            "on-background": "#e0e2ed",
+            "error": "#ffb4ab",
+            "on-secondary-fixed-variant": "#004e5e",
+            "secondary-fixed": "#b2ebff",
+            /* ODIN Olive & Cream Palette Integration */
+            "cream-bg": "#F5F1E6",
+            "cream-ivory": "#FCFAF3",
+            "olive-forest": "#303B28",
+            "olive-primary": "#66734A",
+            "olive-sage": "#A4B18A",
+            "olive-dark": "#252B20",
+            "olive-secondary": "#727665",
+            "olive-border": "#DCDCCB",
+            "gold-amber": "#B79A59"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "margin": "2rem",
+            "gutter": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2.5rem"
+          },
+          "fontFamily": {
+            "display-lg-mobile": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "label-sm": ["JetBrains Mono"],
+            "body-sm": ["Plus Jakarta Sans"],
+            "label-md": ["JetBrains Mono"],
+            "headline-xl": ["Plus Jakarta Sans"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-xl-mobile": ["Plus Jakarta Sans"],
+            "code-inline": ["JetBrains Mono"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "display-lg-mobile": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.04em", "fontWeight": "500" }],
+            "body-sm": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "0.005em", "fontWeight": "400" }],
+            "label-md": ["0.8125rem", { "lineHeight": "1.125rem", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "headline-xl": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg": ["3.5rem", { "lineHeight": "4.25rem", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "headline-xl-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "code-inline": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-sm": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["0.9375rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-lg": ["1.0625rem", { "lineHeight": "1.65rem", "letterSpacing": "-0.005em", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-highlighter {
+      background: linear-gradient(180deg, rgba(164, 177, 138, 0) 40%, rgba(102, 115, 74, 0.28) 45%, rgba(102, 115, 74, 0.32) 90%, rgba(164, 177, 138, 0) 100%);
+      padding: 0 4px;
+      border-radius: 2px;
+    }
+    .subtle-grid {
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, rgba(48, 59, 40, 0.08) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-cream-bg text-olive-dark antialiased min-h-screen selection:bg-olive-sage/30 selection:text-olive-forest font-body-md text-body-md">
+<!-- TOP APP BAR -->
+<header class="bg-olive-forest text-cream-ivory sticky top-0 z-50 shadow-md">
+<div class="w-full max-w-7xl mx-auto flex items-center justify-between px-gutter py-space-sm">
+<div class="flex items-center space-x-6">
+<a class="flex items-center space-x-2 text-cream-ivory hover:opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined text-olive-sage text-2xl" data-icon="visibility">visibility</span>
+<span class="font-headline-sm text-headline-sm font-semibold tracking-wider text-cream-ivory">ODIN</span>
+</a>
+<span class="text-olive-sage/40">|</span>
+<div class="flex items-center text-label-sm font-label-sm text-cream-ivory/80 space-x-1.5">
+<span>ODIN</span>
+<span class="text-olive-sage/60">/</span>
+<span class="text-cream-ivory font-semibold">THOR · Contract Extraction</span>
+</div>
+</div>
+<nav class="hidden md:flex items-center space-x-6 font-label-sm text-label-sm">
+<a class="text-olive-sage hover:text-cream-ivory transition-colors" href="#">Overview</a>
+<a class="text-cream-ivory font-medium border-b-2 border-olive-sage pb-0.5" href="#">Contracts</a>
+<a class="text-cream-ivory/70 hover:text-cream-ivory transition-colors" href="#">Agent Activity</a>
+</nav>
+<div class="flex items-center space-x-4">
+<div class="hidden sm:flex items-center px-2.5 py-1 rounded-lg bg-olive-dark/60 border border-olive-sage/20 text-label-sm font-label-sm text-olive-sage">
+<span class="w-2 h-2 rounded-full bg-olive-sage mr-2 animate-pulse"></span>
+          THOR v2.4-CORP · Operational Agent 01
+        </div>
+<a class="text-label-sm font-label-sm text-olive-sage hover:text-cream-ivory transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+<span>ODIN System</span>
+</a>
+</div>
+</div>
+</header>
+<!-- MAIN WORKSPACE CONTAINER -->
+<main class="w-full max-w-7xl mx-auto px-gutter py-space-lg space-y-space-lg">
+<!-- WORKSPACE HERO / METADATA HEADER -->
+<section class="bg-cream-ivory border border-olive-border rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+<div class="max-w-3xl space-y-2">
+<div class="flex items-center space-x-2">
+<span class="px-2 py-0.5 rounded bg-olive-forest text-cream-ivory font-label-sm text-label-sm font-semibold tracking-wider">ODIN AGENT 01</span>
+<span class="text-olive-secondary font-label-sm text-label-sm">·</span>
+<span class="text-olive-secondary font-label-sm text-label-sm uppercase tracking-wider">CONTRACT EXTRACTION &amp; DETERMINISTIC PROOF</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-olive-forest font-semibold tracking-tight">
+            Turn contractual language into structured evidence.
+          </h1>
+<p class="font-body-md text-body-md text-olive-secondary leading-relaxed">
+            THOR extracts obligations, dates, payment terms, penalties, and termination conditions from your contracts, preserving the clause-level evidence behind every finding.
+          </p>
+<div class="flex flex-wrap items-center gap-2 pt-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-cream-bg border border-olive-border text-label-sm font-label-sm text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-sm" data-icon="verified">verified</span>
+              Evidence-linked extraction
+            </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-cream-bg border border-olive-border text-label-sm font-label-sm text-olive-forest">
+<span class="material-symbols-outlined text-gold-amber text-sm" data-icon="report_problem">report_problem</span>
+              Explicit uncertainty
+            </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-cream-bg border border-olive-border text-label-sm font-label-sm text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-sm" data-icon="restart_alt">restart_alt</span>
+              Targeted clause re-extraction
+            </span>
+</div>
+</div>
+<div class="text-right flex flex-col justify-end">
+<p class="font-label-sm text-label-sm text-olive-secondary italic">
+            Findings are presented with supporting source text and confidence information for review.
+          </p>
+</div>
+</div>
+</section>
+<!-- INTAKE & SIMULATED UPLOAD PIPELINE -->
+<section class="bg-cream-ivory border border-olive-border rounded-xl p-space-md md:p-space-lg shadow-sm space-y-space-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-olive-border/60 pb-space-md">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-olive-forest font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-olive-primary" data-icon="upload_file">upload_file</span>
+            Upload your contract
+          </h2>
+<p class="font-body-sm text-body-sm text-olive-secondary mt-0.5">
+            Start with a PDF containing your agreement. THOR will extract its contractual terms and link the findings to their source clauses.
+          </p>
+</div>
+<!-- Active Document Pill -->
+<div class="flex items-center gap-3 bg-cream-bg border border-olive-sage/60 px-3 py-2 rounded-lg">
+<span class="material-symbols-outlined text-olive-forest" data-icon="description">description</span>
+<div class="text-left font-label-sm text-label-sm">
+<div class="text-olive-dark font-medium truncate max-w-[240px]">Master_Services_Agreement_2025_Executed.pdf</div>
+<div class="text-olive-secondary text-[10px]">3.8 MB · 28 Pages · Processed in 1.4s</div>
+</div>
+<button class="p-1 text-olive-secondary hover:text-error hover:bg-error/10 rounded transition-colors" title="Remove Document">
+<span class="material-symbols-outlined text-base" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Execution Pipeline Stepper -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 font-label-sm text-label-sm">
+<div class="flex items-center gap-2 p-2 rounded bg-olive-forest/5 border border-olive-sage/40 text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-base" data-icon="check_circle">check_circle</span>
+<span class="truncate">01 Reading Document</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-olive-forest/5 border border-olive-sage/40 text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-base" data-icon="check_circle">check_circle</span>
+<span class="truncate">02 Identifying Clauses</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-olive-forest/5 border border-olive-sage/40 text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-base" data-icon="check_circle">check_circle</span>
+<span class="truncate">03 Extracting Fields</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-olive-forest/5 border border-olive-sage/40 text-olive-forest">
+<span class="material-symbols-outlined text-olive-primary text-base" data-icon="check_circle">check_circle</span>
+<span class="truncate">04 Verifying Citations</span>
+</div>
+<div class="flex items-center gap-2 p-2 rounded bg-gold-amber/10 border border-gold-amber/40 text-olive-forest">
+<span class="material-symbols-outlined text-gold-amber text-base" data-icon="pending">pending</span>
+<span class="truncate">05 Collision Check (1)</span>
+</div>
+</div>
+</section>
+<!-- MAIN TWO-COLUMN WORKSPACE (MASTER-DETAIL) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN: STRUCTURED FINDINGS (65% on Desktop = 8 Cols) -->
+<section class="lg:col-span-8 space-y-space-md">
+<!-- Categorical Filters & Status Counter -->
+<div class="bg-cream-ivory border border-olive-border rounded-xl p-space-sm flex flex-wrap items-center justify-between gap-2 shadow-sm font-label-sm text-label-sm">
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-olive-forest text-cream-ivory font-medium transition-colors">
+              All Findings (24)
+            </button>
+<button class="px-3 py-1.5 rounded-lg text-olive-dark hover:bg-cream-bg transition-colors flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-olive-primary"></span>
+              Verified (18)
+            </button>
+<button class="px-3 py-1.5 rounded-lg text-olive-dark hover:bg-cream-bg transition-colors flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-gold-amber"></span>
+              Needs Review / Ambiguous (4)
+            </button>
+<button class="px-3 py-1.5 rounded-lg text-olive-dark hover:bg-cream-bg transition-colors flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+              Conflicting Evidence (1)
+            </button>
+<button class="px-3 py-1.5 rounded-lg text-olive-secondary hover:bg-cream-bg transition-colors">
+              Not Found (1)
+            </button>
+</div>
+<div class="flex items-center gap-2 px-2">
+<span class="material-symbols-outlined text-olive-secondary text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none text-label-sm text-olive-dark placeholder-olive-secondary focus:ring-0 p-0 w-32 md:w-40" placeholder="Filter terms (⌘K)..." type="text"/>
+</div>
+</div>
+<!-- Section Navigation Tabs -->
+<div class="flex border-b border-olive-border space-x-6 px-2 overflow-x-auto font-label-sm text-label-sm">
+<button class="pb-3 text-olive-secondary hover:text-olive-forest whitespace-nowrap">Contract Overview</button>
+<button class="pb-3 text-olive-forest font-semibold border-b-2 border-olive-forest whitespace-nowrap flex items-center gap-1.5">
+<span>Renewals &amp; Deadlines</span>
+<span class="px-1.5 py-0.2 rounded-full bg-olive-sage/20 text-olive-forest text-[10px]">4</span>
+</button>
+<button class="pb-3 text-olive-secondary hover:text-olive-forest whitespace-nowrap">Payment &amp; Financials</button>
+<button class="pb-3 text-olive-secondary hover:text-olive-forest whitespace-nowrap">Obligations &amp; Compliance</button>
+<button class="pb-3 text-olive-secondary hover:text-olive-forest whitespace-nowrap">Termination &amp; Remedies</button>
+</div>
+<!-- Structured Fact Cards List -->
+<div class="space-y-3">
+<!-- Card 1 (Active / Inspected Item) -->
+<div class="bg-cream-ivory border-2 border-olive-primary rounded-xl p-space-md shadow-sm transition-all relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1.5 h-full bg-olive-primary"></div>
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pl-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-olive-secondary uppercase tracking-wider">RENEWAL NOTICE WINDOW</span>
+<span class="px-2 py-0.5 rounded bg-olive-sage/20 text-olive-forest font-label-sm text-label-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                    Verified
+                  </span>
+<span class="font-label-sm text-label-sm text-olive-primary bg-olive-primary/10 px-1.5 py-0.5 rounded">98% High</span>
+</div>
+<div class="font-headline-sm text-headline-sm font-semibold text-olive-forest">
+                  90 Days Prior to Expiry
+                </div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-olive-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="pin_drop">pin_drop</span>
+<span>§ 14.3 Term &amp; Renewal · Page 12, Line 14</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-lg bg-olive-forest text-cream-ivory font-label-sm text-label-sm flex items-center gap-1 hover:bg-olive-dark transition-colors">
+<span>Inspecting</span>
+<span class="material-symbols-outlined text-xs" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="p-1.5 rounded-lg border border-olive-border hover:bg-cream-bg text-olive-secondary hover:text-olive-forest transition-colors" title="Recheck Clause">
+<span class="material-symbols-outlined text-sm" data-icon="replay">replay</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-cream-ivory border border-olive-border rounded-xl p-space-md shadow-sm hover:border-olive-sage transition-all">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-olive-secondary uppercase tracking-wider">AUTO-RENEWAL PROVISION</span>
+<span class="px-2 py-0.5 rounded bg-olive-sage/20 text-olive-forest font-label-sm text-label-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                    Verified
+                  </span>
+<span class="font-label-sm text-label-sm text-olive-primary bg-olive-primary/10 px-1.5 py-0.5 rounded">95% High</span>
+</div>
+<div class="font-headline-sm text-headline-sm font-semibold text-olive-forest">
+                  Automatic 12-Month Successive Terms
+                </div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-olive-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="pin_drop">pin_drop</span>
+<span>§ 14.1 Term Structure · Page 11, Line 38</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-lg border border-olive-border text-olive-dark font-label-sm text-label-sm hover:bg-cream-bg flex items-center gap-1 transition-colors">
+<span>View Evidence</span>
+<span class="material-symbols-outlined text-xs" data-icon="north_east">north_east</span>
+</button>
+<button class="p-1.5 rounded-lg border border-olive-border hover:bg-cream-bg text-olive-secondary hover:text-olive-forest transition-colors" title="Recheck Clause">
+<span class="material-symbols-outlined text-sm" data-icon="replay">replay</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3 (Ambiguous / Needs Review) -->
+<div class="bg-cream-ivory border border-gold-amber/60 rounded-xl p-space-md shadow-sm hover:border-gold-amber transition-all">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-olive-secondary uppercase tracking-wider">RENEWAL NOTICE METHOD</span>
+<span class="px-2 py-0.5 rounded bg-gold-amber/20 text-olive-forest font-label-sm text-label-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-gold-amber" data-icon="warning">warning</span>
+                    Needs Review
+                  </span>
+<span class="font-label-sm text-label-sm text-gold-amber bg-gold-amber/10 px-1.5 py-0.5 rounded">64% Moderate</span>
+</div>
+<div class="font-headline-sm text-headline-sm font-semibold text-olive-forest">
+                  Certified Mail or Written Electronic Transmission
+                </div>
+<div class="text-body-sm font-body-sm text-gold-amber flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="info">info</span>
+<span>Ambiguity: Email acknowledgment requirement undefined in Schedule B</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-olive-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="pin_drop">pin_drop</span>
+<span>§ 22.4 Notices &amp; Formal Delivery · Page 23, Line 08</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-lg border border-gold-amber text-olive-forest font-label-sm text-label-sm hover:bg-gold-amber/10 flex items-center gap-1 transition-colors">
+<span>Inspect Discrepancy</span>
+<span class="material-symbols-outlined text-xs" data-icon="north_east">north_east</span>
+</button>
+<button class="p-1.5 rounded-lg border border-gold-amber/60 hover:bg-gold-amber/10 text-gold-amber transition-colors" title="Targeted Re-extraction">
+<span class="material-symbols-outlined text-sm" data-icon="replay">replay</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4 (Conflicting Evidence) -->
+<div class="bg-cream-ivory border border-error/50 rounded-xl p-space-md shadow-sm hover:border-error transition-all">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-olive-secondary uppercase tracking-wider">ANNUAL PRICE ESCALATION CAP</span>
+<span class="px-2 py-0.5 rounded bg-error/15 text-error font-label-sm text-label-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="error">error</span>
+                    Conflicting Evidence
+                  </span>
+<span class="font-label-sm text-label-sm text-error bg-error/10 px-1.5 py-0.5 rounded">42% Low</span>
+</div>
+<div class="font-headline-sm text-headline-sm font-semibold text-olive-forest">
+                  CPI + 3.0% vs. Fixed 5.0% Not to Exceed
+                </div>
+<div class="text-body-sm font-body-sm text-error/90 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="rule">rule</span>
+<span>Collision detected between Master Agreement (§4.2) and Amendment 1 (§2.1)</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-olive-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="pin_drop">pin_drop</span>
+<span>§ 4.2 (Page 5) vs. Amend. 1 (Page 27)</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-lg bg-error/10 text-error hover:bg-error/20 font-label-sm text-label-sm flex items-center gap-1 transition-colors">
+<span>Resolve Conflict</span>
+<span class="material-symbols-outlined text-xs" data-icon="bolt">bolt</span>
+</button>
+<button class="p-1.5 rounded-lg border border-error/40 hover:bg-error/10 text-error transition-colors" title="Recheck Clause">
+<span class="material-symbols-outlined text-sm" data-icon="replay">replay</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: EVIDENCE INSPECTOR & RE-EXTRACTION PANEL (35% on Desktop = 4 Cols) -->
+<aside class="lg:col-span-4 space-y-space-md">
+<!-- Inspector Card -->
+<div class="bg-cream-ivory border border-olive-border rounded-xl p-space-md shadow-sm space-y-space-md">
+<div class="flex items-center justify-between border-b border-olive-border pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-olive-forest text-lg" data-icon="fact_check">fact_check</span>
+<span class="font-label-sm text-label-sm text-olive-forest font-semibold uppercase tracking-wider">Evidence Inspector</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-olive-sage/20 text-olive-forest font-label-sm text-label-sm font-semibold">Active Focus</span>
+</div>
+<!-- Inspected Field Identity -->
+<div class="space-y-1">
+<div class="font-label-sm text-label-sm text-olive-secondary">INSPECTING FIELD</div>
+<div class="font-headline-sm text-headline-sm font-semibold text-olive-forest">Renewal Notice Window</div>
+<div class="font-label-sm text-label-sm text-olive-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="menu_book">menu_book</span>
+<span>Section 14.3 (Term and Termination), Subsection 2</span>
+</div>
+<div class="font-label-sm text-label-sm text-olive-secondary">Page 12, Lines 14–22 · Hash: #e8a9310f</div>
+</div>
+<!-- Authentic Excerpt Document Preview with Olive Highlighter -->
+<div class="relative bg-cream-bg border border-olive-border rounded-lg p-4 font-serif text-olive-dark shadow-inner">
+<div class="text-[10px] uppercase tracking-wider text-olive-secondary font-mono mb-2 border-b border-olive-border/40 pb-1 flex justify-between">
+<span>EXCERPT FROM MASTER_SERVICES_AGREEMENT.PDF</span>
+<span>PAGE 12</span>
+</div>
+<p class="text-body-sm font-body-sm leading-relaxed text-olive-dark/90">
+              14.2 The term may be extended upon mutual written consent. 
+              <br/><br/>
+              14.3 <span class="custom-highlighter font-medium text-olive-forest">Either party may terminate this Agreement at the conclusion of the Initial Term by delivering written notice to the counter-party no less than ninety (90) days prior</span> to the expiration of the operative term. Failure to deliver timely notice shall automatically trigger successive one (1) year extensions subject to the provisions of Section 14.1.
+            </p>
+</div>
+<!-- Deterministic Proof Metrics -->
+<div class="p-3 bg-cream-bg border border-olive-border rounded-lg space-y-2 font-label-sm text-label-sm">
+<div class="flex justify-between items-center text-olive-dark">
+<span>Match Confidence:</span>
+<span class="font-semibold text-olive-forest">0.98 Deterministic</span>
+</div>
+<div class="flex justify-between items-center text-olive-dark">
+<span>Citation Lineage:</span>
+<span class="font-mono text-olive-primary truncate max-w-[170px]">sha256:7f03b1659a8c...</span>
+</div>
+<div class="flex justify-between items-center text-olive-dark">
+<span>OCR Quality Score:</span>
+<span class="text-olive-forest font-semibold">99.8% (Dual Vector Verified)</span>
+</div>
+</div>
+<!-- Targeted Re-extraction Dialog -->
+<div class="border-t border-olive-border pt-space-md space-y-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-olive-primary text-base" data-icon="rebase_edit">rebase_edit</span>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-olive-forest">Re-extract this clause</h3>
+</div>
+<p class="font-body-sm text-body-sm text-olive-secondary">
+              Review this specific provision again using its source wording and relevant surrounding context.
+            </p>
+<div class="space-y-2">
+<div>
+<label class="block font-label-sm text-label-sm text-olive-secondary mb-1">TARGET CLAUSE IDENTIFIER</label>
+<input class="w-full text-label-sm font-label-sm bg-cream-bg border border-olive-border rounded px-3 py-1.5 text-olive-dark focus:border-olive-primary focus:ring-1 focus:ring-olive-primary" type="text" value="Section 14.3"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-olive-secondary mb-1">OPTIONAL CLARIFICATION PROMPT</label>
+<textarea class="w-full text-label-sm font-label-sm bg-cream-bg border border-olive-border rounded px-3 py-1.5 text-olive-dark placeholder-olive-secondary/60 focus:border-olive-primary focus:ring-1 focus:ring-olive-primary" placeholder="e.g., Clarify if business days or calendar days apply to the 90-day window..." rows="2"></textarea>
+</div>
+<button class="w-full py-2 px-4 rounded-lg bg-olive-forest text-cream-ivory hover:bg-olive-dark font-label-sm text-label-sm font-semibold flex items-center justify-center gap-2 shadow transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span>
+                Run Re-extraction ↺
+              </button>
+</div>
+</div>
+<!-- Revision History Diff Indicator -->
+<div class="border-t border-olive-border pt-space-sm font-label-sm text-label-sm text-olive-secondary space-y-1.5">
+<div class="font-semibold text-olive-dark uppercase tracking-wider text-[10px]">Revision History (1 previous check)</div>
+<div class="flex items-center justify-between text-[11px] p-2 bg-cream-bg rounded border border-olive-border">
+<span>v1.0 (Initial Run): "90 Days"</span>
+<span class="text-olive-sage font-semibold">Matched</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- FOOTER -->
+<footer class="bg-surface-container-lowest dark:bg-surface-container-lowest mt-space-xl border-t border-outline-variant/20">
+<div class="w-full max-w-7xl mx-auto px-gutter py-space-xl flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<div class="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+<span class="font-headline-sm text-headline-sm font-semibold tracking-wider text-on-surface dark:text-on-surface">ODIN</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant dark:text-on-surface-variant">
+          © 2025 ODIN Systems Inc. Autonomous Legal Intelligence. High-stakes determinism engine.
+        </span>
+</div>
+<div class="flex flex-wrap justify-center gap-6 font-label-sm text-label-sm">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors" href="#">Architecture Spec</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Protocol</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors" href="#">Security &amp; Audit</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors" href="#">Model Ethics Disclaimer</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+</body></html>
