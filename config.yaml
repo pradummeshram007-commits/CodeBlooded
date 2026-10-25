@@ -1,0 +1,43 @@
+# Odin configuration. Environment variables (.env) override the llm section and paths;
+# see README.md. Relative paths resolve from the repository root.
+
+llm:
+  provider: anthropic          # anthropic | openai_compat   (env LLM_PROVIDER)
+  model: ""                    # env LLM_MODEL; anthropic defaults to claude-opus-5-5
+  base_url: null               # env LLM_BASE_URL (required for Gemini / Groq / OpenRouter)
+  temperature: 0.0             # sent wherever the provider accepts sampling parameters
+  effort: high                 # anthropic output_config.effort; "" to omit (env LLM_EFFORT)
+  fallbacks: true              # anthropic server-side refusal fallback (env LLM_FALLBACKS)
+  json_mode: true              # openai_compat response_format=json_object (env LLM_JSON_MODE)
+  max_output_tokens: 32000     # includes thinking tokens on Claude models
+  request_timeout_s: 600
+
+limits:
+  max_llm_calls: 60            # real API calls per process (cache hits are free)
+  max_tokens_budget: 1500000   # input + output tokens per process
+  max_retries: 4               # per call, exponential backoff on API errors
+  backoff_base_s: 2.0
+  backoff_max_s: 60.0
+  rate_limit_max_wait_s: 240   # honour "retry in N s" up to this; longer (e.g. daily caps) fails fast
+  validation_retries: 2        # re-prompts with the validation error on bad JSON
+
+loops:                         # for the agents after Thor
+  loki_max_rounds: 3
+  loki_max_clarifications_per_doc: 5
+  max_message_hops: 6
+  heimdall_max_events_per_drop: 100
+  norns_max_iterations: 500
+  tyr_max_rulings_per_run: 25
+
+thor:
+  chunk_max_chars: 9000        # longer documents are split by top-level section (env ODIN_CHUNK_MAX_CHARS);
+                               # 9000 keeps each request under ~8k tokens (e.g. Groq on-demand TPM limits)
+  min_split_chars: 1500
+  std_doc_id: STD
+
+paths:
+  bundle_dir: "02_Ragnarok Odin The Contract War Room/Pack/odin_dev_pack/bundle"   # env ODIN_BUNDLE_DIR
+  db_path: state/odin.db                                                         # env ODIN_DB_PATH
+  outputs_dir: outputs
+  llm_cache_dir: .cache/llm
+  prompts_dir: prompts

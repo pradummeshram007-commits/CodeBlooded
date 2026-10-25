@@ -1,0 +1,152 @@
+================================================================================
+                    CLOUD SERVICE AGREEMENT — COVER PAGE
+================================================================================
+
+                        CONTRACT ID: QH-STRATO-2026-001
+
+This Cover Page incorporates by reference the Common Paper Cloud Service
+Agreement Standard Terms Version 2.0, a copy of which is maintained at
+STD.txt in this bundle (the "Standard Terms"). If this Cover Page and the
+Standard Terms conflict on any point, this Cover Page controls.
+
+================================================================================
+
+PROVIDER INFORMATION
+--------------------
+  Legal Name:     StratoNode Inc.
+  Address:        8500 Cascade Boulevard, Suite 200, Portland, OR 97204
+  Contact:        Jordan Hale, VP Sales — jordan.h@stratonode.com
+  Notice Address: StratoNode Inc.
+                  Attn: Legal Department
+                  8500 Cascade Boulevard, Suite 200
+                  Portland, OR 97204
+                  Email: legal@stratonode.com
+
+CUSTOMER INFORMATION
+--------------------
+  Legal Name:     Quillhub Inc.
+  Address:        1200 Innovation Drive, Suite 400, Austin, TX 78701
+  Contact:        Dana Kowalski, Director of Engineering — dana.k@quillhub.io
+  Notice Address: Quillhub Inc.
+                  Attn: Legal Department
+                  1200 Innovation Drive, Suite 400
+                  Austin, TX 78701
+                  Email: legal-notices@quillhub.io
+
+================================================================================
+                            KEY TERMS
+================================================================================
+
+Section A — Cloud Service Description
+--------------------------------------
+The Cloud Service is StratoNode CloudCore, a managed cloud infrastructure
+platform providing compute, storage, network, and monitoring services. Quillhub
+will use StratoNode CloudCore to host and operate its Route Optimizer
+application.
+
+Section B — Subscription Period and Renewal
+--------------------------------------------
+  Effective Date:            August 1, 2026
+  Initial Subscription Period: 24 months (ending July 31, 2028)
+  Renewal Period:            successive 12-month periods
+  Non-Renewal Notice Period: 90 days before the end of the then-current
+                             Subscription Period
+
+  The Agreement will automatically renew for successive Renewal Periods of
+  12 months each, unless either party delivers written notice of non-renewal
+  to the other party's Notice Address at least 90 days before the end of the
+  then-current Subscription Period, in accordance with Section 5.1 of the
+  Standard Terms.
+
+Section C — Fees and Payment
+-----------------------------
+  Monthly Fee:     $8,000.00 (Eight Thousand U.S. Dollars)
+  Payment Process: Invoicing. StratoNode will issue invoices on the first
+                   business day of each calendar month for that month's Fee.
+  Payment Period:  30 days from invoice date.
+  Currency:        U.S. Dollars
+
+  Late Payment:    In accordance with Section 4.4 of the Standard Terms,
+                   overdue amounts accrue interest at 1.5% per month.
+
+Section D — Technical Support
+------------------------------
+  Support Tier:     Business Support
+  Support Hours:    Monday through Friday, 8:00 AM – 6:00 PM Pacific Time
+                    (excluding StratoNode-observed holidays)
+  Response Targets:
+    - Severity 1 (service down):         1 hour
+    - Severity 2 (significant impact):   4 hours
+    - Severity 3 (minor impact):         1 business day
+    - Severity 4 (general inquiry):      2 business days
+
+  StratoNode does not guarantee resolution times. Response targets are
+  commercially reasonable objectives, not contractual commitments.
+
+Section E — Service Level Agreement
+------------------------------------
+  The Cloud Service is subject to the Service Level Agreement attached hereto
+  as a separate document titled "StratoNode CloudCore — Service Level
+  Agreement" (document QH-STRATO-2026-SLA), which is incorporated into this
+  Agreement by reference. In the event of a conflict between this Cover Page
+  and the SLA, the SLA controls with respect to uptime commitments and service
+  credits.
+
+Section F — Data and Security
+------------------------------
+  Data Location:      United States (us-west-2 and us-east-1 regions)
+  Encryption at Rest: AES-256
+  Encryption in Transit: TLS 1.2 or higher
+  Backup Frequency:   Daily automated snapshots, retained for 30 days
+
+  Security Incident Notification: In accordance with Section 3.3 of the
+  Standard Terms, StratoNode will notify Quillhub within 72 hours of becoming
+  aware of a Security Incident.
+
+Section G — Liability
+----------------------
+  General Cap Amount:  The total Fees paid or payable by Customer in the
+                       twelve (12) months immediately preceding the claim.
+  Unlimited Claims:    Breach of Section 10 (Confidentiality);
+                       Customer's breach of Section 2.1 (Restrictions).
+
+Section H — Governing Law
+--------------------------
+  Governing Law:    State of Oregon
+  Chosen Courts:    Federal and state courts located in Multnomah County,
+                    Oregon
+
+Section I — Additional Terms
+------------------------------
+
+I.1  Incident Notification to Customer. If StratoNode experiences an
+     unplanned service disruption affecting the Cloud Service, StratoNode
+     will use commercially reasonable efforts to notify Quillhub's
+     Operations contact (ops@quillhub.io) within four (4) hours of becoming
+     aware of the disruption. This notification obligation is in addition to
+     the Security Incident notification in Section 3.3 of the Standard Terms.
+
+I.2  Migration Assistance. Upon expiration or termination of this Agreement,
+     StratoNode will provide reasonable migration assistance to Quillhub for
+     a period of up to 90 days following the effective date of termination,
+     at StratoNode's then-current professional services rates.
+
+I.3  Subprocessors. StratoNode may use subprocessors to deliver the Cloud
+     Service. StratoNode will maintain a list of subprocessors and notify
+     Quillhub of any changes at least 30 days in advance.
+
+================================================================================
+
+SIGNATURES
+----------
+
+FOR STRATONODE INC.                   FOR QUILLHUB INC.
+
+Signature: /s/ Jordan Hale            Signature: /s/ Marcus Ellison
+Name:      Jordan Hale                Name:      Marcus Ellison
+Title:     VP Sales                   Title:     VP of Legal & Compliance
+Date:      July 15, 2026             Date:      July 18, 2026
+
+================================================================================
+END OF COVER PAGE — QH-STRATO-2026-001
+================================================================================

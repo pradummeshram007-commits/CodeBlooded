@@ -1,0 +1,160 @@
+================================================================================
+                    CLOUD SERVICE AGREEMENT — COVER PAGE
+================================================================================
+
+                        CONTRACT ID: QH-VANTAGE-2026-001
+
+This Cover Page incorporates by reference the Common Paper Cloud Service
+Agreement Standard Terms Version 2.0, a copy of which is maintained at
+STD.txt in this bundle (the "Standard Terms"). If this Cover Page and the
+Standard Terms conflict on any point, this Cover Page controls.
+
+================================================================================
+
+PROVIDER INFORMATION
+--------------------
+  Legal Name:     Quillhub Inc.
+  Address:        1200 Innovation Drive, Suite 400, Austin, TX 78701
+  Contact:        Raj Subramanian, Head of Customer Success — raj.s@quillhub.io
+  Notice Address: Quillhub Inc.
+                  Attn: Legal Department
+                  1200 Innovation Drive, Suite 400
+                  Austin, TX 78701
+                  Email: legal-notices@quillhub.io
+
+CUSTOMER INFORMATION
+--------------------
+  Legal Name:     Vantage Logistics Corporation
+  Address:        2200 NE Sandy Boulevard, Portland, OR 97232
+  Contact:        Derek Sung, VP Operations — derek.sung@vantagelogistics.com
+  Notice Address: Vantage Logistics Corporation
+                  Attn: Legal Department
+                  2200 NE Sandy Boulevard
+                  Portland, OR 97232
+                  Email: contracts@vantagelogistics.com
+
+================================================================================
+                            KEY TERMS
+================================================================================
+
+Section A — Cloud Service Description
+--------------------------------------
+The Cloud Service is Quillhub Route Optimizer Pro, a cloud-based logistics-
+optimization platform providing real-time route planning, fleet tracking,
+delivery-window management, and standard API access (the "Platform").
+
+Section B — Subscription Period and Renewal
+--------------------------------------------
+  Effective Date:              [TO BE INSERTED UPON GO-LIVE]
+  Initial Subscription Period: 24 months from the Effective Date
+  Renewal Period:              successive 12-month periods
+  Non-Renewal Notice Period:   90 days before the end of the then-current
+                               Subscription Period
+
+  The Agreement will automatically renew for successive Renewal Periods of
+  12 months each, unless either party delivers written notice of non-renewal
+  to the other party's Notice Address at least 90 days before the end of the
+  then-current Subscription Period, in accordance with Section 5.1 of the
+  Standard Terms.
+
+  "Written notice" means a notice delivered in accordance with Section 12.4
+  of the Standard Terms. For the avoidance of doubt, informal communications
+  (including but not limited to phone calls, text messages, and emails sent
+  to addresses other than the Notice Address) do not constitute written
+  notice for the purposes of this Agreement.
+
+Section C — Fees and Payment
+-----------------------------
+  Monthly Fee:     $18,500.00 (Eighteen Thousand Five Hundred U.S. Dollars)
+  Payment Process: Invoicing. Quillhub will issue invoices on the first
+                   business day of each calendar month for that month's Fee.
+  Payment Period:  30 days from invoice date.
+  Currency:        U.S. Dollars
+
+  Setup Fee:       $12,000.00 (Twelve Thousand U.S. Dollars), payable upon
+                   execution of this Agreement. The Setup Fee is non-refundable.
+
+Section D — Service Level
+--------------------------
+  §3.1  Uptime Commitment. Quillhub will make the Platform available at least
+        ninety-nine and five-tenths percent (99.5%) of the minutes in each
+        calendar month, not counting Scheduled Maintenance (the "Vantage
+        Uptime Target"). "Scheduled Maintenance" means maintenance that
+        Quillhub has notified Vantage Logistics about at least 48 hours in
+        advance via email to the Customer's contact.
+
+  §3.2  Service Credits. If the Monthly Uptime Percentage falls below the
+        Vantage Uptime Target in any calendar month, Quillhub will credit
+        Vantage Logistics ten percent (10%) of the Monthly Fee for that month
+        against Vantage Logistics' next invoice.
+
+  §3.3  Credit Request. Vantage Logistics must request a service credit in
+        writing within thirty (30) days after the end of the calendar month
+        in which the Downtime occurred.
+
+Section E — Exclusivity
+-------------------------
+  §4.1  Route Optimizer Exclusivity. During the Subscription Period, Quillhub
+        grants Vantage Logistics the exclusive right to use the Route
+        Optimizer platform (including all tiers: Standard, Pro, and
+        Enterprise) within the Pacific Northwest third-party logistics sector
+        (defined as third-party logistics companies headquartered in the
+        states of Washington and Oregon that provide warehousing and last-mile
+        delivery services). Quillhub will not license any tier of Route
+        Optimizer to any other third-party logistics company headquartered in
+        Washington or Oregon that provides warehousing and last-mile delivery
+        services during the Subscription Period without Vantage Logistics'
+        prior written consent.
+
+Section F — Liability
+-----------------------
+  General Cap Amount:  The total Fees paid or payable by Customer in the
+                       twelve (12) months immediately preceding the claim.
+  Unlimited Claims:    None specified.
+
+Section G — Governing Law
+---------------------------
+  Governing Law:    State of Oregon
+  Chosen Courts:    Federal and state courts located in Multnomah County,
+                    Oregon
+
+Section H — Additional Terms
+------------------------------
+  H.1  Customer Data Ownership. For the avoidance of doubt, all route data,
+       delivery data, fleet telemetry, and optimization outputs generated
+       through Vantage Logistics' use of the Platform ("Vantage Operations
+       Data") are Customer Content as defined in the Standard Terms and remain
+       the exclusive property of Vantage Logistics.
+
+  H.2  Integration Support. Quillhub will provide up to forty (40) hours of
+       integration support at no additional charge during the first six (6)
+       months following the Effective Date, to assist Vantage Logistics with
+       API integration into Vantage Logistics' warehouse management system.
+
+  H.3  Non-Compete Clarification. The exclusivity in Section 4.1 applies
+       only to the Route Optimizer product line. Quillhub may offer other
+       products and services to any customer, including third-party logistics
+       companies in Washington and Oregon, provided those products and services
+       do not provide route optimization, fleet tracking, or delivery-window
+       management functionality substantially similar to Route Optimizer.
+
+================================================================================
+
+SIGNATURES
+----------
+
+FOR QUILLHUB INC.                     FOR VANTAGE LOGISTICS CORPORATION
+
+Signature: /s/ Priya Chandrasekaran   Signature: /s/ Derek Sung
+Name:      Priya Chandrasekaran       Name:      Derek Sung
+Title:     CEO                        Title:     VP Operations
+Date:      November 5, 2026           Date:      November 8, 2026
+
+NOTE: The Effective Date will be the date on which Quillhub confirms in
+writing that the Platform is available for production use by Vantage Logistics
+(the "Go-Live Date"). As of the date of execution of this Cover Page, the
+Go-Live Date has not been set.
+
+================================================================================
+END OF COVER PAGE — QH-VANTAGE-2026-001
+================================================================================

@@ -1,0 +1,403 @@
+%PDF-1.4
+%‚„œ”
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R] /Count 3 >>
+endobj
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3681 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(A2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 1 of 3) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(================================================================================) Tj
+T*
+(              STRATONODE CLOUDCORE ? SERVICE LEVEL AGREEMENT) Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(                    DOCUMENT ID: QH-STRATO-2026-SLA) Tj
+T*
+() Tj
+T*
+(This Service Level Agreement \("SLA"\) is incorporated by reference into the) Tj
+T*
+(Cloud Service Agreement between StratoNode Inc. \("Provider"\) and Quillhub Inc.) Tj
+T*
+(\("Customer"\) dated August 1, 2026 \(Contract ID: QH-STRATO-2026-001, the) Tj
+T*
+("Agreement"\). Capitalized terms not defined in this SLA have the meanings) Tj
+T*
+(given in the Agreement or the Standard Terms.) Tj
+T*
+() Tj
+T*
+(In the event of a conflict between this SLA and the Agreement, this SLA) Tj
+T*
+(controls with respect to uptime commitments and service credits.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(SECTION 1 ? DEFINITIONS) Tj
+T*
+(------------------------) Tj
+T*
+() Tj
+T*
+(1.1  "Monthly Uptime Percentage" means the total number of minutes in a) Tj
+T*
+(     calendar month minus the number of Downtime Minutes, divided by the total) Tj
+T*
+(     number of minutes in that calendar month, expressed as a percentage.) Tj
+T*
+() Tj
+T*
+(1.2  "Downtime Minutes" means the total number of minutes during which the) Tj
+T*
+(     Cloud Service is unavailable, excluding Scheduled Maintenance and any) Tj
+T*
+(     unavailability caused by circumstances described in Section 5.) Tj
+T*
+() Tj
+T*
+(1.3  "Scheduled Maintenance" means maintenance that Provider has notified) Tj
+T*
+(     Customer about at least 48 hours in advance via email to the Customer's) Tj
+T*
+(     Operations contact or through the Provider's status page. Scheduled) Tj
+T*
+(     Maintenance windows will not exceed four \(4\) hours per occurrence and) Tj
+T*
+(     will not be scheduled more than twice per calendar month.) Tj
+T*
+() Tj
+T*
+(1.4  "Service Credit" means a credit against future Fees, calculated as) Tj
+T*
+(     described in Section 3.) Tj
+T*
+() Tj
+T*
+(SECTION 2 ? UPTIME COMMITMENT) Tj
+T*
+(-------------------------------) Tj
+T*
+() Tj
+T*
+(2.1  Provider will make the Cloud Service available at least ninety-nine) Tj
+T*
+(     and one-half percent \(99.5%\) of the minutes in each calendar month, not) Tj
+T*
+(     counting Scheduled Maintenance \(the "Uptime Target"\).) Tj
+T*
+() Tj
+T*
+(SECTION 3 ? SERVICE CREDITS) Tj
+T*
+(-----------------------------) Tj
+T*
+() Tj
+T*
+(3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any) Tj
+T*
+(     calendar month, Customer will be eligible for a Service Credit as) Tj
+T*
+(     specified in the table below:) Tj
+T*
+() Tj
+T*
+(       Monthly Uptime Percentage          Service Credit) Tj
+T*
+(       ----------------------------       -------------------------) Tj
+T*
+(       99.0% to < 99.5%                   10% of Monthly Fee) Tj
+T*
+(       95.0% to < 99.0%                   25% of Monthly Fee) Tj
+T*
+(       Below 95.0%                        50% of Monthly Fee) Tj
+T*
+() Tj
+T*
+(     "Monthly Fee" for the purpose of this SLA means the monthly Fee payable) Tj
+T*
+(     under the Agreement, currently Eight Thousand U.S. Dollars \($8,000.00\).) Tj
+T*
+() Tj
+T*
+(3.2  Credit Request Procedure. To receive a Service Credit, Customer must) Tj
+ET
+
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 3619 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(A2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 2 of 3) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(     submit a written request to Provider's Notice Address within thirty \(30\)) Tj
+T*
+(     days after the end of the calendar month in which the Downtime occurred.) Tj
+T*
+(     The request must include: \(a\) the dates and times of the Downtime;) Tj
+T*
+(     \(b\) a description of how the Cloud Service was affected; and \(c\) any) Tj
+T*
+(     supporting evidence such as error logs or screenshots. Provider will) Tj
+T*
+(     review the request and, if it confirms that the Uptime Target was not) Tj
+T*
+(     met, will apply the Service Credit to Customer's next invoice.) Tj
+T*
+() Tj
+T*
+(3.3  Maximum Credit. The total Service Credits for any single calendar month) Tj
+T*
+(     will not exceed fifty percent \(50%\) of the Monthly Fee for that month.) Tj
+T*
+() Tj
+T*
+(3.4  Sole Remedy. Service Credits are Customer's sole and exclusive remedy) Tj
+T*
+(     for Provider's failure to meet the Uptime Target, except as otherwise) Tj
+T*
+(     provided in the Agreement.) Tj
+T*
+() Tj
+T*
+(SECTION 4 ? REPORTING) Tj
+T*
+(----------------------) Tj
+T*
+() Tj
+T*
+(4.1  Provider will make Monthly Uptime Percentage data available to Customer) Tj
+T*
+(     through the Provider's online dashboard or upon written request.) Tj
+T*
+() Tj
+T*
+(4.2  Provider will maintain service-availability logs for at least twelve) Tj
+T*
+(     \(12\) months and will make them available to Customer upon reasonable) Tj
+T*
+(     request for the purpose of verifying Service Credits.) Tj
+T*
+() Tj
+T*
+(SECTION 5 ? EXCLUSIONS) Tj
+T*
+(------------------------) Tj
+T*
+() Tj
+T*
+(The following are excluded from the calculation of Downtime Minutes:) Tj
+T*
+() Tj
+T*
+(5.1  Scheduled Maintenance, as defined in Section 1.3.) Tj
+T*
+() Tj
+T*
+(5.2  Downtime caused by Customer's equipment, software, network connections,) Tj
+T*
+(     or other infrastructure not provided by Provider.) Tj
+T*
+() Tj
+T*
+(5.3  Downtime caused by Customer's use of the Cloud Service in a manner not) Tj
+T*
+(     authorized by the Agreement or the Documentation.) Tj
+T*
+() Tj
+T*
+(5.4  Downtime caused by a Force Majeure Event as defined in the Standard Terms.) Tj
+T*
+() Tj
+T*
+(5.5  Downtime resulting from actions or inactions of third parties outside) Tj
+T*
+(     Provider's reasonable control, including internet service providers,) Tj
+T*
+(     DNS providers, and certificate authorities.) Tj
+T*
+() Tj
+T*
+(SECTION 6 ? TERMINATION FOR PERSISTENT FAILURES) Tj
+T*
+(-------------------------------------------------) Tj
+T*
+() Tj
+T*
+(6.1  If the Monthly Uptime Percentage falls below the Uptime Target in any) Tj
+T*
+(     two \(2\) consecutive calendar months, Customer may, in addition to any) Tj
+T*
+(     Service Credits, terminate the Agreement upon thirty \(30\) days' written) Tj
+T*
+(     notice to Provider. In such event, Provider will refund to Customer a) Tj
+T*
+(     prorated portion of any prepaid Fees for the remainder of the) Tj
+T*
+(     Subscription Period.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(This SLA is effective as of the Effective Date of the Agreement and will) Tj
+T*
+(remain in effect for the duration of the Agreement, including any renewal) Tj
+T*
+(periods.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+ET
+
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 479 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(A2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 3 of 3) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(END OF SERVICE LEVEL AGREEMENT ? QH-STRATO-2026-SLA) Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+ET
+
+endstream
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000371 00000 n 
+0000000301 00000 n 
+0000000015 00000 n 
+0000000083 00000 n 
+0000000156 00000 n 
+0000000226 00000 n 
+0000000420 00000 n 
+0000000576 00000 n 
+0000004309 00000 n 
+0000004466 00000 n 
+0000008138 00000 n 
+0000008296 00000 n 
+0000000000 00000 n 
+0000000000 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+8827
+%%EOF

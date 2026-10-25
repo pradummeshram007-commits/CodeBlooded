@@ -1,0 +1,334 @@
+================================================================================
+                   INDEPENDENT CONTRACTOR SERVICES AGREEMENT
+================================================================================
+
+                        CONTRACT ID: QH-PIXEL-2026-001
+
+This Independent Contractor Services Agreement ("Agreement") is entered into
+as of October 1, 2026 (the "Effective Date") by and between:
+
+  Quillhub Inc., a Delaware corporation with its principal office at
+  1200 Innovation Drive, Suite 400, Austin, TX 78701 ("Company")
+
+  and
+
+  Pixelwright Design Studio LLC, an Oregon limited liability company with
+  its principal office at 915 SE Hawthorne Boulevard, Suite 3, Portland,
+  OR 97214 ("Contractor")
+
+  (each a "Party" and together the "Parties")
+
+================================================================================
+
+SECTION 1 — SCOPE OF SERVICES
+-------------------------------
+
+1.1  Engagement. Company engages Contractor, and Contractor agrees to provide,
+     the design and development services described in the Statement of Work
+     attached as Exhibit A (the "Services").
+
+1.2  Statement of Work. The initial Statement of Work is incorporated into
+     this Agreement. Additional Statements of Work may be executed by the
+     Parties from time to time and will be governed by this Agreement.
+
+1.3  Performance Standard. Contractor will perform the Services in a
+     professional and workmanlike manner consistent with generally accepted
+     industry standards.
+
+SECTION 2 — TERM
+------------------
+
+2.1  Term. This Agreement begins on the Effective Date and continues until
+     December 31, 2027, unless earlier terminated in accordance with
+     Section 9 (the "Term").
+
+2.2  No Auto-Renewal. This Agreement does not automatically renew. Any
+     extension must be agreed in writing by both Parties.
+
+SECTION 3 — COMPENSATION
+--------------------------
+
+3.1  Fees. Company will pay Contractor the fees set forth in each Statement
+     of Work. For the initial Statement of Work (Exhibit A), the total fixed
+     fee is Sixty-Five Thousand U.S. Dollars ($65,000.00), payable in
+     milestones as follows:
+
+       Milestone    Description                        Amount      Due
+       ----------   --------------------------------   ---------   ---------
+       M1           Project kickoff and discovery       $10,000    Upon execution
+       M2           Design mockups delivery             $15,000    Upon acceptance
+       M3           Front-end development delivery      $20,000    Upon acceptance
+       M4           Integration and testing delivery    $12,000    Upon acceptance
+       M5           Final delivery and launch           $8,000     Upon acceptance
+
+3.2  Invoicing. Contractor will submit an invoice for each milestone within
+     five (5) business days after Company accepts the milestone deliverable
+     (or the milestone is deemed accepted under Section 4.3). Company will
+     pay each invoice within twenty (20) business days of receipt.
+
+3.3  Late Payment. If Company fails to pay any undisputed invoice within the
+     payment period, Contractor may charge interest at the rate of one percent
+     (1.0%) per month on the overdue amount from the due date until paid in
+     full.
+
+3.4  Expenses. Company will reimburse Contractor for reasonable, pre-approved
+     out-of-pocket expenses incurred in performing the Services. Contractor
+     must submit expense reports with receipts within thirty (30) days of
+     incurring the expense.
+
+SECTION 4 — DELIVERABLES AND ACCEPTANCE
+-----------------------------------------
+
+4.1  Delivery. Contractor will deliver each milestone deliverable by the date
+     specified in the Statement of Work. If a delivery date falls on a
+     weekend or holiday observed by Company (as listed in the holiday
+     schedule provided by Company), the delivery date will be the next
+     business day.
+
+4.2  Review Period. Company will have ten (10) business days after receipt of
+     each milestone deliverable to review the deliverable and either accept
+     it or provide Contractor with a written list of deficiencies (a
+     "Rejection Notice"). Business days exclude Saturdays, Sundays, and
+     holidays observed by Company as listed in the holiday schedule provided
+     by Company (data/holidays.csv in this bundle).
+
+4.3  Deemed Acceptance. If Company does not deliver a Rejection Notice within
+     the ten (10) business day review period specified in Section 4.2, the
+     milestone deliverable will be deemed accepted.
+
+4.4  Corrections. If Company delivers a Rejection Notice, Contractor will
+     correct the identified deficiencies within five (5) business days and
+     re-deliver the corrected deliverable. Company will then have five (5)
+     business days to review the corrected deliverable.
+
+4.5  Dispute. If the Parties cannot agree on whether a deliverable meets the
+     requirements in the Statement of Work after two rounds of correction,
+     either Party may escalate the matter to the senior executives
+     designated in Section 10.
+
+SECTION 5 — INTELLECTUAL PROPERTY
+-----------------------------------
+
+5.1  Work Product. All deliverables, work product, and materials created by
+     Contractor in performing the Services ("Work Product") are works made
+     for hire to the extent permitted by Applicable Laws. To the extent any
+     Work Product is not a work made for hire, Contractor hereby assigns to
+     Company all right, title, and interest in and to the Work Product,
+     including all intellectual property rights.
+
+5.2  Pre-Existing Materials. Contractor retains ownership of any tools,
+     frameworks, libraries, or other materials that Contractor developed
+     before or independently of this Agreement ("Pre-Existing Materials").
+     To the extent Contractor incorporates Pre-Existing Materials into the
+     Work Product, Contractor grants Company a non-exclusive, perpetual,
+     irrevocable, royalty-free license to use, modify, and distribute the
+     Pre-Existing Materials as part of the Work Product.
+
+5.3  Open-Source Software. Contractor will not incorporate any open-source
+     software into the Work Product without Company's prior written approval.
+     Contractor will identify all proposed open-source components, their
+     licenses, and any obligations they impose before incorporating them.
+
+SECTION 6 — CONFIDENTIALITY
+-----------------------------
+
+6.1  Definition. "Confidential Information" means any non-public information
+     disclosed by one Party to the other in connection with this Agreement
+     that is marked as confidential or that a reasonable person would
+     understand to be confidential.
+
+6.2  Obligations. Each Party will: (a) use the other Party's Confidential
+     Information only for the purposes of this Agreement; (b) protect the
+     other Party's Confidential Information using at least the same degree
+     of care it uses for its own confidential information, but no less than
+     reasonable care; and (c) not disclose the other Party's Confidential
+     Information to any third party except as necessary to perform the
+     Services, provided such third party is bound by confidentiality
+     obligations at least as protective as those in this Section 6.
+
+6.3  Exclusions. Confidential Information does not include information that:
+     (a) is or becomes publicly available without fault of the receiving
+     Party; (b) the receiving Party already knew without obligation of
+     confidentiality; (c) the receiving Party receives from a third party
+     without obligation of confidentiality; or (d) the receiving Party
+     independently developed without reference to the disclosing Party's
+     Confidential Information.
+
+SECTION 7 — REPRESENTATIONS AND WARRANTIES
+--------------------------------------------
+
+7.1  Mutual. Each Party represents and warrants that: (a) it has the legal
+     power and authority to enter into this Agreement; and (b) it will
+     comply with all Applicable Laws in performing its obligations.
+
+7.2  Contractor. Contractor represents and warrants that: (a) it has the
+     skills, experience, and qualifications necessary to perform the
+     Services; (b) the Work Product will be original and will not infringe
+     any third party's intellectual property rights; and (c) the Work
+     Product will conform to the specifications in the Statement of Work.
+
+SECTION 8 — INDEMNIFICATION
+-----------------------------
+
+8.1  By Contractor. Contractor will indemnify, defend, and hold harmless
+     Company from and against any claims, damages, losses, and expenses
+     (including reasonable attorneys' fees) arising from: (a) Contractor's
+     breach of Section 7.2; (b) any claim that the Work Product infringes
+     a third party's intellectual property rights; or (c) Contractor's
+     gross negligence or willful misconduct in performing the Services.
+
+8.2  By Company. Company will indemnify, defend, and hold harmless
+     Contractor from and against any claims, damages, losses, and expenses
+     (including reasonable attorneys' fees) arising from Company's gross
+     negligence or willful misconduct.
+
+SECTION 9 — TERMINATION
+-------------------------
+
+9.1  Termination for Convenience. Either Party may terminate this Agreement
+     upon thirty (30) calendar days' written notice to the other Party.
+
+9.2  Termination for Cause. Either Party may terminate this Agreement
+     immediately upon written notice if the other Party: (a) materially
+     breaches this Agreement and fails to cure the breach within fifteen
+     (15) calendar days after receiving written notice; or (b) becomes
+     insolvent or files for bankruptcy.
+
+9.3  Effect of Termination. Upon termination: (a) Company will pay
+     Contractor for all Services performed and accepted (or deemed accepted)
+     through the date of termination; (b) Contractor will deliver to
+     Company all Work Product completed or in progress; and (c) each
+     Party will return or destroy the other Party's Confidential Information.
+
+SECTION 10 — GENERAL PROVISIONS
+---------------------------------
+
+10.1 Independent Contractor. Contractor is an independent contractor, not an
+     employee, agent, partner, or joint venturer of Company. Contractor is
+     responsible for its own taxes, insurance, and benefits.
+
+10.2 Notices. All notices must be in writing and sent to the addresses set
+     forth above or to such other address as a Party designates in writing.
+     Notices will be deemed given upon confirmed delivery if by email or
+     personal delivery, or two (2) business days after mailing by overnight
+     commercial delivery.
+
+     Company Notice Address:
+       Quillhub Inc.
+       Attn: Legal Department
+       1200 Innovation Drive, Suite 400
+       Austin, TX 78701
+       Email: legal-notices@quillhub.io
+
+     Contractor Notice Address:
+       Pixelwright Design Studio LLC
+       Attn: Elena Vasquez, Managing Director
+       915 SE Hawthorne Boulevard, Suite 3
+       Portland, OR 97214
+       Email: elena@pixelwright.co
+
+10.3 Governing Law. This Agreement will be governed by the laws of the State
+     of Texas, without regard to its conflict of laws provisions.
+
+10.4 Dispute Resolution. The Parties will attempt to resolve any dispute
+     arising out of this Agreement through good-faith negotiation between
+     their designated senior executives:
+       - For Company: VP of Legal & Compliance
+       - For Contractor: Managing Director
+     If the dispute is not resolved within thirty (30) days, either Party
+     may pursue any remedy available under Applicable Laws.
+
+10.5 Entire Agreement. This Agreement (including all Statements of Work)
+     constitutes the entire agreement between the Parties regarding the
+     Services and supersedes all prior agreements and understandings.
+
+10.6 Amendment. This Agreement may be amended only by a written instrument
+     signed by both Parties.
+
+10.7 Assignment. Neither Party may assign this Agreement without the other
+     Party's prior written consent, except in connection with a merger,
+     acquisition, or sale of all or substantially all of its assets.
+
+10.8 Severability. If any provision of this Agreement is held invalid or
+     unenforceable, the remaining provisions will remain in full force and
+     effect.
+
+10.9 Limitation of Liability. EXCEPT FOR INDEMNIFICATION OBLIGATIONS UNDER
+     SECTION 8, NEITHER PARTY'S TOTAL LIABILITY TO THE OTHER PARTY FOR ALL
+     CLAIMS ARISING OUT OF OR RELATING TO THIS AGREEMENT WILL EXCEED THE
+     TOTAL FEES PAID OR PAYABLE BY COMPANY UNDER THIS AGREEMENT. NEITHER
+     PARTY WILL BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+     OR PUNITIVE DAMAGES.
+
+================================================================================
+
+EXHIBIT A — STATEMENT OF WORK
+-------------------------------
+
+Project:       Route Optimizer Dashboard Redesign
+Duration:      October 1, 2026 – March 31, 2027
+Project Lead:  Elena Vasquez (Contractor) / Dana Kowalski (Company)
+
+Objective:     Redesign the Route Optimizer customer-facing dashboard to
+               improve usability, add real-time fleet visualization, and
+               integrate a new analytics reporting module.
+
+Milestones:
+
+  M1 — Project Kickoff and Discovery
+    Deliverables:  Kickoff meeting notes, requirements document, project plan
+    Due Date:      October 15, 2026
+    Fee:           $10,000
+
+  M2 — Design Mockups
+    Deliverables:  High-fidelity mockups for dashboard, fleet view, analytics
+                   module, and mobile-responsive layouts (Figma files)
+    Due Date:      November 30, 2026
+    Fee:           $15,000
+
+  M3 — Front-End Development
+    Deliverables:  Functional front-end implementation (React), component
+                   library, unit tests with ≥80% code coverage
+    Due Date:      January 31, 2027
+    Fee:           $20,000
+
+  M4 — Integration and Testing
+    Deliverables:  API integration with Route Optimizer backend, end-to-end
+                   tests, performance benchmarks, accessibility audit (WCAG
+                   2.1 AA compliance)
+    Due Date:      February 28, 2027
+    Fee:           $12,000
+
+  M5 — Final Delivery and Launch
+    Deliverables:  Production deployment, documentation, 2-hour training
+                   session for Quillhub support staff, 30-day post-launch
+                   defect support
+    Due Date:      March 31, 2027
+    Fee:           $8,000
+
+Acceptance Criteria:
+  - All deliverables must conform to the specifications in this Statement
+    of Work.
+  - Code deliverables must pass all automated tests and code review by
+    Company's engineering team.
+  - Design deliverables must be approved by Company's product team.
+  - Acceptance and deemed-acceptance are governed by Section 4 of this
+    Agreement.
+  - Business days for the review periods in Section 4 exclude weekends and
+    holidays listed in the holiday schedule provided by Company.
+
+================================================================================
+
+SIGNATURES
+----------
+
+FOR QUILLHUB INC.                     FOR PIXELWRIGHT DESIGN STUDIO LLC
+
+Signature: /s/ Marcus Ellison         Signature: /s/ Elena Vasquez
+Name:      Marcus Ellison             Name:      Elena Vasquez
+Title:     VP of Legal & Compliance   Title:     Managing Director
+Date:      September 28, 2026         Date:      September 29, 2026
+
+================================================================================
+END OF AGREEMENT — QH-PIXEL-2026-001
+================================================================================

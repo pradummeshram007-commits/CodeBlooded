@@ -1,0 +1,13 @@
+# secrets
+.env
+
+# local environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# runtime state (outputs/state_export.json is the shareable snapshot)
+state/*.db
+state/*.db-*
+.cache/

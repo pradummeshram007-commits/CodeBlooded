@@ -1,0 +1,96 @@
+QUILLHUB INC. — COMPANY CONTEXT
+=================================
+
+LEGAL NAME:        Quillhub Inc.
+JURISDICTION:      Delaware, United States
+PRINCIPAL OFFICE:  1200 Innovation Drive, Suite 400, Austin, TX 78701
+FORMED:            March 12, 2021
+FISCAL YEAR:       January 1 – December 31
+
+BUSINESS DESCRIPTION
+--------------------
+Quillhub Inc. develops and operates "Route Optimizer," a cloud-based logistics-
+optimization platform. Route Optimizer provides real-time route planning, fleet
+tracking, and delivery-window management for mid-market retail and logistics
+companies. The platform is offered as a software-as-a-service product.
+
+Quillhub does not own or operate data-center infrastructure. It relies on a
+third-party hosting provider (currently StratoNode Inc.) for cloud infrastructure,
+compute, storage, and network services.
+
+AUTHORIZED SIGNATORIES
+----------------------
+The following individuals are authorized to execute contracts on behalf of
+Quillhub Inc.:
+
+  1. Priya Chandrasekaran, Chief Executive Officer
+     Email: priya.c@quillhub.io
+
+  2. Marcus Ellison, VP of Legal & Compliance
+     Email: marcus.e@quillhub.io
+
+No other individual may bind the company to contractual obligations without a
+written delegation of authority signed by the CEO.
+
+NOTICE ADDRESSES
+----------------
+For contractual notices under any agreement:
+
+  Quillhub Inc.
+  Attn: Legal Department
+  1200 Innovation Drive, Suite 400
+  Austin, TX 78701
+  Email: legal-notices@quillhub.io
+
+For operational and technical communications:
+
+  Quillhub Inc.
+  Attn: Operations
+  Email: ops@quillhub.io
+
+INSURANCE
+---------
+Quillhub maintains the following insurance policies:
+
+  Policy:       Commercial General Liability
+  Insurer:      Meridian Mutual Insurance Co.
+  Policy No.:   MML-2024-88714
+  Coverage:     $2,000,000 per occurrence / $5,000,000 aggregate
+  Effective:    July 1, 2024
+  Expiry:       June 30, 2027
+
+  Policy:       Technology Errors & Omissions / Cyber Liability
+  Insurer:      Meridian Mutual Insurance Co.
+  Policy No.:   MML-2024-88715
+  Coverage:     $3,000,000 per claim / $5,000,000 aggregate
+  Effective:    July 1, 2024
+  Expiry:       June 30, 2027
+
+Note: Both policies expire on June 30, 2027. No renewal confirmation has been
+received as of the date of this document.
+
+BANK DETAILS (for payment references)
+--------------------------------------
+  Bank:         First Continental Bank
+  Account Name: Quillhub Inc.
+  Account No.:  ****7823 (last four digits)
+  Routing:      ****0145
+
+KEY PERSONNEL (operations)
+--------------------------
+  Dana Kowalski, Director of Engineering — dana.k@quillhub.io
+  Raj Subramanian, Head of Customer Success — raj.s@quillhub.io
+  Lena Torres, Finance Controller — lena.t@quillhub.io
+
+CURRENT PRODUCT OFFERINGS
+--------------------------
+  1. Route Optimizer Standard — multi-stop route planning, basic fleet tracking
+  2. Route Optimizer Pro — adds real-time rerouting, delivery-window SLA, API access
+  3. Route Optimizer Enterprise — adds dedicated infrastructure, custom integrations,
+     24/7 premium support
+
+All tiers run on infrastructure hosted by StratoNode Inc. under a hosting agreement
+executed in 2026.
+
+---
+End of company context.

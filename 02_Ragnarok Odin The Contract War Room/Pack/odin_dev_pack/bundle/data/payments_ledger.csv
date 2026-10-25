@@ -1,0 +1,26 @@
+date,from,to,amount,reference,status
+2026-08-05,Quillhub Inc.,StratoNode Inc.,8000.00,August 2026 hosting fee - QH-STRATO-2026-001,paid
+2026-09-03,Quillhub Inc.,StratoNode Inc.,8000.00,September 2026 hosting fee - QH-STRATO-2026-001,paid
+2026-09-20,Harbor Retail Group LLC,Quillhub Inc.,40000.00,September 2026 platform fee (partial month prorated) - QH-HARBOR-2026-001,paid
+2026-10-02,Quillhub Inc.,StratoNode Inc.,8000.00,October 2026 hosting fee - QH-STRATO-2026-001,paid
+2026-10-03,Quillhub Inc.,Pixelwright Design Studio LLC,10000.00,M1 Project kickoff - QH-PIXEL-2026-001,paid
+2026-10-06,Harbor Retail Group LLC,Quillhub Inc.,40000.00,October 2026 platform fee - QH-HARBOR-2026-001,paid
+2026-11-04,Quillhub Inc.,StratoNode Inc.,8000.00,November 2026 hosting fee - QH-STRATO-2026-001,paid
+2026-11-07,Harbor Retail Group LLC,Quillhub Inc.,40000.00,November 2026 platform fee - QH-HARBOR-2026-001,paid
+2026-12-02,Quillhub Inc.,StratoNode Inc.,8000.00,December 2026 hosting fee - QH-STRATO-2026-001,paid
+2026-12-05,Harbor Retail Group LLC,Quillhub Inc.,40000.00,December 2026 platform fee - QH-HARBOR-2026-001,paid
+2026-12-10,Quillhub Inc.,Pixelwright Design Studio LLC,15000.00,M2 Design mockups - QH-PIXEL-2026-001,paid
+2027-01-06,Quillhub Inc.,StratoNode Inc.,8000.00,January 2027 hosting fee - QH-STRATO-2026-001,paid
+2027-01-08,Harbor Retail Group LLC,Quillhub Inc.,40000.00,January 2027 platform fee - QH-HARBOR-2026-001,paid
+2027-02-04,Quillhub Inc.,StratoNode Inc.,8000.00,February 2027 hosting fee - QH-STRATO-2026-001,paid
+2027-02-06,Harbor Retail Group LLC,Quillhub Inc.,40000.00,February 2027 platform fee - QH-HARBOR-2026-001,paid
+2027-02-18,Quillhub Inc.,Pixelwright Design Studio LLC,20000.00,M3 Front-end development - QH-PIXEL-2026-001,paid
+2027-03-05,Quillhub Inc.,StratoNode Inc.,8000.00,March 2027 hosting fee - QH-STRATO-2026-001,paid
+2027-03-07,Harbor Retail Group LLC,Quillhub Inc.,40000.00,March 2027 platform fee - QH-HARBOR-2026-001,paid
+2027-04-03,Quillhub Inc.,StratoNode Inc.,8000.00,April 2027 hosting fee - QH-STRATO-2026-001,paid
+2027-04-08,Harbor Retail Group LLC,Quillhub Inc.,40000.00,April 2027 platform fee - QH-HARBOR-2026-001,overdue
+2027-05-05,Quillhub Inc.,StratoNode Inc.,8000.00,May 2027 hosting fee - QH-STRATO-2026-001,pending
+2027-05-09,Harbor Retail Group LLC,Quillhub Inc.,40000.00,May 2027 platform fee - QH-HARBOR-2026-001,pending
+2027-06-03,Quillhub Inc.,StratoNode Inc.,8000.00,June 2027 hosting fee - QH-STRATO-2026-001,pending
+2027-06-05,Harbor Retail Group LLC,Quillhub Inc.,40000.00,June 2027 platform fee - QH-HARBOR-2026-001,pending
+2027-07-02,Quillhub Inc.,StratoNode Inc.,8000.00,July 2027 hosting fee - QH-STRATO-2026-001,pending

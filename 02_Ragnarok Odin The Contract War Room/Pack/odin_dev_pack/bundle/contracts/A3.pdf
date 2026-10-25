@@ -1,0 +1,324 @@
+%PDF-1.4
+%‚„œ”
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R] /Count 2 >>
+endobj
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3793 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(A3 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 1 of 2) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(================================================================================) Tj
+T*
+(                 AMENDMENT NO. 1 TO SERVICE LEVEL AGREEMENT) Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(                    DOCUMENT ID: QH-STRATO-2026-AMD1) Tj
+T*
+() Tj
+T*
+(This Amendment No. 1 \("Amendment"\) amends the Service Level Agreement dated) Tj
+T*
+(August 1, 2026, Document ID QH-STRATO-2026-SLA \(the "SLA"\), which is) Tj
+T*
+(incorporated by reference into the Cloud Service Agreement between StratoNode) Tj
+T*
+(Inc. \("Provider"\) and Quillhub Inc. \("Customer"\) dated August 1, 2026) Tj
+T*
+(\(Contract ID: QH-STRATO-2026-001, the "Agreement"\).) Tj
+T*
+() Tj
+T*
+(Capitalized terms not defined in this Amendment have the meanings given in) Tj
+T*
+(the SLA, the Agreement, or the Standard Terms.) Tj
+T*
+() Tj
+T*
+(Except as expressly modified by this Amendment, the SLA remains in full force) Tj
+T*
+(and effect. In the event of a conflict between this Amendment and the SLA,) Tj
+T*
+(this Amendment controls.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(AMENDMENT EFFECTIVE DATE:  January 1, 2027) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(SECTION 1 ? MODIFICATION TO CREDIT REQUEST PROCEDURE) Tj
+T*
+(------------------------------------------------------) Tj
+T*
+() Tj
+T*
+(Section 3.2 of the SLA is deleted in its entirety and replaced with the) Tj
+T*
+(following:) Tj
+T*
+() Tj
+T*
+(  "3.2  Credit Request Procedure. To receive a Service Credit, Customer must) Tj
+T*
+(        submit a written request to Provider's Notice Address within fifteen) Tj
+T*
+(        \(15\) days after the end of the calendar month in which the Downtime) Tj
+T*
+(        occurred. The request must include: \(a\) the specific dates and times) Tj
+T*
+(        of each Downtime incident; \(b\) a description of how the Cloud Service) Tj
+T*
+(        was affected; \(c\) evidence from Customer's own monitoring systems or) Tj
+T*
+(        Provider's status page; and \(d\) the calculated Monthly Uptime) Tj
+T*
+(        Percentage. Provider will review the request and respond within ten) Tj
+T*
+(        \(10\) business days. If Provider confirms that the Uptime Target was) Tj
+T*
+(        not met, Provider will apply the Service Credit to Customer's next) Tj
+T*
+(        invoice.") Tj
+T*
+() Tj
+T*
+(SECTION 2 ? MODIFICATION TO SERVICE CREDIT CALCULATION) Tj
+T*
+(-------------------------------------------------------) Tj
+T*
+() Tj
+T*
+(Section 3.1 of the SLA is deleted in its entirety and replaced with the) Tj
+T*
+(following:) Tj
+T*
+() Tj
+T*
+(  "3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any) Tj
+T*
+(        calendar month, Customer will be eligible for a Service Credit as) Tj
+T*
+(        specified in the table below:) Tj
+T*
+() Tj
+T*
+(          Monthly Uptime Percentage          Service Credit) Tj
+T*
+(          ----------------------------       -------------------------) Tj
+T*
+(          99.0% to < 99.5%                   10% of Monthly Fee) Tj
+T*
+(          95.0% to < 99.0%                   25% of Monthly Fee) Tj
+T*
+(          Below 95.0%                        50% of Monthly Fee) Tj
+T*
+() Tj
+T*
+(        'Monthly Fee' for the purpose of this SLA means the monthly Fee) Tj
+T*
+(        payable under the Agreement, currently Eight Thousand U.S. Dollars) Tj
+ET
+
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 2605 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(A3 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 2 of 2) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(        \($8,000.00\).) Tj
+T*
+() Tj
+T*
+(        Additionally, if Downtime in a single incident exceeds sixty \(60\)) Tj
+T*
+(        consecutive minutes, Customer will receive an additional Service) Tj
+T*
+(        Credit equal to five percent \(5%\) of the Monthly Fee for that month,) Tj
+T*
+(        in addition to the credit specified in the table above. This) Tj
+T*
+(        additional credit is subject to the maximum credit in Section 3.3.") Tj
+T*
+() Tj
+T*
+(SECTION 3 ? MODIFICATION TO NOTICE WINDOW) Tj
+T*
+(-------------------------------------------) Tj
+T*
+() Tj
+T*
+(Section B of the Cover Page \(Contract ID: QH-STRATO-2026-001\) is amended as) Tj
+T*
+(follows:) Tj
+T*
+() Tj
+T*
+(  The Non-Renewal Notice Period is changed from ninety \(90\) days to sixty) Tj
+T*
+(  \(60\) days before the end of the then-current Subscription Period.) Tj
+T*
+() Tj
+T*
+(  For clarity, the amended non-renewal provision reads: "The Agreement will) Tj
+T*
+(  automatically renew for successive Renewal Periods of 12 months each,) Tj
+T*
+(  unless either party delivers written notice of non-renewal to the other) Tj
+T*
+(  party's Notice Address at least 60 days before the end of the then-current) Tj
+T*
+(  Subscription Period, in accordance with Section 5.1 of the Standard Terms.") Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(All other terms and conditions of the SLA and the Agreement remain unchanged) Tj
+T*
+(and in full force and effect.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(SIGNATURES) Tj
+T*
+(----------) Tj
+T*
+() Tj
+T*
+(FOR STRATONODE INC.                   FOR QUILLHUB INC.) Tj
+T*
+() Tj
+T*
+(Signature: /s/ Jordan Hale            Signature: /s/ Marcus Ellison) Tj
+T*
+(Name:      Jordan Hale                Name:      Marcus Ellison) Tj
+T*
+(Title:     VP Sales                   Title:     VP of Legal & Compliance) Tj
+T*
+(Date:      December 20, 2026          Date:      December 22, 2026) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+(END OF AMENDMENT NO. 1 ? QH-STRATO-2026-AMD1) Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+ET
+
+endstream
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000364 00000 n 
+0000000301 00000 n 
+0000000015 00000 n 
+0000000083 00000 n 
+0000000156 00000 n 
+0000000226 00000 n 
+0000000413 00000 n 
+0000000569 00000 n 
+0000004414 00000 n 
+0000004571 00000 n 
+0000000000 00000 n 
+0000000000 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R >>
+startxref
+7229
+%%EOF

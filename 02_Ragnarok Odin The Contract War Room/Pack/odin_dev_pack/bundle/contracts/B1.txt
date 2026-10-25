@@ -1,0 +1,198 @@
+================================================================================
+                    CLOUD SERVICE AGREEMENT — COVER PAGE
+================================================================================
+
+                        CONTRACT ID: QH-HARBOR-2026-001
+
+This Cover Page incorporates by reference the Common Paper Cloud Service
+Agreement Standard Terms Version 2.0, a copy of which is maintained at
+STD.txt in this bundle (the "Standard Terms"). If this Cover Page and the
+Standard Terms conflict on any point, this Cover Page controls.
+
+================================================================================
+
+PROVIDER INFORMATION
+--------------------
+  Legal Name:     Quillhub Inc.
+  Address:        1200 Innovation Drive, Suite 400, Austin, TX 78701
+  Contact:        Raj Subramanian, Head of Customer Success — raj.s@quillhub.io
+  Notice Address: Quillhub Inc.
+                  Attn: Legal Department
+                  1200 Innovation Drive, Suite 400
+                  Austin, TX 78701
+                  Email: legal-notices@quillhub.io
+
+CUSTOMER INFORMATION
+--------------------
+  Legal Name:     Harbor Retail Group LLC
+  Address:        700 Waterfront Plaza, 12th Floor, Seattle, WA 98101
+  Contact:        Nora Chen, SVP Supply Chain — nora.chen@harborretail.com
+  Notice Address: Harbor Retail Group LLC
+                  Attn: General Counsel
+                  700 Waterfront Plaza, 12th Floor
+                  Seattle, WA 98101
+                  Email: legal@harborretail.com
+
+================================================================================
+                            KEY TERMS
+================================================================================
+
+Section A — Cloud Service Description
+--------------------------------------
+The Cloud Service is Quillhub Route Optimizer Enterprise, a cloud-based
+logistics-optimization platform providing real-time route planning, fleet
+tracking, delivery-window management, and API integration services (the
+"Platform").
+
+Section B — Subscription Period and Renewal
+--------------------------------------------
+  Effective Date:              September 15, 2026
+  Initial Subscription Period: 36 months (ending September 14, 2029)
+  Renewal Period:              successive 24-month periods
+  Non-Renewal Notice Period:   180 days before the end of the then-current
+                               Subscription Period
+
+  The Agreement will automatically renew for successive Renewal Periods of
+  24 months each, unless either party delivers written notice of non-renewal
+  to the other party's Notice Address at least 180 days before the end of the
+  then-current Subscription Period, in accordance with Section 5.1 of the
+  Standard Terms.
+
+Section C — Fees and Payment
+-----------------------------
+  Monthly Fee:     $40,000.00 (Forty Thousand U.S. Dollars)
+  Payment Process: Invoicing. Quillhub will issue invoices on the first
+                   business day of each calendar month for that month's Fee.
+  Payment Period:  45 days from invoice date.
+  Currency:        U.S. Dollars
+
+  Annual Fee Adjustment: Beginning with the second year of the Subscription
+  Period, the Monthly Fee will increase by three percent (3%) on each
+  anniversary of the Effective Date. For clarity, the Monthly Fee for the
+  period beginning September 15, 2027 will be $41,200.00.
+
+Section D — Service Level
+--------------------------
+  §3.1  Uptime Commitment. Quillhub will make the Platform available at least
+        ninety-nine and nine-tenths percent (99.9%) of the minutes in each
+        calendar month, not counting Scheduled Maintenance (the "Harbor Uptime
+        Target"). "Scheduled Maintenance" means maintenance that Quillhub has
+        notified Harbor Retail about at least 72 hours in advance via email to
+        the Customer's contact. Scheduled Maintenance windows will not exceed
+        two (2) hours per occurrence and will not be scheduled more than once
+        per calendar month.
+
+  §3.2  Uptime Measurement. "Monthly Uptime Percentage" means the total
+        number of minutes in a calendar month minus the number of Downtime
+        Minutes, divided by the total number of minutes in that calendar
+        month, expressed as a percentage. "Downtime Minutes" means the total
+        number of minutes during which the Platform is unavailable, excluding
+        Scheduled Maintenance.
+
+  §3.3  Service Credits. If the Monthly Uptime Percentage falls below the
+        Harbor Uptime Target in any calendar month, Quillhub will credit
+        Harbor Retail fifteen percent (15%) of the Monthly Fee for that month
+        against Harbor Retail's next invoice.
+
+  §3.4  Credit Cap. The total service credits for any single calendar month
+        will not exceed twenty percent (20%) of the Monthly Fee for that month.
+
+  §3.5  Credit Request. Harbor Retail must request a service credit in writing
+        within forty-five (45) days after the end of the calendar month in
+        which the Downtime occurred.
+
+Section E — Incident Response
+------------------------------
+  §4.1  Incident Notification. If Quillhub becomes aware of any unplanned
+        service disruption affecting the Platform, Quillhub will notify Harbor
+        Retail's contact (nora.chen@harborretail.com) within four (4) hours
+        of becoming aware of the disruption.
+
+  §4.2  Incident Reports. For any unplanned Downtime exceeding thirty (30)
+        minutes, Quillhub will provide a written root-cause analysis to
+        Harbor Retail within five (5) business days after service is restored.
+
+Section F — Data Protection
+-----------------------------
+  §5.1  Data Breach Notification. If Quillhub becomes aware of any actual or
+        reasonably suspected unauthorized access to, or unauthorized
+        acquisition, disclosure, use, or loss of, Harbor Retail's data
+        ("Data Breach"), Quillhub will notify Harbor Retail's General Counsel
+        within twenty-four (24) hours of becoming aware of the Data Breach.
+        This obligation is in addition to and does not replace the Security
+        Incident notification obligation in Section 3.3 of the Standard Terms.
+
+  §5.2  Breach Notification Contents. The Data Breach notification must
+        include: (a) a description of the nature of the breach; (b) the
+        categories and approximate number of records affected; (c) the likely
+        consequences; and (d) the measures taken or proposed to address the
+        breach.
+
+Section G — Exclusivity
+-------------------------
+  §6.1  Route Optimizer Exclusivity. During the Subscription Period, Quillhub
+        grants Harbor Retail the exclusive right to use the Route Optimizer
+        Enterprise platform within the Pacific Northwest retail grocery
+        sector (defined as retail grocery operations headquartered in the
+        states of Washington and Oregon). Quillhub will not license Route
+        Optimizer Enterprise to any other retail grocery company headquartered
+        in Washington or Oregon during the Subscription Period without Harbor
+        Retail's prior written consent.
+
+Section H — Insurance Requirement
+-----------------------------------
+  §7.1  Provider Insurance. Quillhub will maintain, at its own expense and
+        throughout the Subscription Period, the following insurance coverage:
+        (a) Commercial General Liability insurance with limits of at least
+        $2,000,000 per occurrence; and (b) Technology Errors & Omissions and
+        Cyber Liability insurance with limits of at least $3,000,000 per
+        claim. Quillhub will provide certificates of insurance to Harbor
+        Retail upon request within ten (10) business days.
+
+  §7.2  Lapse Notification. If any required insurance policy is cancelled,
+        materially reduced, or not renewed, Quillhub will notify Harbor
+        Retail in writing within five (5) business days. A lapse in required
+        insurance coverage constitutes a material breach of this Agreement.
+
+Section I — Termination
+-------------------------
+  §8.1  Termination for Persistent SLA Failures. If the Monthly Uptime
+        Percentage falls below the Harbor Uptime Target in any two (2)
+        consecutive calendar months, Harbor Retail may terminate this
+        Agreement upon written notice to Quillhub. In such event, Quillhub
+        will refund to Harbor Retail a prorated portion of any prepaid Fees
+        for the remainder of the Subscription Period.
+
+  §8.2  Termination for Insurance Lapse. If Quillhub fails to maintain the
+        insurance required by Section 7 and does not cure the lapse within
+        fifteen (15) days after written notice from Harbor Retail, Harbor
+        Retail may terminate this Agreement immediately upon written notice.
+
+Section J — Liability
+-----------------------
+  General Cap Amount:  The total Fees paid or payable by Customer in the
+                       twelve (12) months immediately preceding the claim.
+  Unlimited Claims:    Data Breach obligations under Section 5;
+                       Customer's breach of Section 2.1 of the Standard Terms
+                       (Restrictions on Customer).
+
+Section K — Governing Law
+---------------------------
+  Governing Law:    State of Washington
+  Chosen Courts:    Federal and state courts located in King County, Washington
+
+================================================================================
+
+SIGNATURES
+----------
+
+FOR QUILLHUB INC.                     FOR HARBOR RETAIL GROUP LLC
+
+Signature: /s/ Priya Chandrasekaran   Signature: /s/ Nora Chen
+Name:      Priya Chandrasekaran       Name:      Nora Chen
+Title:     CEO                        Title:     SVP Supply Chain
+Date:      September 10, 2026         Date:      September 12, 2026
+
+================================================================================
+END OF COVER PAGE — QH-HARBOR-2026-001
+================================================================================

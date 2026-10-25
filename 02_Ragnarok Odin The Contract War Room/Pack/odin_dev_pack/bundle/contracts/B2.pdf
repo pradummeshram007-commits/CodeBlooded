@@ -1,0 +1,568 @@
+%PDF-1.4
+%‚„œ”
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R] /Count 4 >>
+endobj
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3670 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(B2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 1 of 4) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(================================================================================) Tj
+T*
+(           DATA PROCESSING AND SECURITY ADDENDUM TO THE) Tj
+T*
+(         CLOUD SERVICE AGREEMENT \(QH-HARBOR-2026-001\)) Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(                    DOCUMENT ID: QH-HARBOR-2026-DPA) Tj
+T*
+() Tj
+T*
+(This Data Processing and Security Addendum \("Addendum"\) supplements the Cloud) Tj
+T*
+(Service Agreement between Quillhub Inc. \("Provider"\) and Harbor Retail Group) Tj
+T*
+(LLC \("Customer"\) dated September 15, 2026 \(Contract ID: QH-HARBOR-2026-001,) Tj
+T*
+(the "Agreement"\). This Addendum is incorporated into and forms part of the) Tj
+T*
+(Agreement.) Tj
+T*
+() Tj
+T*
+(Capitalized terms not defined in this Addendum have the meanings given in the) Tj
+T*
+(Agreement or the Standard Terms.) Tj
+T*
+() Tj
+T*
+(In the event of a conflict between this Addendum and the Agreement \(including) Tj
+T*
+(the Standard Terms\), this Addendum controls with respect to data processing,) Tj
+T*
+(security, and breach notification obligations.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(SECTION 1 ? SCOPE AND ROLES) Tj
+T*
+(-----------------------------) Tj
+T*
+() Tj
+T*
+(1.1  This Addendum applies to the processing of Personal Data that Harbor) Tj
+T*
+(     Retail submits to or makes accessible through the Platform.) Tj
+T*
+() Tj
+T*
+(1.2  For the purposes of Applicable Data Protection Laws:) Tj
+T*
+(     \(a\) Harbor Retail is the data controller \(or equivalent role\);) Tj
+T*
+(     \(b\) Quillhub is the data processor \(or equivalent role\).) Tj
+T*
+() Tj
+T*
+(1.3  Quillhub will process Personal Data only on documented instructions) Tj
+T*
+(     from Harbor Retail, including as set forth in this Addendum and the) Tj
+T*
+(     Agreement, unless required to do so by Applicable Laws. In such a case,) Tj
+T*
+(     Quillhub will inform Harbor Retail of that legal requirement before) Tj
+T*
+(     processing, unless Applicable Laws prohibit such notice.) Tj
+T*
+() Tj
+T*
+(SECTION 2 ? DATA SECURITY) Tj
+T*
+(---------------------------) Tj
+T*
+() Tj
+T*
+(2.1  Security Measures. Quillhub will implement and maintain appropriate) Tj
+T*
+(     technical and organizational measures to protect Personal Data against) Tj
+T*
+(     unauthorized or unlawful processing and against accidental loss,) Tj
+T*
+(     destruction, damage, theft, or disclosure. These measures include, at a) Tj
+T*
+(     minimum:) Tj
+T*
+() Tj
+T*
+(     \(a\) Encryption of Personal Data at rest using AES-256 and in transit) Tj
+T*
+(         using TLS 1.2 or higher;) Tj
+T*
+(     \(b\) Access controls that limit access to Personal Data to authorized) Tj
+T*
+(         personnel on a need-to-know basis;) Tj
+T*
+(     \(c\) Regular testing and evaluation of the effectiveness of security) Tj
+T*
+(         measures;) Tj
+T*
+(     \(d\) Employee security training at least annually;) Tj
+T*
+(     \(e\) Secure disposal of media containing Personal Data.) Tj
+T*
+() Tj
+T*
+(2.2  Access Logging. Quillhub will maintain access logs for systems that) Tj
+T*
+(     process Personal Data and will retain such logs for at least twelve \(12\)) Tj
+T*
+(     months.) Tj
+T*
+() Tj
+T*
+(2.3  Vulnerability Management. Quillhub will perform vulnerability scans of) Tj
+ET
+
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 3875 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(B2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 2 of 4) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(     its systems at least quarterly and will remediate critical) Tj
+T*
+(     vulnerabilities within thirty \(30\) days of discovery.) Tj
+T*
+() Tj
+T*
+(SECTION 3 ? DATA BREACH NOTIFICATION) Tj
+T*
+(--------------------------------------) Tj
+T*
+() Tj
+T*
+(3.1  Notification Timing. If Quillhub becomes aware of a Data Breach \(as) Tj
+T*
+(     defined in Section 5.1 of the Agreement\), Quillhub will notify Harbor) Tj
+T*
+(     Retail within twenty-four \(24\) hours of becoming aware of the Data) Tj
+T*
+(     Breach. For the purposes of this Addendum, Quillhub "becomes aware" of) Tj
+T*
+(     a Data Breach at the point at which Quillhub has a reasonable degree of) Tj
+T*
+(     certainty that a security incident has resulted in unauthorized access) Tj
+T*
+(     to Personal Data.) Tj
+T*
+() Tj
+T*
+(3.2  Notification Contents. The notification will include, to the extent) Tj
+T*
+(     available: \(a\) the nature of the Data Breach; \(b\) the categories and) Tj
+T*
+(     approximate number of individuals and records affected; \(c\) the contact) Tj
+T*
+(     details of Quillhub's privacy officer or other contact; \(d\) the likely) Tj
+T*
+(     consequences; \(e\) the measures taken or proposed to address the breach) Tj
+T*
+(     and mitigate its effects.) Tj
+T*
+() Tj
+T*
+(3.3  Cooperation. Quillhub will cooperate with Harbor Retail in investigating) Tj
+T*
+(     and remediating the Data Breach and will provide reasonable assistance) Tj
+T*
+(     in fulfilling Harbor Retail's obligations to notify individuals and) Tj
+T*
+(     regulatory authorities, at Quillhub's expense if the Data Breach was) Tj
+T*
+(     caused by Quillhub's failure to comply with this Addendum.) Tj
+T*
+() Tj
+T*
+(3.4  Record Keeping. Quillhub will maintain a record of all Data Breaches,) Tj
+T*
+(     including the facts relating to the breach, its effects, and the) Tj
+T*
+(     remedial action taken.) Tj
+T*
+() Tj
+T*
+(SECTION 4 ? SUBPROCESSORS) Tj
+T*
+(---------------------------) Tj
+T*
+() Tj
+T*
+(4.1  Authorization. Harbor Retail grants Quillhub general authorization to) Tj
+T*
+(     engage subprocessors to process Personal Data, subject to the) Tj
+T*
+(     requirements in this Section 4.) Tj
+T*
+() Tj
+T*
+(4.2  Current Subprocessors. As of the Effective Date, the following) Tj
+T*
+(     subprocessors are authorized:) Tj
+T*
+() Tj
+T*
+(       Subprocessor          Service                   Location) Tj
+T*
+(       -------------------   -----------------------   ---------------) Tj
+T*
+(       StratoNode Inc.       Cloud infrastructure      United States) Tj
+T*
+(       SendGrid Inc.         Transactional email       United States) Tj
+T*
+(       Logfire Analytics     Usage analytics            United States) Tj
+T*
+() Tj
+T*
+(4.3  New Subprocessors. Quillhub will notify Harbor Retail of any new) Tj
+T*
+(     subprocessor at least thirty \(30\) days before the new subprocessor) Tj
+T*
+(     begins processing Personal Data. The notification will include the) Tj
+T*
+(     subprocessor's name, the processing activities, and the location of) Tj
+T*
+(     processing.) Tj
+T*
+() Tj
+T*
+(4.4  Objection. Harbor Retail may object to a new subprocessor in writing) Tj
+T*
+(     within fifteen \(15\) days of receiving notice. If Harbor Retail objects) Tj
+T*
+(     on reasonable data-protection grounds and Quillhub cannot address the) Tj
+T*
+(     objection within thirty \(30\) days, Harbor Retail may terminate this) Tj
+T*
+(     Addendum and the Agreement upon written notice.) Tj
+T*
+() Tj
+T*
+(SECTION 5 ? DATA RETENTION AND DELETION) Tj
+T*
+(-----------------------------------------) Tj
+ET
+
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 3492 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(B2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 3 of 4) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+() Tj
+T*
+(5.1  Upon termination or expiration of the Agreement, Quillhub will, at) Tj
+T*
+(     Harbor Retail's election, delete or return all Personal Data within) Tj
+T*
+(     sixty \(60\) days. Quillhub will certify in writing that deletion has) Tj
+T*
+(     been completed.) Tj
+T*
+() Tj
+T*
+(5.2  Quillhub may retain Personal Data to the extent required by Applicable) Tj
+T*
+(     Laws, provided that Quillhub will \(a\) limit such retention to the) Tj
+T*
+(     minimum necessary; \(b\) continue to protect the retained data in) Tj
+T*
+(     accordance with this Addendum; and \(c\) delete the retained data when) Tj
+T*
+(     the legal obligation has been fulfilled.) Tj
+T*
+() Tj
+T*
+(SECTION 6 ? AUDITS) Tj
+T*
+(--------------------) Tj
+T*
+() Tj
+T*
+(6.1  Quillhub will make available to Harbor Retail, upon reasonable request) Tj
+T*
+(     and at least once per year, information necessary to demonstrate) Tj
+T*
+(     compliance with this Addendum. This may include third-party audit) Tj
+T*
+(     reports \(e.g., SOC 2 Type II\), security certifications, or summaries) Tj
+T*
+(     of internal assessments.) Tj
+T*
+() Tj
+T*
+(6.2  Harbor Retail may, upon sixty \(60\) days' written notice, conduct or) Tj
+T*
+(     commission an audit of Quillhub's data-processing activities, limited) Tj
+T*
+(     to once per twelve-month period unless a Data Breach has occurred.) Tj
+T*
+(     Quillhub will cooperate with the audit and provide reasonable access) Tj
+T*
+(     to relevant facilities, systems, and personnel.) Tj
+T*
+() Tj
+T*
+(SECTION 7 ? INTERNATIONAL TRANSFERS) Tj
+T*
+(--------------------------------------) Tj
+T*
+() Tj
+T*
+(7.1  Quillhub will not transfer Personal Data outside the United States) Tj
+T*
+(     without Harbor Retail's prior written consent.) Tj
+T*
+() Tj
+T*
+(7.2  If a transfer outside the United States is authorized, Quillhub will) Tj
+T*
+(     ensure that appropriate safeguards are in place as required by) Tj
+T*
+(     Applicable Data Protection Laws, including standard contractual clauses) Tj
+T*
+(     or other approved transfer mechanisms.) Tj
+T*
+() Tj
+T*
+(SECTION 8 ? LIABILITY) Tj
+T*
+(-----------------------) Tj
+T*
+() Tj
+T*
+(8.1  Quillhub's liability for breaches of this Addendum will be subject to) Tj
+T*
+(     the limitation of liability provisions in the Agreement, except that) Tj
+T*
+(     Data Breach obligations under Section 3 of this Addendum are Unlimited) Tj
+T*
+(     Claims as specified in Section J of the Cover Page.) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+(SIGNATURES) Tj
+T*
+(----------) Tj
+T*
+() Tj
+T*
+(FOR QUILLHUB INC.                     FOR HARBOR RETAIL GROUP LLC) Tj
+T*
+() Tj
+T*
+(Signature: /s/ Marcus Ellison         Signature: /s/ Nora Chen) Tj
+T*
+(Name:      Marcus Ellison             Name:      Nora Chen) Tj
+T*
+(Title:     VP of Legal & Compliance   Title:     SVP Supply Chain) Tj
+T*
+(Date:      September 10, 2026         Date:      September 12, 2026) Tj
+T*
+() Tj
+T*
+(================================================================================) Tj
+T*
+() Tj
+T*
+([NOTE: The remainder of this document, including Exhibit A \(Description of) Tj
+ET
+
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 574 >>
+stream
+BT
+/F6 8 Tf
+54 750 Td
+(B2 ? Contract Twin) Tj
+ET
+BT
+/F5 7 Tf
+400 750 Td
+(ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT) Tj
+ET
+0.5 w
+54 742 m 558 742 l S
+0.5 w
+54 46 m 558 46 l S
+BT
+/F5 7 Tf
+54 36 Td
+(Quillhub Inc. Contract Analysis Dataset) Tj
+ET
+BT
+/F6 8 Tf
+510 36 Td
+(Page 4 of 4) Tj
+ET
+BT
+/F1 8.5 Tf
+11.0 TL
+54 730 Td
+(Processing Activities\) and Exhibit B \(Technical and Organizational Measures\),) Tj
+T*
+(was not included in this copy. The document appears to be incomplete.]) Tj
+T*
+() Tj
+T*
+(==========================================================) Tj
+T*
+() Tj
+ET
+
+endstream
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000378 00000 n 
+0000000301 00000 n 
+0000000015 00000 n 
+0000000083 00000 n 
+0000000156 00000 n 
+0000000226 00000 n 
+0000000427 00000 n 
+0000000583 00000 n 
+0000004305 00000 n 
+0000004462 00000 n 
+0000008390 00000 n 
+0000008548 00000 n 
+0000012093 00000 n 
+0000012251 00000 n 
+0000000000 00000 n 
+0000000000 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R >>
+startxref
+12877
+%%EOF

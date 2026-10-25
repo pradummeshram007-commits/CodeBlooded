@@ -1,0 +1,124 @@
+================================================================================
+              STRATONODE CLOUDCORE — SERVICE LEVEL AGREEMENT
+================================================================================
+
+                    DOCUMENT ID: QH-STRATO-2026-SLA
+
+This Service Level Agreement ("SLA") is incorporated by reference into the
+Cloud Service Agreement between StratoNode Inc. ("Provider") and Quillhub Inc.
+("Customer") dated August 1, 2026 (Contract ID: QH-STRATO-2026-001, the
+"Agreement"). Capitalized terms not defined in this SLA have the meanings
+given in the Agreement or the Standard Terms.
+
+In the event of a conflict between this SLA and the Agreement, this SLA
+controls with respect to uptime commitments and service credits.
+
+================================================================================
+
+SECTION 1 — DEFINITIONS
+------------------------
+
+1.1  "Monthly Uptime Percentage" means the total number of minutes in a
+     calendar month minus the number of Downtime Minutes, divided by the total
+     number of minutes in that calendar month, expressed as a percentage.
+
+1.2  "Downtime Minutes" means the total number of minutes during which the
+     Cloud Service is unavailable, excluding Scheduled Maintenance and any
+     unavailability caused by circumstances described in Section 5.
+
+1.3  "Scheduled Maintenance" means maintenance that Provider has notified
+     Customer about at least 48 hours in advance via email to the Customer's
+     Operations contact or through the Provider's status page. Scheduled
+     Maintenance windows will not exceed four (4) hours per occurrence and
+     will not be scheduled more than twice per calendar month.
+
+1.4  "Service Credit" means a credit against future Fees, calculated as
+     described in Section 3.
+
+SECTION 2 — UPTIME COMMITMENT
+-------------------------------
+
+2.1  Provider will make the Cloud Service available at least ninety-nine
+     and one-half percent (99.5%) of the minutes in each calendar month, not
+     counting Scheduled Maintenance (the "Uptime Target").
+
+SECTION 3 — SERVICE CREDITS
+-----------------------------
+
+3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any
+     calendar month, Customer will be eligible for a Service Credit as
+     specified in the table below:
+
+       Monthly Uptime Percentage          Service Credit
+       ----------------------------       -------------------------
+       99.0% to < 99.5%                   10% of Monthly Fee
+       95.0% to < 99.0%                   25% of Monthly Fee
+       Below 95.0%                        50% of Monthly Fee
+
+     "Monthly Fee" for the purpose of this SLA means the monthly Fee payable
+     under the Agreement, currently Eight Thousand U.S. Dollars ($8,000.00).
+
+3.2  Credit Request Procedure. To receive a Service Credit, Customer must
+     submit a written request to Provider's Notice Address within thirty (30)
+     days after the end of the calendar month in which the Downtime occurred.
+     The request must include: (a) the dates and times of the Downtime;
+     (b) a description of how the Cloud Service was affected; and (c) any
+     supporting evidence such as error logs or screenshots. Provider will
+     review the request and, if it confirms that the Uptime Target was not
+     met, will apply the Service Credit to Customer's next invoice.
+
+3.3  Maximum Credit. The total Service Credits for any single calendar month
+     will not exceed fifty percent (50%) of the Monthly Fee for that month.
+
+3.4  Sole Remedy. Service Credits are Customer's sole and exclusive remedy
+     for Provider's failure to meet the Uptime Target, except as otherwise
+     provided in the Agreement.
+
+SECTION 4 — REPORTING
+----------------------
+
+4.1  Provider will make Monthly Uptime Percentage data available to Customer
+     through the Provider's online dashboard or upon written request.
+
+4.2  Provider will maintain service-availability logs for at least twelve
+     (12) months and will make them available to Customer upon reasonable
+     request for the purpose of verifying Service Credits.
+
+SECTION 5 — EXCLUSIONS
+------------------------
+
+The following are excluded from the calculation of Downtime Minutes:
+
+5.1  Scheduled Maintenance, as defined in Section 1.3.
+
+5.2  Downtime caused by Customer's equipment, software, network connections,
+     or other infrastructure not provided by Provider.
+
+5.3  Downtime caused by Customer's use of the Cloud Service in a manner not
+     authorized by the Agreement or the Documentation.
+
+5.4  Downtime caused by a Force Majeure Event as defined in the Standard Terms.
+
+5.5  Downtime resulting from actions or inactions of third parties outside
+     Provider's reasonable control, including internet service providers,
+     DNS providers, and certificate authorities.
+
+SECTION 6 — TERMINATION FOR PERSISTENT FAILURES
+-------------------------------------------------
+
+6.1  If the Monthly Uptime Percentage falls below the Uptime Target in any
+     two (2) consecutive calendar months, Customer may, in addition to any
+     Service Credits, terminate the Agreement upon thirty (30) days' written
+     notice to Provider. In such event, Provider will refund to Customer a
+     prorated portion of any prepaid Fees for the remainder of the
+     Subscription Period.
+
+================================================================================
+
+This SLA is effective as of the Effective Date of the Agreement and will
+remain in effect for the duration of the Agreement, including any renewal
+periods.
+
+================================================================================
+END OF SERVICE LEVEL AGREEMENT — QH-STRATO-2026-SLA
+================================================================================

@@ -1,0 +1,104 @@
+================================================================================
+                 AMENDMENT NO. 1 TO SERVICE LEVEL AGREEMENT
+================================================================================
+
+                    DOCUMENT ID: QH-STRATO-2026-AMD1
+
+This Amendment No. 1 ("Amendment") amends the Service Level Agreement dated
+August 1, 2026, Document ID QH-STRATO-2026-SLA (the "SLA"), which is
+incorporated by reference into the Cloud Service Agreement between StratoNode
+Inc. ("Provider") and Quillhub Inc. ("Customer") dated August 1, 2026
+(Contract ID: QH-STRATO-2026-001, the "Agreement").
+
+Capitalized terms not defined in this Amendment have the meanings given in
+the SLA, the Agreement, or the Standard Terms.
+
+Except as expressly modified by this Amendment, the SLA remains in full force
+and effect. In the event of a conflict between this Amendment and the SLA,
+this Amendment controls.
+
+================================================================================
+
+AMENDMENT EFFECTIVE DATE:  January 1, 2027
+
+================================================================================
+
+SECTION 1 — MODIFICATION TO CREDIT REQUEST PROCEDURE
+------------------------------------------------------
+
+Section 3.2 of the SLA is deleted in its entirety and replaced with the
+following:
+
+  "3.2  Credit Request Procedure. To receive a Service Credit, Customer must
+        submit a written request to Provider's Notice Address within fifteen
+        (15) days after the end of the calendar month in which the Downtime
+        occurred. The request must include: (a) the specific dates and times
+        of each Downtime incident; (b) a description of how the Cloud Service
+        was affected; (c) evidence from Customer's own monitoring systems or
+        Provider's status page; and (d) the calculated Monthly Uptime
+        Percentage. Provider will review the request and respond within ten
+        (10) business days. If Provider confirms that the Uptime Target was
+        not met, Provider will apply the Service Credit to Customer's next
+        invoice."
+
+SECTION 2 — MODIFICATION TO SERVICE CREDIT CALCULATION
+-------------------------------------------------------
+
+Section 3.1 of the SLA is deleted in its entirety and replaced with the
+following:
+
+  "3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any
+        calendar month, Customer will be eligible for a Service Credit as
+        specified in the table below:
+
+          Monthly Uptime Percentage          Service Credit
+          ----------------------------       -------------------------
+          99.0% to < 99.5%                   10% of Monthly Fee
+          95.0% to < 99.0%                   25% of Monthly Fee
+          Below 95.0%                        50% of Monthly Fee
+
+        'Monthly Fee' for the purpose of this SLA means the monthly Fee
+        payable under the Agreement, currently Eight Thousand U.S. Dollars
+        ($8,000.00).
+
+        Additionally, if Downtime in a single incident exceeds sixty (60)
+        consecutive minutes, Customer will receive an additional Service
+        Credit equal to five percent (5%) of the Monthly Fee for that month,
+        in addition to the credit specified in the table above. This
+        additional credit is subject to the maximum credit in Section 3.3."
+
+SECTION 3 — MODIFICATION TO NOTICE WINDOW
+-------------------------------------------
+
+Section B of the Cover Page (Contract ID: QH-STRATO-2026-001) is amended as
+follows:
+
+  The Non-Renewal Notice Period is changed from ninety (90) days to sixty
+  (60) days before the end of the then-current Subscription Period.
+
+  For clarity, the amended non-renewal provision reads: "The Agreement will
+  automatically renew for successive Renewal Periods of 12 months each,
+  unless either party delivers written notice of non-renewal to the other
+  party's Notice Address at least 60 days before the end of the then-current
+  Subscription Period, in accordance with Section 5.1 of the Standard Terms."
+
+================================================================================
+
+All other terms and conditions of the SLA and the Agreement remain unchanged
+and in full force and effect.
+
+================================================================================
+
+SIGNATURES
+----------
+
+FOR STRATONODE INC.                   FOR QUILLHUB INC.
+
+Signature: /s/ Jordan Hale            Signature: /s/ Marcus Ellison
+Name:      Jordan Hale                Name:      Marcus Ellison
+Title:     VP Sales                   Title:     VP of Legal & Compliance
+Date:      December 20, 2026          Date:      December 22, 2026
+
+================================================================================
+END OF AMENDMENT NO. 1 — QH-STRATO-2026-AMD1
+================================================================================

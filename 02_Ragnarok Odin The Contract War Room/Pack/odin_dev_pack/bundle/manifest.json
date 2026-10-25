@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "company/context.txt",
+      "title": "Quillhub Inc. — Company Context"
+    },
+    {
+      "path": "contracts/STD.txt",
+      "title": "Common Paper Cloud Service Agreement — Standard Terms Version 2.0"
+    },
+    {
+      "path": "contracts/A1.txt",
+      "title": "Cloud Service Agreement Cover Page — StratoNode Inc."
+    },
+    {
+      "path": "contracts/A2.txt",
+      "title": "StratoNode CloudCore — Service Level Agreement"
+    },
+    {
+      "path": "contracts/A3.txt",
+      "title": "Amendment No. 1 to Service Level Agreement — StratoNode Inc."
+    },
+    {
+      "path": "contracts/B1.txt",
+      "title": "Cloud Service Agreement Cover Page — Harbor Retail Solutions LLC"
+    },
+    {
+      "path": "contracts/B2.txt",
+      "title": "Data Processing and Security Addendum — Harbor Retail Solutions LLC"
+    },
+    {
+      "path": "contracts/C1.txt",
+      "title": "Cloud Service Agreement Cover Page — Vantage Logistics Corp."
+    },
+    {
+      "path": "contracts/D1.txt",
+      "title": "Independent Contractor Services Agreement — Pixelwright Design Studio LLC"
+    },
+    {
+      "path": "data/payments_ledger.csv",
+      "title": "Quillhub Inc. Accounts Payable & Receivable Ledger"
+    },
+    {
+      "path": "data/holidays.csv",
+      "title": "Observed Business Holidays (2026–2027)"
+    },
+    {
+      "path": "events/events_drop1.jsonl",
+      "title": "Operational Events & Communications Log — Drop 1 (E-01 through E-10)"
+    },
+    {
+      "path": "events/events_drop2.jsonl",
+      "title": "Operational Events & Communications Log — Drop 2 (E-11 through E-18)"
+    }
+  ]
+}

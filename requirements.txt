@@ -1,0 +1,6 @@
+pydantic>=2.7,<3
+PyYAML>=6.0
+python-dotenv>=1.0
+anthropic>=2.0
+openai>=1.40
+pytest>=8.0
