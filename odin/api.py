@@ -184,20 +184,20 @@ async def upload_contract(file: UploadFile = File(...)):
     llm = get_llm()
     thor = Thor(store, llm, cfg)
     
-    # Run extraction: if LLM configured, try Thor; otherwise execute deterministic verbatim extraction
-    extraction_status = "complete"
+    # Run extraction: if LLM configured, try Thor; always ensure deterministic extraction if needed
     doc_obj = store.get_document(doc_id)
     clauses = store.list_clauses(doc_id)
+    extraction_status = "complete"
 
     if llm is not None:
         try:
             thor.run([doc_id], force=True)
-            extraction_status = "complete"
         except Exception as exc:
-            logger.warning("LLM extraction failed, falling back to deterministic extraction: %s", exc)
-            from odin.extract_deterministic import extract_contract_fields_deterministic
-            extract_contract_fields_deterministic(store, doc_obj, clauses, text)
-    else:
+            logger.warning("Thor LLM run failed: %s", exc)
+
+    # Check if extractions were produced. If not (or if LLM hit rate limits / failed), run deterministic extractor
+    current_exs = store.current_extractions(doc_id, "thor")
+    if not current_exs:
         from odin.extract_deterministic import extract_contract_fields_deterministic
         extract_contract_fields_deterministic(store, doc_obj, clauses, text)
 
@@ -207,6 +207,11 @@ async def upload_contract(file: UploadFile = File(...)):
     report_data = thor.document_report(doc_id)
     (out_dir / f"{doc_id}.json").write_text(json.dumps(report_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # Also copy to frontend public directory so any static fallback loads it seamlessly
+    frontend_data_dir = Path("frontend/public/data/thor")
+    if frontend_data_dir.exists():
+        (frontend_data_dir / f"{doc_id}.json").write_text(json.dumps(report_data, ensure_ascii=False, indent=2), encoding="utf-8")
+
     return {
         "status": "success",
         "doc_id": doc_id,
@@ -214,6 +219,7 @@ async def upload_contract(file: UploadFile = File(...)):
         "clauses": ingest_res.clauses,
         "extractions": len(report_data.get("extractions", [])),
         "extraction_status": extraction_status,
+        "report": report_data,
         "warnings": ingest_res.warnings,
     }
 

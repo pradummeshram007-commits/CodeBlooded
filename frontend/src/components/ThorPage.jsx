@@ -61,6 +61,15 @@ export default function ThorPage() {
       };
       setDocuments((prev) => [newDoc, ...prev]);
       setSelectedDocId(uploadResult.doc_id);
+
+      // If document report was returned directly with extractions, set it immediately
+      if (uploadResult.report) {
+        setDocData(uploadResult.report);
+        if (uploadResult.report.extractions && uploadResult.report.extractions.length > 0) {
+          setSelectedExtraction(uploadResult.report.extractions[0]);
+        }
+        setLoading(false);
+      }
     }
   };
 

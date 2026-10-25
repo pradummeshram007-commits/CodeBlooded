@@ -61,7 +61,7 @@ def extract_contract_fields_deterministic(
             value=value,
             readings=[],
             raw_text=raw_text,
-            confidence=0.98 if v_cite.verified else 0.70,
+            confidence=0.98 if v_cite.verified else 0.85,
             status="extracted",
             source_kind="sourced",
             agent="thor",
@@ -75,20 +75,17 @@ def extract_contract_fields_deterministic(
         return ex_id
 
     # 1. PARTIES
+    parties_found = set()
     party_patterns = [
-        # "between [Party A] and [Party B]"
         r"between\s+([A-Z][A-Za-z0-9\s,\.\(\)]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited|Co\.))\s+(?:\([^\)]+\)\s+)?and\s+([A-Z][A-Za-z0-9\s,\.\(\)]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited|Co\.))",
-        # "by and between [Party A] ... and [Party B]"
         r"by\s+and\s+between\s+([A-Z][A-Za-z0-9\s,\.\(\)]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited|Co\.))\s+(?:\([^\)]+\)\s+)?and\s+([A-Z][A-Za-z0-9\s,\.\(\)]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited|Co\.))",
     ]
 
-    parties_found = set()
     for clause in clauses:
         c_text = index.by_id[clause.clause_id].text if clause.clause_id in index.by_id else ""
         if not c_text:
             continue
 
-        # Check for provider/customer blocks or structured party lines
         p_match = re.search(r"(?:Provider|Vendor|Licensor|Contractor|Company)\s*:\s*([A-Z][A-Za-z0-9\s\.,&]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited)?)", c_text, re.I)
         if p_match:
             p_name = p_match.group(1).strip()
@@ -98,7 +95,7 @@ def extract_contract_fields_deterministic(
                 record_field(
                     "party", "party_provider",
                     {"name": p_name, "role": "Provider"},
-                    clause.clause_id, quote, quote, "Identified contracting party"
+                    clause.clause_id, quote, quote, "Contracting Provider"
                 )
 
         c_match = re.search(r"(?:Customer|Client|Licensee|Subscriber)\s*:\s*([A-Z][A-Za-z0-9\s\.,&]+?(?:Inc\.|LLC|Corp\.|Corporation|Ltd\.|Limited)?)", c_text, re.I)
@@ -110,7 +107,7 @@ def extract_contract_fields_deterministic(
                 record_field(
                     "party", "party_customer",
                     {"name": c_name, "role": "Customer"},
-                    clause.clause_id, quote, quote, "Identified contracting party"
+                    clause.clause_id, quote, quote, "Contracting Customer"
                 )
 
         for pat in party_patterns:
@@ -132,14 +129,12 @@ def extract_contract_fields_deterministic(
         if not c_text:
             continue
 
-        # Effective date
         eff_match = re.search(r"(?:Effective\s+Date|Date\s+of\s+Agreement|dated\s+as\s+of)\s*:\s*([A-Za-z]+\s+\d{1,2},\s*\d{4}|\d{4}-\d{2}-\d{2})", c_text, re.I)
         if eff_match:
             date_str = eff_match.group(1).strip()
             quote = eff_match.group(0).strip()
             record_field("effective_date", "effective_date", {"raw": date_str}, clause.clause_id, quote, quote)
 
-        # Term / Duration
         term_match = re.search(r"(?:Initial\s+Term|Term|Subscription\s+Period|Duration)\s*(?:is|shall\s+be|:)?\s*(\d+\s*(?:months?|years?|days?)(?:\s*\([^\)]+\))?)", c_text, re.I)
         if term_match:
             dur_str = term_match.group(1).strip()
@@ -161,12 +156,11 @@ def extract_contract_fields_deterministic(
             continue
 
         renew_match = re.search(
-            r"((?:automatically\s+renews?|renew\s+for\s+successive|renewal\s+term)[^.]{0,250}?(?:notice\s+(?:at\s+least\s+)?(\d+\s+days?)|unless\s+either\s+party\s+gives\s+notice)[^.]{0,200}?\.?)",
+            r"((?:automatically\s+renews?|renew\s+for\s+successive|renewal\s+term|non-renewal)[^.]{0,250}?(?:notice\s+(?:at\s+least\s+)?(\d+\s+days?)|unless\s+either\s+party\s+gives\s+notice)[^.]{0,200}?\.?)",
             c_text, re.I
         )
         if renew_match:
             quote = renew_match.group(0).strip()
-            # Extract notice days if specified
             days_match = re.search(r"(\d+)\s*days?", quote, re.I)
             notice_days = int(days_match.group(1)) if days_match else 30
             record_field(
@@ -177,7 +171,7 @@ def extract_contract_fields_deterministic(
                     "notice_period_days": notice_days,
                     "day_type": "calendar" if "calendar" in quote.lower() else "business" if "business" in quote.lower() else "unspecified"
                 },
-                clause.clause_id, quote, quote, "Auto-renewal mechanism"
+                clause.clause_id, quote, quote, "Auto-renewal and notice terms"
             )
 
     # 4. PAYMENT SCHEDULES & FEES
@@ -186,7 +180,6 @@ def extract_contract_fields_deterministic(
         if not c_text:
             continue
 
-        # Look for dollar amounts / currencies and payment schedules
         pay_match = re.search(
             r"((?:fee|fees|payment|price|compensation|invoice|payable)[^.]{0,180}?(?:\$|USD\s*|EUR\s*|GBP\s*)\s*([\d,]+(?:\.\d{2})?)[^.]{0,180}?\.?)",
             c_text, re.I
@@ -202,27 +195,50 @@ def extract_contract_fields_deterministic(
                     "currency": "USD" if "$" in quote or "USD" in quote else "USD",
                     "due_rule": quote[:120],
                 },
-                clause.clause_id, quote, quote, "Payment terms"
+                clause.clause_id, quote, quote, "Payment schedule"
             )
         else:
-            # Check for general payment schedules like Net 30, invoice payment
             net_match = re.search(r"(net\s+\d+\s+days?|payable\s+within\s+\d+\s+days?|invoices?\s+shall\s+be\s+paid\s+within\s+\d+\s+days?)", c_text, re.I)
             if net_match:
                 quote = net_match.group(0).strip()
                 record_field(
                     "payment", "payment_terms",
                     {"due_rule": quote},
-                    clause.clause_id, quote, quote, "Invoicing and payment timing"
+                    clause.clause_id, quote, quote, "Invoicing and payment terms"
                 )
 
-    # 5. PENALTY CLAUSES (service credits, late fees, liquidated damages)
+    # 5. OBLIGATIONS (affirmative duties, notification requirements, delivery obligations)
+    ob_count = 0
+    for clause in clauses:
+        c_text = index.by_id[clause.clause_id].text if clause.clause_id in index.by_id else ""
+        if not c_text:
+            continue
+
+        ob_match = re.search(
+            r"((?:Provider|Customer|Vendor|Client|Company|Each\s+party|Party)\s+(?:shall|will|must|agrees\s+to|is\s+obligated\s+to)[^.]{10,240}?\.?)",
+            c_text, re.I
+        )
+        if ob_match and ob_count < 8:
+            quote = ob_match.group(0).strip()
+            ob_count += 1
+            record_field(
+                "obligation", f"obligation_{ob_count}",
+                {
+                    "action": quote[:140],
+                    "obligor": "Provider" if "provider" in quote.lower() else "Customer" if "customer" in quote.lower() else "Party",
+                    "recurring": "monthly" in quote.lower() or "annual" in quote.lower()
+                },
+                clause.clause_id, quote, quote, "Contractual obligation"
+            )
+
+    # 6. PENALTY CLAUSES (service credits, late fees, liquidated damages, interest)
     for clause in clauses:
         c_text = index.by_id[clause.clause_id].text if clause.clause_id in index.by_id else ""
         if not c_text:
             continue
 
         penalty_match = re.search(
-            r"((?:service\s+credit|late\s+fee|liquidated\s+damages|interest\s+rate\s+of|penalty|penalties)[^.]{0,220}?(?:\d+%\s*|\$\s*[\d,]+|accrue\s+interest)[^.]{0,200}?\.?)",
+            r"((?:service\s+credit|late\s+fee|liquidated\s+damages|interest\s+rate\s+of|penalty|penalties|late\s+payment)[^.]{0,220}?(?:\d+%\s*|\$\s*[\d,]+|accrue\s+interest|entitled\s+to\s+a\s+credit)[^.]{0,200}?\.?)",
             c_text, re.I
         )
         if penalty_match:
@@ -234,14 +250,14 @@ def extract_contract_fields_deterministic(
                 clause.clause_id, quote, quote, "Penalty and credit conditions"
             )
 
-    # 6. COMPLIANCE REQUIREMENTS (data protection, security, audit, SOC, GDPR, confidentiality)
+    # 7. COMPLIANCE REQUIREMENTS (security, encryption, audit, GDPR, HIPAA, SOC 2, data location)
     for clause in clauses:
         c_text = index.by_id[clause.clause_id].text if clause.clause_id in index.by_id else ""
         if not c_text:
             continue
 
         comp_match = re.search(
-            r"((?:security\s+measures|data\s+protection|GDPR|HIPAA|SOC\s*2|encryption|audit\s+rights?|confidentiality|applicable\s+laws?|compliance\s+with)[^.]{0,240}?(?:shall|must|agrees\s+to|warrants?)[^.]{0,200}?\.?)",
+            r"((?:security\s+measures|data\s+protection|GDPR|HIPAA|SOC\s*2|encryption|audit\s+rights?|confidentiality|applicable\s+laws?|compliance\s+with|standards?)[^.]{0,240}?(?:shall|must|agrees\s+to|warrants?|maintains?)[^.]{0,200}?\.?)",
             c_text, re.I
         )
         if comp_match:
@@ -250,10 +266,10 @@ def extract_contract_fields_deterministic(
             record_field(
                 "compliance", f"compliance_{cat}",
                 {"category": cat, "requirement": quote[:160]},
-                clause.clause_id, quote, quote, "Regulatory and compliance duty"
+                clause.clause_id, quote, quote, "Regulatory and compliance requirement"
             )
 
-    # 7. TERMINATION CONDITIONS (for cause, convenience, notice periods, cure)
+    # 8. TERMINATION CONDITIONS (for cause, for convenience, notice, cure periods)
     for clause in clauses:
         c_text = index.by_id[clause.clause_id].text if clause.clause_id in index.by_id else ""
         if not c_text:
