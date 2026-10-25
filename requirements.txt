@@ -4,3 +4,13 @@ python-dotenv>=1.0
 anthropic>=2.0
 openai>=1.40
 pytest>=8.0
+# Step 2A: Supabase state + storage, PDF text, viewer
+psycopg[binary]>=3.2
+supabase>=2.16
+httpx>=0.27
+pdfplumber>=0.11
+streamlit>=1.50
+streamlit-pdf-viewer>=0.0.20
+# Step 2B: Norns (business-day calendar, month arithmetic)
+numpy>=1.26
+python-dateutil>=2.8

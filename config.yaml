@@ -34,10 +34,36 @@ thor:
                                # 9000 keeps each request under ~8k tokens (e.g. Groq on-demand TPM limits)
   min_split_chars: 1500
   std_doc_id: STD
+  recall_check: true           # re-extract (once) clauses whose figures no extraction captures
+  recall_max_reextracts_per_doc: 8
+
+norns:                         # timeline agent (deterministic dates and money)
+  contracts: [A1, B1]          # root contracts; each brings its family (SLA, amendments, STD, DPA)
+  horizon_months: 12           # instances run to 12 months after the last clock checkpoint
+  projection_months: 12        # worst case: "no action" projected this far past as_of
+  due_soon_days: 7             # the "due now" window
+  writeup_min_words: 150
+  writeup_max_words: 250
+
+state:                         # shared state + uploaded originals
+  backend: sqlite              # sqlite | supabase   (env STATE_BACKEND)
+  bucket: contracts            # private Supabase Storage bucket (env SUPABASE_BUCKET)
+  signed_url_ttl_s: 3600       # signed URLs for the original files expire after 1 hour
+  connect_timeout_s: 10
+  retries: 3                   # per Supabase call, exponential backoff from retry_backoff_s
+  retry_backoff_s: 1.0
+  # SUPABASE_DB_URL, SUPABASE_URL and SUPABASE_SECRET_KEY come from .env only (secrets)
+
+upload:
+  max_upload_mb: 20            # env ODIN_MAX_UPLOAD_MB
+  allowed_extensions: [.pdf, .txt]
+  min_pair_similarity: 0.85    # a .pdf less similar than this to its .txt is flagged
 
 paths:
   bundle_dir: "02_Ragnarok Odin The Contract War Room/Pack/odin_dev_pack/bundle"   # env ODIN_BUNDLE_DIR
-  db_path: state/odin.db                                                         # env ODIN_DB_PATH
+  db_path: state/odin.db                                                         # env ODIN_DB_PATH (sqlite backend)
+  files_dir: state/files                                                         # env ODIN_FILES_DIR (sqlite backend)
+  migrations_dir: supabase/migrations
   outputs_dir: outputs
   llm_cache_dir: .cache/llm
   prompts_dir: prompts

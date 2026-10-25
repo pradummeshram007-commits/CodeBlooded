@@ -211,3 +211,76 @@ never assumes one.
 - Event schema: `event_id, timestamp, channel (email|system|status_log|phone), from, to,
   subject, body`. Ledger: `date, from, to, amount, reference, status (paid|overdue|pending)`;
   contract IDs are embedded in `reference`. Holidays: `date, name, observed_by`.
+
+## 7. PDF twins (read in step 2A)
+
+- Every contract ships as `X.txt` + `X.pdf`. Each PDF page starts with a header line
+  `X ? Contract Twin ODIN DEV PACK - CANONICAL TEXT ANCHOR IS .TXT`: the PDFs
+  themselves name the `.txt` as canonical, consistent with format_spec.
+- pdfplumber extraction drops the indentation that the segmenter relies on, and the em
+  dashes come out as `?` (the fonts have no usable ToUnicode map). Segmenting the PDF text
+  finds fewer clauses (A1: 11 vs 16 from the `.txt`).
+- Word-level similarity of PDF text vs `.txt` (case, punctuation and layout ignored):
+  0.962–0.975 for all eight pairs. Uploads therefore pair them as one document: the
+  `.txt` is the text source and the `.pdf` the viewable original. A pair below 0.85 is
+  flagged.
+- `manifest.json` lists only the `.txt` paths; seeding finds each `.pdf` next to its `.txt`.
+
+## 8. Norns inputs: ledger, checkpoints, day conventions (read in step 2B)
+
+**Ledger (`data/payments_ledger.csv` -> `ledger_entries`).** Columns `date, from, to,
+amount, reference, status`; loaded as `line_no` (CSV line, header = 1), `date`,
+`from_party`, `to_party`, `amount`, `reference`, `status` and `contract_id`.
+- A row links to a contract through the printed contract ID inside `reference`
+  (`QH-STRATO-2026-001` = A1's own `CONTRACT ID`, `QH-HARBOR-2026-001` = B1,
+  `QH-PIXEL-2026-001` = D1), never through the manifest. The billing month comes from the
+  reference text ("August 2026 hosting fee" -> 2026-08); Norns matches on contract, both
+  parties, that month and the amount.
+- `status` is `paid`, `pending` or `overdue`. Only `paid` rows are payments. A `pending`
+  or `overdue` row is the accounting system's view of an open item, not money received.
+  Norns attaches it to the instance as a flag.
+- The file is one snapshot, apparently taken in spring 2027: May–July 2027 rows are
+  `pending`. A row is visible to Norns only from its own date (no future leakage), so at
+  2027-09-15 those months are unpaid as far as the data shows.
+- Quirks that are flagged, not corrected:
+  - the Harbor April 2027 row is `overdue` on 2027-04-08, although its invoice (2027-04-01,
+    45 days) is due 2027-05-16;
+  - the September 2026 Harbor row says "partial month prorated" but records the full
+    $40,000.00;
+  - D1 (Pixelwright) rows are outside Norns' scope (`norns.contracts` = A1, B1) and are
+    listed, not dropped.
+
+**Checkpoints (`clock.json` -> `clock_checkpoints`).** idx 0 = start date 2027-01-15;
+idx 1 = 2027-03-15, idx 2 = 2027-06-01, idx 3 = 2027-09-15. `scripts/clock.py checkpoint N`
+uses these numbers. The Norns horizon is 12 months after the last checkpoint (2028-09-15).
+The worst-case projection runs 12 months past `as_of`.
+
+**Day conventions** (`odin/norns/calendar.py`):
+- A business day is not a Saturday or Sunday and not a holiday of the observer. Rows
+  marked `All` apply to everyone; `Quillhub` rows apply only to Quillhub (2026-11-29,
+  12-24, 12-31). No StratoNode or Harbor list exists, so their deadlines use the `All`
+  rows, and a flag says so.
+- Holidays cover 2026–2027 only. Business days in 2028/2029 exclude weekends only
+  (flagged on every such date).
+- Day counts the text does not qualify ("30 days from invoice date", "at least 60 days
+  before the end") are computed both ways, and the EARLIER date is used.
+  - For "after" periods that is usually the calendar count.
+  - For "before" periods (renewal notice) it is the business count: A1's 60 days before
+    2028-07-31 gives 2028-06-01 calendar but 2028-05-08 business, so 2028-05-08 is used.
+- "First business day of each calendar month" invoicing uses the invoicing party's
+  calendar (Quillhub's own list for B1, `All` for StratoNode on A1). The contracts don't
+  say whose calendar applies (flagged).
+- A calendar-day deadline that lands on a weekend is not moved (B1's April 2027 invoice is
+  due Sunday 2027-05-16). The contracts have no roll rule, and E-09's "May 17" may reflect
+  one.
+- Late interest (A1 §C, STD 4.4) is 1.5% per month from the due date. Whole months are
+  counted with `relativedelta` and part months as days/30. The contracts don't define
+  part-month accrual (flagged).
+- Month arithmetic uses `relativedelta`: Jan 31 + 1 month = Feb 28/29.
+
+**Company context** feeds two facts:
+- both insurance policies expire 2027-06-30 with "No renewal confirmation", which
+  triggers B1 §7.2's 5-business-day lapse notice, due 2027-07-08 since 2027-07-05 is a
+  holiday;
+- "All tiers run on infrastructure hosted by StratoNode Inc.", the upstream/downstream
+  link for the A1 -> B1 cascade.

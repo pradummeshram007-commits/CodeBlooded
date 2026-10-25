@@ -12,8 +12,15 @@
     "external_id": "QH-STRATO-2026-AMD1",
     "source": "bundle",
     "extracted_sha256": "09b6e7bb722bf93e5d2a09fe42dbd9b09c22547432995f9781c366ebffaa27e6",
-    "ingested_at": "2026-10-25T08:28:23+00:00",
-    "updated_at": "2026-10-25T09:15:28+00:00"
+    "text": "================================================================================\n                 AMENDMENT NO. 1 TO SERVICE LEVEL AGREEMENT\n================================================================================\n\n                    DOCUMENT ID: QH-STRATO-2026-AMD1\n\nThis Amendment No. 1 (\"Amendment\") amends the Service Level Agreement dated\nAugust 1, 2026, Document ID QH-STRATO-2026-SLA (the \"SLA\"), which is\nincorporated by reference into the Cloud Service Agreement between StratoNode\nInc. (\"Provider\") and Quillhub Inc. (\"Customer\") dated August 1, 2026\n(Contract ID: QH-STRATO-2026-001, the \"Agreement\").\n\nCapitalized terms not defined in this Amendment have the meanings given in\nthe SLA, the Agreement, or the Standard Terms.\n\nExcept as expressly modified by this Amendment, the SLA remains in full force\nand effect. In the event of a conflict between this Amendment and the SLA,\nthis Amendment controls.\n\n================================================================================\n\nAMENDMENT EFFECTIVE DATE:  January 1, 2027\n\n================================================================================\n\nSECTION 1 — MODIFICATION TO CREDIT REQUEST PROCEDURE\n------------------------------------------------------\n\nSection 3.2 of the SLA is deleted in its entirety and replaced with the\nfollowing:\n\n  \"3.2  Credit Request Procedure. To receive a Service Credit, Customer must\n        submit a written request to Provider's Notice Address within fifteen\n        (15) days after the end of the calendar month in which the Downtime\n        occurred. The request must include: (a) the specific dates and times\n        of each Downtime incident; (b) a description of how the Cloud Service\n        was affected; (c) evidence from Customer's own monitoring systems or\n        Provider's status page; and (d) the calculated Monthly Uptime\n        Percentage. Provider will review the request and respond within ten\n        (10) business days. If Provider confirms that the Uptime Target was\n        not met, Provider will apply the Service Credit to Customer's next\n        invoice.\"\n\nSECTION 2 — MODIFICATION TO SERVICE CREDIT CALCULATION\n-------------------------------------------------------\n\nSection 3.1 of the SLA is deleted in its entirety and replaced with the\nfollowing:\n\n  \"3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any\n        calendar month, Customer will be eligible for a Service Credit as\n        specified in the table below:\n\n          Monthly Uptime Percentage          Service Credit\n          ----------------------------       -------------------------\n          99.0% to < 99.5%                   10% of Monthly Fee\n          95.0% to < 99.0%                   25% of Monthly Fee\n          Below 95.0%                        50% of Monthly Fee\n\n        'Monthly Fee' for the purpose of this SLA means the monthly Fee\n        payable under the Agreement, currently Eight Thousand U.S. Dollars\n        ($8,000.00).\n\n        Additionally, if Downtime in a single incident exceeds sixty (60)\n        consecutive minutes, Customer will receive an additional Service\n        Credit equal to five percent (5%) of the Monthly Fee for that month,\n        in addition to the credit specified in the table above. This\n        additional credit is subject to the maximum credit in Section 3.3.\"\n\nSECTION 3 — MODIFICATION TO NOTICE WINDOW\n-------------------------------------------\n\nSection B of the Cover Page (Contract ID: QH-STRATO-2026-001) is amended as\nfollows:\n\n  The Non-Renewal Notice Period is changed from ninety (90) days to sixty\n  (60) days before the end of the then-current Subscription Period.\n\n  For clarity, the amended non-renewal provision reads: \"The Agreement will\n  automatically renew for successive Renewal Periods of 12 months each,\n  unless either party delivers written notice of non-renewal to the other\n  party's Notice Address at least 60 days before the end of the then-current\n  Subscription Period, in accordance with Section 5.1 of the Standard Terms.\"\n\n================================================================================\n\nAll other terms and conditions of the SLA and the Agreement remain unchanged\nand in full force and effect.\n\n================================================================================\n\nSIGNATURES\n----------\n\nFOR STRATONODE INC.                   FOR QUILLHUB INC.\n\nSignature: /s/ Jordan Hale            Signature: /s/ Marcus Ellison\nName:      Jordan Hale                Name:      Marcus Ellison\nTitle:     VP Sales                   Title:     VP of Legal & Compliance\nDate:      December 20, 2026          Date:      December 22, 2026\n\n================================================================================\nEND OF AMENDMENT NO. 1 — QH-STRATO-2026-AMD1\n================================================================================\n",
+    "text_source": "txt",
+    "parse_status": "parsed",
+    "storage_path": "A3/a7cd58a2cf43cdfc8c71d2391a318a8dc5e5a19305839f3607b6c8d79f05a2b1/A3.pdf",
+    "original_filename": "A3.pdf",
+    "mime_type": "application/pdf",
+    "uploaded_at": "2026-10-25T11:33:23+00:00",
+    "ingested_at": "2026-10-25T11:33:21+00:00",
+    "updated_at": "2026-10-25T11:36:52+00:00"
   },
   "clauses": [
     {
@@ -110,7 +117,7 @@
   ],
   "extractions": [
     {
-      "id": 435,
+      "id": 124,
       "doc_id": "A3",
       "field_type": "party",
       "field_key": "party_provider",
@@ -124,16 +131,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 78,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:42+00:00",
       "citations": [
         {
-          "id": 384,
-          "extraction_id": 435,
+          "id": 113,
+          "extraction_id": 124,
           "doc_id": "A3",
           "clause_id": "A3:preamble",
           "clause_ref": "Preamble",
@@ -149,7 +156,7 @@
       ]
     },
     {
-      "id": 436,
+      "id": 125,
       "doc_id": "A3",
       "field_type": "party",
       "field_key": "party_customer",
@@ -163,16 +170,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 79,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:43+00:00",
       "citations": [
         {
-          "id": 385,
-          "extraction_id": 436,
+          "id": 114,
+          "extraction_id": 125,
           "doc_id": "A3",
           "clause_id": "A3:preamble",
           "clause_ref": "Preamble",
@@ -188,7 +195,7 @@
       ]
     },
     {
-      "id": 437,
+      "id": 126,
       "doc_id": "A3",
       "field_type": "effective_date",
       "field_key": "effective_date",
@@ -202,16 +209,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 80,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:43+00:00",
       "citations": [
         {
-          "id": 386,
-          "extraction_id": 437,
+          "id": 115,
+          "extraction_id": 126,
           "doc_id": "A3",
           "clause_id": "A3:amendment-effective-date",
           "clause_ref": "Amendment Effective Date",
@@ -227,7 +234,7 @@
       ]
     },
     {
-      "id": 438,
+      "id": 127,
       "doc_id": "A3",
       "field_type": "term",
       "field_key": "term",
@@ -238,28 +245,28 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 81,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:43+00:00",
       "citations": []
     },
     {
-      "id": 439,
+      "id": 128,
       "doc_id": "A3",
       "field_type": "renewal",
       "field_key": "renewal",
       "value": {
-        "auto_renew": true,
         "day_type": "unspecified",
+        "auto_renew": true,
         "notice_method": "written notice",
-        "notice_period_days": 60,
-        "notice_period_raw": "at least 60 days before the end of the then-current Subscription Period",
         "notice_recipient": "other party's Notice Address",
-        "renewal_term_months": 12,
-        "renewal_term_raw": "12 months"
+        "renewal_term_raw": "12 months",
+        "notice_period_raw": "at least 60 days before the end of the then-current Subscription Period",
+        "notice_period_days": 60,
+        "renewal_term_months": 12
       },
       "readings": [],
       "raw_text": "The Agreement will automatically renew for successive Renewal Periods of 12 months each, unless either party delivers written notice of non-renewal to the other party's Notice Address at least 60 days before the end of the then-current Subscription Period, in accordance with Section 5.1 of the Standard Terms.",
@@ -267,16 +274,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 82,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:43+00:00",
       "citations": [
         {
-          "id": 387,
-          "extraction_id": 439,
+          "id": 116,
+          "extraction_id": 128,
           "doc_id": "A3",
           "clause_id": "A3:3",
           "clause_ref": "Section 3",
@@ -292,7 +299,7 @@
       ]
     },
     {
-      "id": 440,
+      "id": 129,
       "doc_id": "A3",
       "field_type": "payment",
       "field_key": "payment",
@@ -303,28 +310,28 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 2,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 83,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:44+00:00",
       "citations": []
     },
     {
-      "id": 441,
+      "id": 130,
       "doc_id": "A3",
       "field_type": "obligation",
       "field_key": "obligation_credit_request",
       "value": {
         "action": "submit a written request to Provider's Notice Address",
-        "day_type": "unspecified",
-        "deadline_raw": "within fifteen days after the end of the calendar month",
-        "deadline_unit": "days",
         "obligee": "Provider",
         "obligor": "Customer",
+        "trigger": "after Downtime occurred",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "after Downtime occurred"
+        "deadline_raw": "within fifteen days after the end of the calendar month",
+        "deadline_unit": "days"
       },
       "readings": [],
       "raw_text": "Customer must submit a written request to Provider's Notice Address within fifteen days after the end of the calendar month in which the Downtime occurred.",
@@ -332,16 +339,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 84,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:44+00:00",
       "citations": [
         {
-          "id": 388,
-          "extraction_id": 441,
+          "id": 117,
+          "extraction_id": 130,
           "doc_id": "A3",
           "clause_id": "A3:1",
           "clause_ref": "Section 1",
@@ -357,19 +364,19 @@
       ]
     },
     {
-      "id": 442,
+      "id": 131,
       "doc_id": "A3",
       "field_type": "obligation",
       "field_key": "obligation_review_request",
       "value": {
         "action": "review the request and respond",
-        "day_type": "business",
-        "deadline_raw": "within ten business days",
-        "deadline_unit": "days",
         "obligee": "Customer",
         "obligor": "Provider",
+        "trigger": "upon receipt of request",
+        "day_type": "business",
         "recurring": false,
-        "trigger": "upon receipt of request"
+        "deadline_raw": "within ten business days",
+        "deadline_unit": "days"
       },
       "readings": [],
       "raw_text": "Provider will review the request and respond within ten business days.",
@@ -377,16 +384,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 85,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:44+00:00",
       "citations": [
         {
-          "id": 389,
-          "extraction_id": 442,
+          "id": 118,
+          "extraction_id": 131,
           "doc_id": "A3",
           "clause_id": "A3:1",
           "clause_ref": "Section 1",
@@ -402,7 +409,7 @@
       ]
     },
     {
-      "id": 443,
+      "id": 132,
       "doc_id": "A3",
       "field_type": "obligation",
       "field_key": "obligation_apply_credit",
@@ -410,8 +417,8 @@
         "action": "apply the Service Credit to Customer's next invoice",
         "obligee": "Customer",
         "obligor": "Provider",
-        "recurring": false,
-        "trigger": "upon confirmation that the Uptime Target was not met"
+        "trigger": "upon confirmation that the Uptime Target was not met",
+        "recurring": false
       },
       "readings": [],
       "raw_text": "If Provider confirms that the Uptime Target was not met, Provider will apply the Service Credit to Customer's next invoice.",
@@ -419,16 +426,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 86,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:44+00:00",
       "citations": [
         {
-          "id": 390,
-          "extraction_id": 443,
+          "id": 119,
+          "extraction_id": 132,
           "doc_id": "A3",
           "clause_id": "A3:1",
           "clause_ref": "Section 1",
@@ -444,19 +451,19 @@
       ]
     },
     {
-      "id": 444,
+      "id": 133,
       "doc_id": "A3",
       "field_type": "obligation",
       "field_key": "obligation_non_renewal_notice",
       "value": {
         "action": "deliver written notice of non-renewal to the other party's Notice Address",
-        "day_type": "unspecified",
-        "deadline_raw": "at least 60 days before the end of the then-current Subscription Period",
-        "deadline_unit": "days",
         "obligee": "other party",
         "obligor": "either party",
+        "trigger": "before end of Subscription Period",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "before end of Subscription Period"
+        "deadline_raw": "at least 60 days before the end of the then-current Subscription Period",
+        "deadline_unit": "days"
       },
       "readings": [],
       "raw_text": "unless either party delivers written notice of non-renewal to the other party's Notice Address at least 60 days before the end of the then-current Subscription Period",
@@ -464,16 +471,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 87,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:45+00:00",
       "citations": [
         {
-          "id": 391,
-          "extraction_id": 444,
+          "id": 120,
+          "extraction_id": 133,
           "doc_id": "A3",
           "clause_id": "A3:3",
           "clause_ref": "Section 3",
@@ -489,16 +496,16 @@
       ]
     },
     {
-      "id": 445,
+      "id": 134,
       "doc_id": "A3",
       "field_type": "penalty",
       "field_key": "penalty_uptime_99_0_to_99_5",
       "value": {
-        "amount_raw": "10% of Monthly Fee",
-        "beneficiary": "Customer",
         "kind": "service_credit",
         "payer": "Provider",
-        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month"
+        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month",
+        "amount_raw": "10% of Monthly Fee",
+        "beneficiary": "Customer"
       },
       "readings": [],
       "raw_text": "99.0% to < 99.5%                   10% of Monthly Fee",
@@ -506,16 +513,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 88,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:45+00:00",
       "citations": [
         {
-          "id": 392,
-          "extraction_id": 445,
+          "id": 121,
+          "extraction_id": 134,
           "doc_id": "A3",
           "clause_id": "A3:2",
           "clause_ref": "Section 2",
@@ -531,16 +538,16 @@
       ]
     },
     {
-      "id": 446,
+      "id": 135,
       "doc_id": "A3",
       "field_type": "penalty",
       "field_key": "penalty_uptime_95_0_to_99_0",
       "value": {
-        "amount_raw": "25% of Monthly Fee",
-        "beneficiary": "Customer",
         "kind": "service_credit",
         "payer": "Provider",
-        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month"
+        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month",
+        "amount_raw": "25% of Monthly Fee",
+        "beneficiary": "Customer"
       },
       "readings": [],
       "raw_text": "95.0% to < 99.0%                   25% of Monthly Fee",
@@ -548,16 +555,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 89,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:45+00:00",
       "citations": [
         {
-          "id": 393,
-          "extraction_id": 446,
+          "id": 122,
+          "extraction_id": 135,
           "doc_id": "A3",
           "clause_id": "A3:2",
           "clause_ref": "Section 2",
@@ -573,16 +580,16 @@
       ]
     },
     {
-      "id": 447,
+      "id": 136,
       "doc_id": "A3",
       "field_type": "penalty",
       "field_key": "penalty_uptime_below_95",
       "value": {
-        "amount_raw": "50% of Monthly Fee",
-        "beneficiary": "Customer",
         "kind": "service_credit",
         "payer": "Provider",
-        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month"
+        "trigger": "Monthly Uptime Percentage falls below the Uptime Target in any calendar month",
+        "amount_raw": "50% of Monthly Fee",
+        "beneficiary": "Customer"
       },
       "readings": [],
       "raw_text": "Below 95.0%                        50% of Monthly Fee",
@@ -590,16 +597,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 2,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 90,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:46+00:00",
       "citations": [
         {
-          "id": 394,
-          "extraction_id": 447,
+          "id": 123,
+          "extraction_id": 136,
           "doc_id": "A3",
           "clause_id": "A3:2",
           "clause_ref": "Section 2",
@@ -615,16 +622,16 @@
       ]
     },
     {
-      "id": 448,
+      "id": 137,
       "doc_id": "A3",
       "field_type": "penalty",
       "field_key": "penalty_additional_credit",
       "value": {
-        "amount_raw": "5% of the Monthly Fee for that month",
-        "beneficiary": "Customer",
         "kind": "service_credit",
         "payer": "Provider",
-        "trigger": "Downtime in a single incident exceeds sixty consecutive minutes"
+        "trigger": "Downtime in a single incident exceeds sixty consecutive minutes",
+        "amount_raw": "5% of the Monthly Fee for that month",
+        "beneficiary": "Customer"
       },
       "readings": [],
       "raw_text": "additional Service Credit equal to five percent (5%) of the Monthly Fee for that month",
@@ -632,16 +639,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 91,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:46+00:00",
       "citations": [
         {
-          "id": 395,
-          "extraction_id": 448,
+          "id": 124,
+          "extraction_id": 137,
           "doc_id": "A3",
           "clause_id": "A3:2",
           "clause_ref": "Section 2",
@@ -657,7 +664,7 @@
       ]
     },
     {
-      "id": 449,
+      "id": 138,
       "doc_id": "A3",
       "field_type": "compliance",
       "field_key": "compliance",
@@ -668,16 +675,16 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 92,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:46+00:00",
       "citations": []
     },
     {
-      "id": 450,
+      "id": 139,
       "doc_id": "A3",
       "field_type": "termination",
       "field_key": "termination",
@@ -688,16 +695,16 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 93,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:46+00:00",
       "citations": []
     },
     {
-      "id": 451,
+      "id": 140,
       "doc_id": "A3",
       "field_type": "governing_law",
       "field_key": "governing_law",
@@ -708,16 +715,16 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 94,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:46+00:00",
       "citations": []
     },
     {
-      "id": 452,
+      "id": 141,
       "doc_id": "A3",
       "field_type": "liability_cap",
       "field_key": "liability_cap",
@@ -728,16 +735,16 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 95,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:47+00:00",
       "citations": []
     },
     {
-      "id": 453,
+      "id": 142,
       "doc_id": "A3",
       "field_type": "indemnity",
       "field_key": "indemnity",
@@ -748,23 +755,23 @@
       "status": "missing",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 3,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 96,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:47+00:00",
       "citations": []
     },
     {
-      "id": 454,
+      "id": 143,
       "doc_id": "A3",
       "field_type": "cross_reference",
       "field_key": "cross_ref_inc_sla_into_agreement",
       "value": {
+        "to_doc": "A2",
         "from_doc": "A1",
         "ref_type": "incorporation",
-        "to_doc": "A2",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -773,16 +780,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 2,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 97,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:47+00:00",
       "citations": [
         {
-          "id": 396,
-          "extraction_id": 454,
+          "id": 125,
+          "extraction_id": 143,
           "doc_id": "A3",
           "clause_id": "A3:preamble",
           "clause_ref": "Preamble",
@@ -798,15 +805,15 @@
       ]
     },
     {
-      "id": 455,
+      "id": 144,
       "doc_id": "A3",
       "field_type": "cross_reference",
       "field_key": "cross_ref_reference_standardterms",
       "value": {
+        "to_doc": "STD",
         "from_doc": "A3",
         "ref_type": "reference",
         "target_clause": "Section 5.1",
-        "to_doc": "STD",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -815,16 +822,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 2,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 98,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:48+00:00",
       "citations": [
         {
-          "id": 397,
-          "extraction_id": 455,
+          "id": 126,
+          "extraction_id": 144,
           "doc_id": "A3",
           "clause_id": "A3:3",
           "clause_ref": "Section 3",
@@ -840,17 +847,17 @@
       ]
     },
     {
-      "id": 456,
+      "id": 145,
       "doc_id": "A3",
       "field_type": "cross_reference",
       "field_key": "cross_ref_precedence",
       "value": {
-        "controlling_doc": "A3",
+        "scope": "conflict between this Amendment and the SLA",
+        "to_doc": "A2",
         "from_doc": "A3",
         "ref_type": "precedence",
-        "scope": "conflict between this Amendment and the SLA",
+        "controlling_doc": "A3",
         "subordinate_doc": "A2",
-        "to_doc": "A2",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -859,16 +866,16 @@
       "status": "extracted",
       "source_kind": "sourced",
       "agent": "thor",
-      "version": 2,
+      "version": 1,
       "is_current": true,
-      "supersedes_id": 99,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:36:49+00:00",
       "citations": [
         {
-          "id": 398,
-          "extraction_id": 456,
+          "id": 127,
+          "extraction_id": 145,
           "doc_id": "A3",
           "clause_id": "A3:preamble",
           "clause_ref": "Preamble",
@@ -882,39 +889,220 @@
           "source_type": "clause"
         }
       ]
+    },
+    {
+      "id": 146,
+      "doc_id": "A3",
+      "field_type": "cross_reference",
+      "field_key": "cross_ref_preamble",
+      "value": {
+        "scope": "SLA",
+        "to_doc": "A2",
+        "from_doc": "A3",
+        "controlling_doc": "A3",
+        "subordinate_doc": "A2",
+        "to_doc_resolved": true
+      },
+      "readings": [],
+      "raw_text": "",
+      "confidence": 0.99,
+      "status": "extracted",
+      "source_kind": "sourced",
+      "agent": "thor",
+      "version": 1,
+      "is_current": true,
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
+      "notes": null,
+      "created_at": "2026-10-25T11:36:49+00:00",
+      "citations": [
+        {
+          "id": 128,
+          "extraction_id": 146,
+          "doc_id": "A3",
+          "clause_id": "A3:preamble",
+          "clause_ref": "Preamble",
+          "quote": "This Amendment No. 1 (\"Amendment\") amends the Service Level Agreement dated\nAugust 1, 2026, Document ID QH-STRATO-2026-SLA (the \"SLA\"), which is\nincorporated by reference into the Cloud Service Agreement between StratoNode\nInc. (\"Provider\") and Quillhub Inc. (\"Customer\") dated August 1, 2026\n(Contract ID: QH-STRATO-2026-001, the \"Agreement\").",
+          "llm_quote": "This Amendment No. 1 (\"Amendment\") amends the Service Level Agreement dated August 1, 2026, Document ID QH-STRATO-2026-SLA (the \"SLA\"), which is incorporated by reference into the Cloud Service Agreement between StratoNode Inc. (\"Provider\") and Quillhub Inc. (\"Customer\") dated August 1, 2026 (Contract ID: QH-STRATO-2026-001, the \"Agreement\").",
+          "llm_clause_id": "A3:preamble",
+          "char_start": 277,
+          "char_end": 621,
+          "verified": true,
+          "match_method": "normalized",
+          "source_type": "clause"
+        }
+      ]
+    },
+    {
+      "id": 147,
+      "doc_id": "A3",
+      "field_type": "cross_reference",
+      "field_key": "cross_ref_1",
+      "value": {
+        "scope": "Section 3.2",
+        "to_doc": "A2",
+        "from_doc": "A3",
+        "new_text": "3.2  Credit Request Procedure. To receive a Service Credit, Customer must submit a written request to Provider's Notice Address within fifteen (15) days after the end of the calendar month in which the Downtime occurred. The request must include: (a) the specific dates and times of each Downtime incident; (b) a description of how the Cloud Service was affected; (c) evidence from Customer's own monitoring systems or Provider's status page; and (d) the calculated Monthly Uptime Percentage. Provider will review the request and respond within ten (10) business days. If Provider confirms that the Uptime Target was not met, Provider will apply the Service Credit to Customer's next invoice.",
+        "operation": "replace",
+        "target_clause": "Section 3.2",
+        "controlling_doc": "A3",
+        "subordinate_doc": "A2",
+        "to_doc_resolved": true
+      },
+      "readings": [],
+      "raw_text": "",
+      "confidence": 0.99,
+      "status": "extracted",
+      "source_kind": "sourced",
+      "agent": "thor",
+      "version": 1,
+      "is_current": true,
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
+      "notes": null,
+      "created_at": "2026-10-25T11:36:49+00:00",
+      "citations": [
+        {
+          "id": 129,
+          "extraction_id": 147,
+          "doc_id": "A3",
+          "clause_id": "A3:1",
+          "clause_ref": "Section 1",
+          "quote": "3.2  Credit Request Procedure. To receive a Service Credit, Customer must\n        submit a written request to Provider's Notice Address within fifteen\n        (15) days after the end of the calendar month in which the Downtime\n        occurred. The request must include: (a) the specific dates and times\n        of each Downtime incident; (b) a description of how the Cloud Service\n        was affected; (c) evidence from Customer's own monitoring systems or\n        Provider's status page; and (d) the calculated Monthly Uptime\n        Percentage. Provider will review the request and respond within ten\n        (10) business days. If Provider confirms that the Uptime Target was\n        not met, Provider will apply the Service Credit to Customer's next\n        invoice.",
+          "llm_quote": "3.2  Credit Request Procedure. To receive a Service Credit, Customer must submit a written request to Provider's Notice Address within fifteen (15) days after the end of the calendar month in which the Downtime occurred. The request must include: (a) the specific dates and times of each Downtime incident; (b) a description of how the Cloud Service was affected; (c) evidence from Customer's own monitoring systems or Provider's status page; and (d) the calculated Monthly Uptime Percentage. Provider will review the request and respond within ten (10) business days. If Provider confirms that the Uptime Target was not met, Provider will apply the Service Credit to Customer's next invoice.",
+          "llm_clause_id": "A3:1",
+          "char_start": 1329,
+          "char_end": 2101,
+          "verified": true,
+          "match_method": "normalized",
+          "source_type": "clause"
+        }
+      ]
+    },
+    {
+      "id": 148,
+      "doc_id": "A3",
+      "field_type": "cross_reference",
+      "field_key": "cross_ref_2",
+      "value": {
+        "scope": "Section 3.1",
+        "to_doc": "A2",
+        "from_doc": "A3",
+        "new_text": "3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any calendar month, Customer will be eligible for a Service Credit as specified in the table below: Monthly Uptime Percentage          Service Credit ----------------------------       ------------------------- 99.0% to < 99.5%                   10% of Monthly Fee 95.0% to < 99.0%                   25% of Monthly Fee Below 95.0%                        50% of Monthly Fee 'Monthly Fee' for the purpose of this SLA means the monthly Fee payable under the Agreement, currently Eight Thousand U.S. Dollars ($8,000.00). Additionally, if Downtime in a single incident exceeds sixty (60) consecutive minutes, Customer will receive an additional Service Credit equal to five percent (5%) of the Monthly Fee for that month, in addition to the credit specified in the table above. This additional credit is subject to the maximum credit in Section 3.3.",
+        "operation": "replace",
+        "target_clause": "Section 3.1",
+        "controlling_doc": "A3",
+        "subordinate_doc": "A2",
+        "to_doc_resolved": true
+      },
+      "readings": [],
+      "raw_text": "",
+      "confidence": 0.99,
+      "status": "extracted",
+      "source_kind": "sourced",
+      "agent": "thor",
+      "version": 1,
+      "is_current": true,
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
+      "notes": null,
+      "created_at": "2026-10-25T11:36:49+00:00",
+      "citations": [
+        {
+          "id": 130,
+          "extraction_id": 148,
+          "doc_id": "A3",
+          "clause_id": "A3:2",
+          "clause_ref": "Section 2",
+          "quote": "3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any\n        calendar month, Customer will be eligible for a Service Credit as\n        specified in the table below:\n\n          Monthly Uptime Percentage          Service Credit\n          ----------------------------       -------------------------\n          99.0% to < 99.5%                   10% of Monthly Fee\n          95.0% to < 99.0%                   25% of Monthly Fee\n          Below 95.0%                        50% of Monthly Fee\n\n        'Monthly Fee' for the purpose of this SLA means the monthly Fee\n        payable under the Agreement, currently Eight Thousand U.S. Dollars\n        ($8,000.00).\n\n        Additionally, if Downtime in a single incident exceeds sixty (60)\n        consecutive minutes, Customer will receive an additional Service\n        Credit equal to five percent (5%) of the Monthly Fee for that month,\n        in addition to the credit specified in the table above. This\n        additional credit is subject to the maximum credit in Section 3.3.",
+          "llm_quote": "3.1  If the Monthly Uptime Percentage falls below the Uptime Target in any calendar month, Customer will be eligible for a Service Credit as specified in the table below: Monthly Uptime Percentage          Service Credit ----------------------------       ------------------------- 99.0% to < 99.5%                   10% of Monthly Fee 95.0% to < 99.0%                   25% of Monthly Fee Below 95.0%                        50% of Monthly Fee 'Monthly Fee' for the purpose of this SLA means the monthly Fee payable under the Agreement, currently Eight Thousand U.S. Dollars ($8,000.00). Additionally, if Downtime in a single incident exceeds sixty (60) consecutive minutes, Customer will receive an additional Service Credit equal to five percent (5%) of the Monthly Fee for that month, in addition to the credit specified in the table above. This additional credit is subject to the maximum credit in Section 3.3.",
+          "llm_clause_id": "A3:2",
+          "char_start": 2303,
+          "char_end": 3351,
+          "verified": true,
+          "match_method": "normalized",
+          "source_type": "clause"
+        }
+      ]
+    },
+    {
+      "id": 149,
+      "doc_id": "A3",
+      "field_type": "cross_reference",
+      "field_key": "cross_ref_3",
+      "value": {
+        "scope": "Section B",
+        "to_doc": "A1",
+        "from_doc": "A3",
+        "new_text": "The Non-Renewal Notice Period is changed from ninety (90) days to sixty (60) days before the end of the then-current Subscription Period. For clarity, the amended non-renewal provision reads: \"The Agreement will automatically renew for successive Renewal Periods of 12 months each, unless either party delivers written notice of non-renewal to the other party's Notice Address at least 60 days before the end of the then-current Subscription Period, in accordance with Section 5.1 of the Standard Terms.\"",
+        "operation": "replace",
+        "target_clause": "Section B",
+        "controlling_doc": "A3",
+        "subordinate_doc": "A1",
+        "to_doc_resolved": true
+      },
+      "readings": [],
+      "raw_text": "",
+      "confidence": 0.99,
+      "status": "extracted",
+      "source_kind": "sourced",
+      "agent": "thor",
+      "version": 1,
+      "is_current": true,
+      "supersedes_id": null,
+      "run_id": "thor-20261025T170425-3b1491",
+      "notes": null,
+      "created_at": "2026-10-25T11:36:50+00:00",
+      "citations": [
+        {
+          "id": 131,
+          "extraction_id": 149,
+          "doc_id": "A3",
+          "clause_id": "A3:3",
+          "clause_ref": "Section 3",
+          "quote": "The Non-Renewal Notice Period is changed from ninety (90) days to sixty\n  (60) days before the end of the then-current Subscription Period.\n\n  For clarity, the amended non-renewal provision reads: \"The Agreement will\n  automatically renew for successive Renewal Periods of 12 months each,\n  unless either party delivers written notice of non-renewal to the other\n  party's Notice Address at least 60 days before the end of the then-current\n  Subscription Period, in accordance with Section 5.1 of the Standard Terms.\"",
+          "llm_quote": "The Non-Renewal Notice Period is changed from ninety (90) days to sixty (60) days before the end of the then-current Subscription Period. For clarity, the amended non-renewal provision reads: \"The Agreement will automatically renew for successive Renewal Periods of 12 months each, unless either party delivers written notice of non-renewal to the other party's Notice Address at least 60 days before the end of the then-current Subscription Period, in accordance with Section 5.1 of the Standard Terms.\"",
+          "llm_clause_id": "A3:3",
+          "char_start": 3529,
+          "char_end": 4046,
+          "verified": true,
+          "match_method": "normalized",
+          "source_type": "clause"
+        }
+      ]
     }
   ],
   "flags": [
     {
-      "id": 57,
+      "id": 14,
       "doc_id": "A3",
       "clause_id": "A3:1",
       "type": "unverified_citation",
       "description": "obligation/obligation_credit_request: quote not found in A3:1; confidence capped at 0.3",
       "raised_by": "thor",
-      "extraction_id": 441,
+      "extraction_id": 130,
       "evidence": "Customer must submit a written request to Provider's Notice Address within fifteen days after the end of the calendar month in which the Downtime occurred.",
       "evidence_verified": false,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:44+00:00"
     },
     {
-      "id": 58,
+      "id": 15,
       "doc_id": "A3",
       "clause_id": "A3:1",
       "type": "unverified_citation",
       "description": "obligation/obligation_review_request: quote not found in A3:1; confidence capped at 0.3",
       "raised_by": "thor",
-      "extraction_id": 442,
+      "extraction_id": 131,
       "evidence": "Provider will review the request and respond within ten business days.",
       "evidence_verified": false,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:44+00:00"
     },
     {
-      "id": 59,
+      "id": 16,
       "doc_id": "A3",
       "clause_id": "A3:1",
       "type": "missing",
@@ -924,11 +1112,11 @@
       "evidence": "Provider's Notice Address",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:50+00:00"
     },
     {
-      "id": 60,
+      "id": 17,
       "doc_id": "A3",
       "clause_id": "A3:3",
       "type": "missing",
@@ -938,11 +1126,11 @@
       "evidence": "Notice Address",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:50+00:00"
     },
     {
-      "id": 61,
+      "id": 18,
       "doc_id": "A3",
       "clause_id": "A3:2",
       "type": "missing",
@@ -952,11 +1140,11 @@
       "evidence": "Uptime Target",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:50+00:00"
     },
     {
-      "id": 62,
+      "id": 19,
       "doc_id": "A3",
       "clause_id": "A3:2",
       "type": "missing",
@@ -966,11 +1154,11 @@
       "evidence": "Downtime",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 63,
+      "id": 20,
       "doc_id": "A3",
       "clause_id": "A3:2",
       "type": "missing",
@@ -980,11 +1168,11 @@
       "evidence": "Monthly Uptime Percentage",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 64,
+      "id": 21,
       "doc_id": "A3",
       "clause_id": "A3:2",
       "type": "cross_reference",
@@ -994,11 +1182,11 @@
       "evidence": "Section 3.3",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 65,
+      "id": 22,
       "doc_id": "A3",
       "clause_id": "A3:3",
       "type": "cross_reference",
@@ -1008,11 +1196,11 @@
       "evidence": "Section B of the Cover Page",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 66,
+      "id": 23,
       "doc_id": "A3",
       "clause_id": "A3:3",
       "type": "cross_reference",
@@ -1022,11 +1210,11 @@
       "evidence": "Section 5.1 of the Standard Terms",
       "evidence_verified": true,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 67,
+      "id": 24,
       "doc_id": "A3",
       "clause_id": "A3:preamble",
       "type": "cross_reference",
@@ -1036,11 +1224,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 68,
+      "id": 25,
       "doc_id": "A3",
       "clause_id": "A3:1",
       "type": "cross_reference",
@@ -1050,11 +1238,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 69,
+      "id": 26,
       "doc_id": "A3",
       "clause_id": "A3:2",
       "type": "cross_reference",
@@ -1064,11 +1252,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     },
     {
-      "id": 70,
+      "id": 27,
       "doc_id": "A3",
       "clause_id": "A3:3",
       "type": "cross_reference",
@@ -1078,34 +1266,34 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:36:51+00:00"
     }
   ],
   "relations": [
     {
-      "id": 30,
+      "id": 8,
       "from_doc": "A3",
       "to_doc": "STD",
       "type": "references",
       "clause_id": "A3:3",
       "citation": {
-        "char_end": 4045,
-        "char_start": 3992,
-        "clause_id": "A3:3",
-        "clause_ref": "Section 3",
-        "direction_corrected": false,
-        "operation": null,
         "quote": "in accordance with Section 5.1 of the Standard Terms.",
+        "char_end": 4045,
+        "verified": true,
+        "clause_id": "A3:3",
+        "operation": null,
+        "char_start": 3992,
+        "clause_ref": "Section 3",
         "target_clause": "Section 5.1",
         "target_clause_id": "STD:5.1",
         "target_clause_raw": "Section 5.1",
-        "verified": true
+        "direction_corrected": false
       },
-      "extraction_id": 455,
+      "extraction_id": 144,
       "raised_by": "thor",
       "verified": true,
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "created_at": "2026-10-25T11:36:49+00:00"
     }
   ]
 }

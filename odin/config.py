@@ -6,8 +6,10 @@ Every agent reads limits from here so loops and LLM spend are bounded in one pla
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote, urlsplit
 
 import yaml
 from dotenv import load_dotenv
@@ -61,14 +63,55 @@ class ThorSettings(BaseModel):
     chunk_max_chars: int = 9000        # above this, split by top-level section (fits low per-minute token limits)
     min_split_chars: int = 1500        # don't split a truncated chunk below this
     std_doc_id: str = "STD"            # extracted first, once, as its own document
+    recall_check: bool = True          # re-extract clauses whose figures no extraction captures (code check)
+    recall_max_reextracts_per_doc: int = 8
+
+
+class NornsSettings(BaseModel):
+    """Timeline agent. All date and money logic is deterministic; the LLM only normalises due-rule
+    text Thor's fields leave open, and writes the short worst-case summary."""
+
+    contracts: list[str] = ["A1", "B1"]   # root contracts; each brings its family (SLA, amendments, STD, ...)
+    horizon_months: int = 12              # instances run to this many months after the last checkpoint
+    projection_months: int = 12           # worst case: how far past as_of the "no action" scenario runs
+    due_soon_days: int = 7                # "due now" window
+    writeup_min_words: int = 150
+    writeup_max_words: int = 250
+
+
+class StateSettings(BaseModel):
+    """Where shared state and uploaded files live. sqlite = local file; supabase = Postgres + Storage."""
+
+    backend: Literal["sqlite", "supabase"] = "sqlite"
+    db_url: str | None = Field(default=None, repr=False)          # SUPABASE_DB_URL (session pooler)
+    supabase_url: str | None = None                               # SUPABASE_URL (https://<ref>.supabase.co)
+    secret_key: str | None = Field(default=None, repr=False)      # SUPABASE_SECRET_KEY, server-side only
+    bucket: str = "contracts"
+    signed_url_ttl_s: int = 3600
+    connect_timeout_s: int = 10
+    retries: int = 3                   # attempts after the first, per Supabase call
+    retry_backoff_s: float = 1.0       # doubles per attempt
+
+
+class UploadSettings(BaseModel):
+    max_upload_mb: float = 20.0
+    allowed_extensions: tuple[str, ...] = (".pdf", ".txt")
+    # Below this text similarity a PDF attached to a .txt of the same name is flagged as a possible mismatch.
+    min_pair_similarity: float = 0.85
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return int(self.max_upload_mb * 1024 * 1024)
 
 
 class Paths(BaseModel):
     bundle_dir: Path = ROOT / "02_Ragnarok Odin The Contract War Room" / "Pack" / "odin_dev_pack" / "bundle"
     db_path: Path = ROOT / "state" / "odin.db"
+    files_dir: Path = ROOT / "state" / "files"   # file store when STATE_BACKEND=sqlite
     outputs_dir: Path = ROOT / "outputs"
     llm_cache_dir: Path = ROOT / ".cache" / "llm"
     prompts_dir: Path = ROOT / "prompts"
+    migrations_dir: Path = ROOT / "supabase" / "migrations"
 
     @property
     def pack_dir(self) -> Path:
@@ -80,7 +123,45 @@ class OdinConfig(BaseModel):
     limits: Limits = Limits()
     loops: LoopLimits = LoopLimits()
     thor: ThorSettings = ThorSettings()
+    norns: NornsSettings = NornsSettings()
+    state: StateSettings = StateSettings()
+    upload: UploadSettings = UploadSettings()
     paths: Paths = Paths()
+
+
+_URL_UNSAFE_IN_PASSWORD = set("@/?#[] %")
+
+
+def normalize_db_url(url: str) -> str:
+    """Percent-encode a password that contains URL delimiters ('@', '/', ...).
+
+    Supabase shows the connection string with the raw password; libpq splits user info at
+    the first '@', so a password like ``abc@123`` would otherwise be read as host ``123@...``.
+    """
+    url = url.strip().strip('"').strip("'")
+    m = re.match(r"^(postgres(?:ql)?://)(.*)$", url)
+    if not m or "@" not in m.group(2):
+        return url
+    scheme, rest = m.groups()
+    at = rest.rfind("@")
+    userinfo, hostpart = rest[:at], rest[at + 1:]
+    if ":" not in userinfo:
+        return url
+    user, password = userinfo.split(":", 1)
+    if any(c in _URL_UNSAFE_IN_PASSWORD for c in password):
+        password = quote(password, safe="")
+    return f"{scheme}{user}:{password}@{hostpart}"
+
+
+def db_url_summary(url: str | None) -> str:
+    """host:port/db of a connection URL, with no credentials (safe to print)."""
+    if not url:
+        return "(SUPABASE_DB_URL not set)"
+    try:
+        parts = urlsplit(normalize_db_url(url))
+        return f"{parts.hostname}:{parts.port or 5432}/{parts.path.lstrip('/') or 'postgres'}"
+    except ValueError:
+        return "(unparseable SUPABASE_DB_URL)"
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -147,8 +228,21 @@ def load_config(path: str | Path | None = None, *, env: dict[str, str] | None = 
     if env.get("ODIN_CHUNK_MAX_CHARS"):
         data["thor"]["chunk_max_chars"] = int(env["ODIN_CHUNK_MAX_CHARS"])
 
+    state = data["state"]
+    if env.get("STATE_BACKEND"):
+        state["backend"] = env["STATE_BACKEND"].strip().strip('"').lower()
+    for env_key, field in (("SUPABASE_DB_URL", "db_url"), ("SUPABASE_URL", "supabase_url"),
+                           ("SUPABASE_SECRET_KEY", "secret_key"), ("SUPABASE_BUCKET", "bucket")):
+        if env.get(env_key):
+            state[field] = env[env_key].strip().strip('"').strip("'")
+    if state.get("db_url"):
+        state["db_url"] = normalize_db_url(state["db_url"])
+    if env.get("ODIN_MAX_UPLOAD_MB"):
+        data["upload"]["max_upload_mb"] = float(env["ODIN_MAX_UPLOAD_MB"])
+
     paths = data["paths"]
-    for env_key, field in (("ODIN_BUNDLE_DIR", "bundle_dir"), ("ODIN_DB_PATH", "db_path"), ("ODIN_OUTPUTS_DIR", "outputs_dir")):
+    for env_key, field in (("ODIN_BUNDLE_DIR", "bundle_dir"), ("ODIN_DB_PATH", "db_path"), ("ODIN_OUTPUTS_DIR", "outputs_dir"),
+                           ("ODIN_FILES_DIR", "files_dir")):
         if env.get(env_key):
             paths[field] = env[env_key]
     for field in list(paths):

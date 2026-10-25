@@ -1,0 +1,7 @@
+[server]
+# Matches upload.max_upload_mb (ODIN_MAX_UPLOAD_MB); ingest_file enforces the configured limit itself.
+maxUploadSize = 20
+headless = true
+
+[browser]
+gatherUsageStats = false

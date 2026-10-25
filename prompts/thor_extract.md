@@ -38,6 +38,10 @@ never to assume a relationship the text does not state.
      ellipses ("..."), no added or dropped words, no text from two different clauses in
      one quote (use two citations instead). Line breaks inside a quote may be written as
      single spaces. Prefer 6-40 words: enough to support the value on its own.
+   - Copy numbers exactly as written, words and digits together: "fifteen (15) days",
+     never "fifteen days" or "15 days"; "$8,000.00", never "$8000".
+   - When a value draws on several clauses (a credit tier in one clause, its cap in
+     another, its claim window in a third), cite each of those clauses.
    - Quotes are checked by a program against the clause text. A quote that is not found
      costs the whole row its credibility.
 6. Dates. `raw` / `*_raw` always holds the date or period exactly as written. Fill an
@@ -45,10 +49,11 @@ never to assume a relationship the text does not state.
    ("August 1, 2026" -> "2026-08-01"). Relative, conditional or blank dates ("within 30
    days after the end of the calendar month", "upon acceptance", "[TO BE INSERTED]")
    stay as rules in `rule` / `trigger` / `deadline_raw`. Never compute a resulting date.
-7. Day counting. For every period measured in days set `day_type`: "business" if the text
-   says business days, "calendar" if it says calendar days, "unspecified" if it only says
-   "days". Do not assume. For periods in hours, months or minutes, put the unit in the
-   `*_unit` field and omit day_type.
+7. Day counting. For every period measured in days set `day_type`: "business" only if the
+   words "business day(s)" qualify that period, "calendar" only if the words "calendar
+   day(s)" do, otherwise "unspecified" ("30 days after the end of the calendar month" is
+   unspecified: "calendar" there qualifies the month, not the days). Do not assume. For
+   periods in hours, months or minutes, put the unit in the `*_unit` field and omit day_type.
 8. Amounts. `amount` / `cap_amount` are plain numbers (8000.0, not "$8,000.00"). Keep the
    written form in the `*_raw` field and `raw_text`. Percentages stay in raw/formula text.
 9. Confidence (0-1): your certainty that status and value are right given this text.
@@ -72,37 +77,44 @@ and stable (e.g. "party_provider", "monthly_fee", "renewal", "uptime_commitment"
 | renewal | auto-renewal and non-renewal notice | auto_renew (bool), renewal_term_raw, renewal_term_months, notice_period_raw, notice_period_days, day_type, notice_method, notice_recipient, rule |
 | payment | each fee / payment schedule | item, amount, currency, frequency, due_rule (e.g. "net 30 from invoice date"), payment_period_days, day_type, invoice_rule, late_fee_raw, interest_rate_raw, adjustment_raw |
 | obligation | who owes what to whom, by when, on what trigger | obligor, obligee, action, trigger, deadline_raw, deadline_amount, deadline_unit, day_type, recurring (bool), condition |
-| penalty | service credits, interest, fees, refunds for a failure | kind (service_credit, interest, fee, refund, liquidated_damages, other), trigger, amount_raw, formula, cap_raw, payer, beneficiary, claim_window_raw, claim_window_days, day_type, sole_remedy (bool) |
+| penalty | service credits, interest, fees, refunds for a failure | kind (service_credit, interest, fee, refund, liquidated_damages, other), trigger, amount_raw, formula, cap_raw, payer, beneficiary, claim_window_raw, claim_window_days, day_type, sole_remedy (true/false only when stated plainly; if qualified, the qualifying words verbatim as a string, e.g. "sole and exclusive remedy ... except as otherwise provided in the Agreement"; omit when not stated) |
 | compliance | standards, data protection, security, audit rights, breach-notification windows, insurance, subprocessors, data location, retention | category (data_protection, security, breach_notification, audit, insurance, subprocessor, data_location, retention, standard, other), requirement, obligor, beneficiary, standard, window_raw, window_amount, window_unit, day_type |
 | termination | each termination right and its effects | kind (for_cause, for_convenience, persistent_failure, insolvency, force_majeure, non_renewal, other), who_may_terminate, trigger, notice_period_raw, notice_days, cure_period_raw, cure_days, day_type, consequences |
 | governing_law | governing law and forum | law, courts |
 | liability_cap | caps, exclusions, damages waivers | cap_raw, cap_formula, cap_amount, exclusions (list of strings), damages_waiver_raw |
 | indemnity | each indemnity | indemnitor, indemnitee, scope, conditions |
-| cross_reference | links to other documents and precedence rules | ref_type, from_doc, to_doc, to_doc_resolved (bool), target_clause, operation, new_text, old_value, new_value, controlling_doc, subordinate_doc, scope, effective_raw, effective_iso |
+| cross_reference | links to other documents and precedence rules | ref_type (required), from_doc, to_doc, target_doc, to_doc_resolved (bool), target_clause, operation, new_text, old_value, new_value, controlling_doc, subordinate_doc, scope, effective_raw, effective_date |
 
 Obligations: cover the actionable duties (deadlines, notices, reports, deliveries,
 reviews, payments of non-fee amounts, restrictions). Group a list of prohibitions in one
 clause into one row. Skip pure boilerplate (counterparts, headings) unless it sets a
-deadline or a condition.
+deadline or a condition. Limits are facts too: targets, caps, maximum durations and
+frequencies, exclusions and the amounts of required coverage go in the row they belong to.
 
-Cross-references (`ref_type`):
-- "incorporation": one document incorporates another by reference, or declares itself
+Compliance: insurance requirements (coverage types and limits, certificates, notice of a
+lapse) and breach / incident notification duties ARE compliance rows (category
+"insurance" / "breach_notification"), in addition to any obligation row for the same duty.
+
+Cross-references: every cross_reference row needs `ref_type`, one of:
+- "incorporates": one document incorporates another by reference, or declares itself
   incorporated into / part of another. from_doc = the document that incorporates;
   to_doc = the document incorporated. If THIS document says it is incorporated into
   another, from_doc is the other document and to_doc is this one.
-- "amendment": this document changes another. One row per operation. operation =
-  replace | insert | delete | modify; target_clause = the clause reference as written in
-  the target (e.g. "Section 3.2", "Section B"); to_doc = the amended document; new_text =
-  the replacement wording verbatim (it may be long); old_value / new_value = a short
-  before/after summary when the text states both (e.g. "90 days" -> "60 days");
-  effective_raw / effective_iso when the amendment states when it takes effect. Check
-  whether a single amendment modifies more than one document.
+- "amends": this document changes another. One row per operation, each with ALL of:
+  operation = replace | insert | delete | modify; target_doc = the amended document (also
+  put it in to_doc); target_clause = the clause reference as written in the target (e.g.
+  "Section 3.2", "Section B"); new_text = the new wording verbatim (it may be long; not
+  needed for delete); effective_date = YYYY-MM-DD when this document states when the
+  amendment takes effect (anywhere in this document), else effective_raw = the wording
+  that says when. old_value / new_value = a short before/after summary when the text
+  states both (e.g. "90 days" -> "60 days"). Check whether a single amendment modifies
+  more than one document.
 - "precedence": an order-of-priority rule ("if X and Y conflict, X controls").
   controlling_doc, subordinate_doc, scope (the subject matter the priority is limited
   to, if any).
 - "notwithstanding": an override clause ("notwithstanding Section N ...", "except as
   otherwise provided in ..."). target_clause = what it overrides; scope = what it does.
-- "reference": any other pointer to a named document, section of another document, or
+- "references": any other pointer to a named document, section of another document, or
   bundle data file (e.g. a holiday schedule file).
 - to_doc: a doc_id from the registry when the text identifies the document by name,
   printed ID or file name; set to_doc_resolved=true. Use this document's own doc_id for
@@ -116,7 +128,11 @@ Separately list anything a reviewer must know that does not fit a field: placeho
 blank values, missing exhibits or truncated text, capitalised terms the document relies on
 but never defines (and that no referenced document is stated to define), references to
 sections or documents that are not present, numbering that collides with another document
-in a way that makes a reference unclear, internal inconsistencies. Each issue: type
+in a way that makes a reference unclear, internal inconsistencies, and wording with two
+reasonable readings that is not already an "ambiguous" field (e.g. whether an amount
+"for a single incident" is due once per incident or once per period). Do not report a
+section of another document as missing just because it is not in this text: other
+documents are checked by the system. Each issue: type
 (ambiguous | missing | contradictory | cross_reference), clause_id, a verbatim `quote`
 (same rules as citations), and a one-sentence description. Do not repeat issues already
 captured as an ambiguous/contradictory field.

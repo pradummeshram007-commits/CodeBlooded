@@ -1,10 +1,11 @@
-"""Bundle ingestion: manifest, company context, contracts (+ segmentation).
+"""Ingestion helpers shared by the upload pipeline and bundle seeding.
 
 Nothing here assumes relationships between documents: the manifest only supplies file
 paths and titles. Document kind and IDs come from each document's own text.
 
-Operational inputs (events, ledger, holidays, clock) get loader functions and tables
-for Norns/Heimdall, but ``ingest_bundle`` only registers them as resources.
+Parsers for the operational inputs (ledger, holidays, clock, events) live here too; the
+bundle seeding (``odin/ingest/bundle.py``) loads ledger, holidays and clock into tables and
+leaves the event drops unparsed for Heimdall.
 """
 from __future__ import annotations
 
@@ -12,13 +13,12 @@ import csv
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from odin.config import OdinConfig
-from odin.ingest.segmenter import DECORATION_RE, Segmentation, segment
-from odin.state.models import Checkpoint, Clause, Document, Event, Flag, Holiday, LedgerEntry, Resource
+from odin.ingest.segmenter import DECORATION_RE, Segmentation
+from odin.state.models import Checkpoint, Clause, Document, Event, Holiday, LedgerEntry
 from odin.state.store import StateStore
 
 EXTERNAL_ID_RE = re.compile(r"(?:CONTRACT|DOCUMENT)\s+ID:\s*([A-Z0-9][A-Z0-9-]+)")
@@ -79,26 +79,7 @@ def classify_kind(title: str | None, preamble: str) -> str:
     return "contract"
 
 
-@dataclass
-class DocIngest:
-    doc_id: str
-    status: str                  # new | changed | unchanged
-    clauses: int
-    method: str
-    warnings: list[str] = field(default_factory=list)
-
-
-@dataclass
-class IngestReport:
-    documents: list[DocIngest] = field(default_factory=list)
-    resources: list[str] = field(default_factory=list)
-
-    @property
-    def changed_doc_ids(self) -> list[str]:
-        return [d.doc_id for d in self.documents if d.status != "unchanged"]
-
-
-def _clauses_from(seg: Segmentation) -> list[Clause]:
+def clauses_from(seg: Segmentation) -> list[Clause]:
     return [
         Clause(
             clause_id=c.clause_id, doc_id=c.doc_id, number=c.number, ref=c.ref, heading=c.heading, text=c.text,
@@ -109,82 +90,18 @@ def _clauses_from(seg: Segmentation) -> list[Clause]:
     ]
 
 
-def ingest_document(store: StateStore, path: Path, rel_path: str, title: str | None, source: str = "bundle") -> DocIngest:
-    doc_id = path.stem
-    text = read_text_exact(path)
-    seg = segment(doc_id, text)
-    preamble = next((c.text for c in seg.clauses if c.kind == "preamble"), text[:2000])
-    banner = text_title(text)
-    m = EXTERNAL_ID_RE.search(text[:2000])
-    doc = Document(
-        doc_id=doc_id,
-        title=title or banner or doc_id,
-        text_title=banner,
-        path=rel_path,
-        sha256=sha256_file(path),
-        kind=classify_kind(banner, preamble),  # type: ignore[arg-type]
-        external_id=m.group(1) if m else None,
-        source=source,
-    )
-    is_new = store.get_document(doc_id) is None
-    changed = store.upsert_document(doc)
-    if changed or not store.list_clauses(doc_id):
-        with store.transaction():
-            store.replace_clauses(doc_id, _clauses_from(seg))
-            store.supersede_flags(doc_id, raised_by="ingest")
-            if seg.unparseable:
-                store.add_flag(
-                    Flag(
-                        doc_id=doc_id,
-                        type="unparseable",
-                        description="; ".join(seg.warnings) or "numbering scheme not recognised; paragraph chunks used",
-                        raised_by="ingest",
-                    )
-                )
-    status = "new" if is_new else ("changed" if changed else "unchanged")
-    return DocIngest(doc_id, status, len(seg.clauses), seg.method, seg.warnings)
-
-
-def ingest_bundle(store: StateStore, cfg: OdinConfig, source: str = "bundle") -> IngestReport:
-    """Register every manifest file; segment and store every contract text.
-
-    Contract .txt files present on disk but missing from the manifest (e.g. delivered by
-    a later drop) are ingested too, titled from their own banner.
-    """
-    bundle = cfg.paths.bundle_dir
-    report = IngestReport()
-    manifest = load_manifest(bundle)
-    titles = {f["path"]: f.get("title") for f in manifest}
-
-    store.upsert_resource(Resource(path="manifest.json", kind="manifest", title="Bundle manifest",
-                                   sha256=sha256_file(bundle / "manifest.json")))
-    clock = cfg.paths.pack_dir / "clock.json"
-    if clock.exists():
-        store.upsert_resource(Resource(path="../clock.json", kind="clock", title="Simulated clock", sha256=sha256_file(clock)))
-    for entry in manifest:
-        rel = entry["path"]
-        full = bundle / rel
-        if rel.startswith("contracts/") or not full.exists():
-            continue
-        kind = RESOURCE_KINDS.get(rel) or ("events" if rel.startswith("events/") else "data")
-        store.upsert_resource(Resource(path=rel, kind=kind, title=entry.get("title"), sha256=sha256_file(full)))
-        report.resources.append(rel)
-
-    contract_paths = {p.relative_to(bundle).as_posix(): p for p in sorted((bundle / "contracts").glob("*.txt"))}
-    ordered = [r for r in titles if r in contract_paths] + [r for r in contract_paths if r not in titles]
-    for rel in ordered:
-        report.documents.append(ingest_document(store, contract_paths[rel], rel, titles.get(rel), source))
-    return report
-
-
 def document_text(cfg: OdinConfig, doc: Document) -> str:
+    """The text clause offsets index into: stored in the database since step 2A, else the bundle file."""
+    if doc.text is not None:
+        return doc.text
     return read_text_exact(cfg.paths.bundle_dir / doc.path)
 
 
 def registry(store: StateStore) -> list[dict[str, Any]]:
     """What each document says about itself, used to resolve references in other documents."""
     out = []
-    for d in store.list_documents():
+    # Sorted by doc_id, not by ingest time, so prompts (and their LLM cache keys) do not depend on upload order.
+    for d in sorted(store.list_documents(include_text=False), key=lambda d: d.doc_id):
         out.append({
             "doc_id": d.doc_id,
             "file": Path(d.path).name,

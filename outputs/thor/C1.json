@@ -12,8 +12,15 @@
     "external_id": "QH-VANTAGE-2026-001",
     "source": "bundle",
     "extracted_sha256": "9ab886565ac3d970d2d46e81794e52bea2311d1751a5d2e0b33b96395baf505c",
-    "ingested_at": "2026-10-25T08:28:23+00:00",
-    "updated_at": "2026-10-25T09:15:28+00:00"
+    "text": "================================================================================\n                    CLOUD SERVICE AGREEMENT — COVER PAGE\n================================================================================\n\n                        CONTRACT ID: QH-VANTAGE-2026-001\n\nThis Cover Page incorporates by reference the Common Paper Cloud Service\nAgreement Standard Terms Version 2.0, a copy of which is maintained at\nSTD.txt in this bundle (the \"Standard Terms\"). If this Cover Page and the\nStandard Terms conflict on any point, this Cover Page controls.\n\n================================================================================\n\nPROVIDER INFORMATION\n--------------------\n  Legal Name:     Quillhub Inc.\n  Address:        1200 Innovation Drive, Suite 400, Austin, TX 78701\n  Contact:        Raj Subramanian, Head of Customer Success — raj.s@quillhub.io\n  Notice Address: Quillhub Inc.\n                  Attn: Legal Department\n                  1200 Innovation Drive, Suite 400\n                  Austin, TX 78701\n                  Email: legal-notices@quillhub.io\n\nCUSTOMER INFORMATION\n--------------------\n  Legal Name:     Vantage Logistics Corporation\n  Address:        2200 NE Sandy Boulevard, Portland, OR 97232\n  Contact:        Derek Sung, VP Operations — derek.sung@vantagelogistics.com\n  Notice Address: Vantage Logistics Corporation\n                  Attn: Legal Department\n                  2200 NE Sandy Boulevard\n                  Portland, OR 97232\n                  Email: contracts@vantagelogistics.com\n\n================================================================================\n                            KEY TERMS\n================================================================================\n\nSection A — Cloud Service Description\n--------------------------------------\nThe Cloud Service is Quillhub Route Optimizer Pro, a cloud-based logistics-\noptimization platform providing real-time route planning, fleet tracking,\ndelivery-window management, and standard API access (the \"Platform\").\n\nSection B — Subscription Period and Renewal\n--------------------------------------------\n  Effective Date:              [TO BE INSERTED UPON GO-LIVE]\n  Initial Subscription Period: 24 months from the Effective Date\n  Renewal Period:              successive 12-month periods\n  Non-Renewal Notice Period:   90 days before the end of the then-current\n                               Subscription Period\n\n  The Agreement will automatically renew for successive Renewal Periods of\n  12 months each, unless either party delivers written notice of non-renewal\n  to the other party's Notice Address at least 90 days before the end of the\n  then-current Subscription Period, in accordance with Section 5.1 of the\n  Standard Terms.\n\n  \"Written notice\" means a notice delivered in accordance with Section 12.4\n  of the Standard Terms. For the avoidance of doubt, informal communications\n  (including but not limited to phone calls, text messages, and emails sent\n  to addresses other than the Notice Address) do not constitute written\n  notice for the purposes of this Agreement.\n\nSection C — Fees and Payment\n-----------------------------\n  Monthly Fee:     $18,500.00 (Eighteen Thousand Five Hundred U.S. Dollars)\n  Payment Process: Invoicing. Quillhub will issue invoices on the first\n                   business day of each calendar month for that month's Fee.\n  Payment Period:  30 days from invoice date.\n  Currency:        U.S. Dollars\n\n  Setup Fee:       $12,000.00 (Twelve Thousand U.S. Dollars), payable upon\n                   execution of this Agreement. The Setup Fee is non-refundable.\n\nSection D — Service Level\n--------------------------\n  §3.1  Uptime Commitment. Quillhub will make the Platform available at least\n        ninety-nine and five-tenths percent (99.5%) of the minutes in each\n        calendar month, not counting Scheduled Maintenance (the \"Vantage\n        Uptime Target\"). \"Scheduled Maintenance\" means maintenance that\n        Quillhub has notified Vantage Logistics about at least 48 hours in\n        advance via email to the Customer's contact.\n\n  §3.2  Service Credits. If the Monthly Uptime Percentage falls below the\n        Vantage Uptime Target in any calendar month, Quillhub will credit\n        Vantage Logistics ten percent (10%) of the Monthly Fee for that month\n        against Vantage Logistics' next invoice.\n\n  §3.3  Credit Request. Vantage Logistics must request a service credit in\n        writing within thirty (30) days after the end of the calendar month\n        in which the Downtime occurred.\n\nSection E — Exclusivity\n-------------------------\n  §4.1  Route Optimizer Exclusivity. During the Subscription Period, Quillhub\n        grants Vantage Logistics the exclusive right to use the Route\n        Optimizer platform (including all tiers: Standard, Pro, and\n        Enterprise) within the Pacific Northwest third-party logistics sector\n        (defined as third-party logistics companies headquartered in the\n        states of Washington and Oregon that provide warehousing and last-mile\n        delivery services). Quillhub will not license any tier of Route\n        Optimizer to any other third-party logistics company headquartered in\n        Washington or Oregon that provides warehousing and last-mile delivery\n        services during the Subscription Period without Vantage Logistics'\n        prior written consent.\n\nSection F — Liability\n-----------------------\n  General Cap Amount:  The total Fees paid or payable by Customer in the\n                       twelve (12) months immediately preceding the claim.\n  Unlimited Claims:    None specified.\n\nSection G — Governing Law\n---------------------------\n  Governing Law:    State of Oregon\n  Chosen Courts:    Federal and state courts located in Multnomah County,\n                    Oregon\n\nSection H — Additional Terms\n------------------------------\n  H.1  Customer Data Ownership. For the avoidance of doubt, all route data,\n       delivery data, fleet telemetry, and optimization outputs generated\n       through Vantage Logistics' use of the Platform (\"Vantage Operations\n       Data\") are Customer Content as defined in the Standard Terms and remain\n       the exclusive property of Vantage Logistics.\n\n  H.2  Integration Support. Quillhub will provide up to forty (40) hours of\n       integration support at no additional charge during the first six (6)\n       months following the Effective Date, to assist Vantage Logistics with\n       API integration into Vantage Logistics' warehouse management system.\n\n  H.3  Non-Compete Clarification. The exclusivity in Section 4.1 applies\n       only to the Route Optimizer product line. Quillhub may offer other\n       products and services to any customer, including third-party logistics\n       companies in Washington and Oregon, provided those products and services\n       do not provide route optimization, fleet tracking, or delivery-window\n       management functionality substantially similar to Route Optimizer.\n\n================================================================================\n\nSIGNATURES\n----------\n\nFOR QUILLHUB INC.                     FOR VANTAGE LOGISTICS CORPORATION\n\nSignature: /s/ Priya Chandrasekaran   Signature: /s/ Derek Sung\nName:      Priya Chandrasekaran       Name:      Derek Sung\nTitle:     CEO                        Title:     VP Operations\nDate:      November 5, 2026           Date:      November 8, 2026\n\nNOTE: The Effective Date will be the date on which Quillhub confirms in\nwriting that the Platform is available for production use by Vantage Logistics\n(the \"Go-Live Date\"). As of the date of execution of this Cover Page, the\nGo-Live Date has not been set.\n\n================================================================================\nEND OF COVER PAGE — QH-VANTAGE-2026-001\n================================================================================\n",
+    "text_source": "txt",
+    "parse_status": "parsed",
+    "storage_path": "C1/cb9de886a98ae336d7e44c49b6ee153d9e2a9aad22b8a8c7f27ea0d4e79497aa/C1.pdf",
+    "original_filename": "C1.pdf",
+    "mime_type": "application/pdf",
+    "uploaded_at": "2026-10-25T11:33:34+00:00",
+    "ingested_at": "2026-10-25T11:33:32+00:00",
+    "updated_at": "2026-10-25T11:37:48+00:00"
   },
   "clauses": [
     {
@@ -279,17 +286,17 @@
   ],
   "extractions": [
     {
-      "id": 546,
+      "id": 239,
       "doc_id": "C1",
       "field_type": "party",
       "field_key": "party_provider",
       "value": {
+        "name": "Quillhub Inc.",
+        "role": "provider",
         "address": "1200 Innovation Drive, Suite 400, Austin, TX 78701",
         "contact": "Raj Subramanian, Head of Customer Success — raj.s@quillhub.io",
-        "name": "Quillhub Inc.",
-        "notice_address": "Quillhub Inc.\nAttn: Legal Department\n1200 Innovation Drive, Suite 400\nAustin, TX 78701",
         "notice_email": "legal-notices@quillhub.io",
-        "role": "provider"
+        "notice_address": "Quillhub Inc.\nAttn: Legal Department\n1200 Innovation Drive, Suite 400\nAustin, TX 78701"
       },
       "readings": [],
       "raw_text": "Legal Name:     Quillhub Inc.\n  Address:        1200 Innovation Drive, Suite 400, Austin, TX 78701",
@@ -300,13 +307,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:38+00:00",
       "citations": [
         {
-          "id": 480,
-          "extraction_id": 546,
+          "id": 213,
+          "extraction_id": 239,
           "doc_id": "C1",
           "clause_id": "C1:provider-information",
           "clause_ref": "Provider Information",
@@ -322,17 +329,17 @@
       ]
     },
     {
-      "id": 547,
+      "id": 240,
       "doc_id": "C1",
       "field_type": "party",
       "field_key": "party_customer",
       "value": {
+        "name": "Vantage Logistics Corporation",
+        "role": "customer",
         "address": "2200 NE Sandy Boulevard, Portland, OR 97232",
         "contact": "Derek Sung, VP Operations — derek.sung@vantagelogistics.com",
-        "name": "Vantage Logistics Corporation",
-        "notice_address": "Vantage Logistics Corporation\nAttn: Legal Department\n2200 NE Sandy Boulevard\nPortland, OR 97232",
         "notice_email": "contracts@vantagelogistics.com",
-        "role": "customer"
+        "notice_address": "Vantage Logistics Corporation\nAttn: Legal Department\n2200 NE Sandy Boulevard\nPortland, OR 97232"
       },
       "readings": [],
       "raw_text": "Legal Name:     Vantage Logistics Corporation\n  Address:        2200 NE Sandy Boulevard, Portland, OR 97232",
@@ -343,13 +350,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:38+00:00",
       "citations": [
         {
-          "id": 481,
-          "extraction_id": 547,
+          "id": 214,
+          "extraction_id": 240,
           "doc_id": "C1",
           "clause_id": "C1:customer-information",
           "clause_ref": "Customer Information",
@@ -365,7 +372,7 @@
       ]
     },
     {
-      "id": 548,
+      "id": 241,
       "doc_id": "C1",
       "field_type": "effective_date",
       "field_key": "effective_date",
@@ -379,21 +386,21 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:38+00:00",
       "citations": []
     },
     {
-      "id": 549,
+      "id": 242,
       "doc_id": "C1",
       "field_type": "term",
       "field_key": "term_initial",
       "value": {
-        "duration_months": 24,
-        "duration_raw": "24 months from the Effective Date",
         "end_raw": "end of the then-current Subscription Period",
-        "start_raw": "Effective Date"
+        "start_raw": "Effective Date",
+        "duration_raw": "24 months from the Effective Date",
+        "duration_months": 24
       },
       "readings": [],
       "raw_text": "Initial Subscription Period: 24 months from the Effective Date",
@@ -404,13 +411,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:39+00:00",
       "citations": [
         {
-          "id": 482,
-          "extraction_id": 549,
+          "id": 215,
+          "extraction_id": 242,
           "doc_id": "C1",
           "clause_id": "C1:B",
           "clause_ref": "Section B",
@@ -426,20 +433,20 @@
       ]
     },
     {
-      "id": 550,
+      "id": 243,
       "doc_id": "C1",
       "field_type": "renewal",
       "field_key": "renewal",
       "value": {
-        "auto_renew": true,
+        "rule": "unless either party delivers written notice of non-renewal to the other party's Notice Address at least 90 days before the end of the then-current Subscription Period, in accordance with Section 5.1 of the Standard Terms.",
         "day_type": "unspecified",
+        "auto_renew": true,
         "notice_method": "written notice",
-        "notice_period_days": 90,
-        "notice_period_raw": "90 days before the end of the then-current Subscription Period",
         "notice_recipient": "other party's Notice Address",
-        "renewal_term_months": 12,
         "renewal_term_raw": "successive 12-month periods",
-        "rule": "unless either party delivers written notice of non-renewal to the other party's Notice Address at least 90 days before the end of the then-current Subscription Period, in accordance with Section 5.1 of the Standard Terms."
+        "notice_period_raw": "90 days before the end of the then-current Subscription Period",
+        "notice_period_days": 90,
+        "renewal_term_months": 12
       },
       "readings": [],
       "raw_text": "Renewal Period:              successive 12-month periods\n  Non-Renewal Notice Period:   90 days before the end of the then-current\n                               Subscription Period",
@@ -450,13 +457,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:39+00:00",
       "citations": [
         {
-          "id": 483,
-          "extraction_id": 550,
+          "id": 216,
+          "extraction_id": 243,
           "doc_id": "C1",
           "clause_id": "C1:B",
           "clause_ref": "Section B",
@@ -472,18 +479,18 @@
       ]
     },
     {
-      "id": 551,
+      "id": 244,
       "doc_id": "C1",
       "field_type": "payment",
       "field_key": "payment_monthly_fee",
       "value": {
+        "item": "Monthly Fee",
         "amount": 18500.0,
         "currency": "USD",
         "day_type": "unspecified",
         "due_rule": "Payment Period: 30 days from invoice date.",
         "frequency": "monthly",
         "invoice_rule": "Invoicing. Quillhub will issue invoices on the first business day of each calendar month for that month's Fee.",
-        "item": "Monthly Fee",
         "payment_period_days": 30
       },
       "readings": [],
@@ -495,13 +502,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:39+00:00",
       "citations": [
         {
-          "id": 484,
-          "extraction_id": 551,
+          "id": 217,
+          "extraction_id": 244,
           "doc_id": "C1",
           "clause_id": "C1:C",
           "clause_ref": "Section C",
@@ -517,17 +524,17 @@
       ]
     },
     {
-      "id": 552,
+      "id": 245,
       "doc_id": "C1",
       "field_type": "payment",
       "field_key": "payment_setup_fee",
       "value": {
+        "item": "Setup Fee",
         "amount": 12000.0,
         "currency": "USD",
         "day_type": "unspecified",
         "due_rule": "Setup Fee is payable upon execution of this Agreement.",
         "frequency": "one-time",
-        "item": "Setup Fee",
         "payment_period_days": 0
       },
       "readings": [],
@@ -539,13 +546,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:39+00:00",
       "citations": [
         {
-          "id": 485,
-          "extraction_id": 552,
+          "id": 218,
+          "extraction_id": 245,
           "doc_id": "C1",
           "clause_id": "C1:C",
           "clause_ref": "Section C",
@@ -561,20 +568,20 @@
       ]
     },
     {
-      "id": 553,
+      "id": 246,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_uptime_commitment",
       "value": {
         "action": "make the Platform available at least 99.5% of the minutes in each calendar month",
-        "day_type": "unspecified",
-        "deadline_amount": 99.5,
-        "deadline_raw": "ninety-nine and five-tenths percent (99.5%) of the minutes in each calendar month",
-        "deadline_unit": "percent",
         "obligee": "Vantage Logistics",
         "obligor": "Quillhub",
+        "trigger": "each calendar month",
+        "day_type": "unspecified",
         "recurring": true,
-        "trigger": "each calendar month"
+        "deadline_raw": "ninety-nine and five-tenths percent (99.5%) of the minutes in each calendar month",
+        "deadline_unit": "percent",
+        "deadline_amount": 99.5
       },
       "readings": [],
       "raw_text": "Uptime Commitment. Quillhub will make the Platform available at least\n        ninety-nine and five-tenths percent (99.5%) of the minutes in each\n        calendar month, not counting Scheduled Maintenance (the \"Vantage\n        Uptime Target\").",
@@ -585,13 +592,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:40+00:00",
       "citations": [
         {
-          "id": 486,
-          "extraction_id": 553,
+          "id": 219,
+          "extraction_id": 246,
           "doc_id": "C1",
           "clause_id": "C1:3.1",
           "clause_ref": "§3.1",
@@ -607,20 +614,20 @@
       ]
     },
     {
-      "id": 554,
+      "id": 247,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_service_credit",
       "value": {
         "action": "credit Vantage Logistics ten percent (10%) of the Monthly Fee for that month against Vantage Logistics' next invoice",
-        "day_type": "unspecified",
-        "deadline_amount": 10.0,
-        "deadline_raw": "credit 10% of the Monthly Fee for that month against next invoice",
-        "deadline_unit": "percent",
         "obligee": "Vantage Logistics",
         "obligor": "Quillhub",
+        "trigger": "Monthly Uptime Percentage falls below the Vantage Uptime Target in any calendar month",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "Monthly Uptime Percentage falls below the Vantage Uptime Target in any calendar month"
+        "deadline_raw": "credit 10% of the Monthly Fee for that month against next invoice",
+        "deadline_unit": "percent",
+        "deadline_amount": 10.0
       },
       "readings": [],
       "raw_text": "Service Credits. If the Monthly Uptime Percentage falls below the\n        Vantage Uptime Target in any calendar month, Quillhub will credit\n        Vantage Logistics ten percent (10%) of the Monthly Fee for that month\n        against Vantage Logistics' next invoice.",
@@ -631,13 +638,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:40+00:00",
       "citations": [
         {
-          "id": 487,
-          "extraction_id": 554,
+          "id": 220,
+          "extraction_id": 247,
           "doc_id": "C1",
           "clause_id": "C1:3.2",
           "clause_ref": "§3.2",
@@ -653,20 +660,20 @@
       ]
     },
     {
-      "id": 555,
+      "id": 248,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_credit_request",
       "value": {
         "action": "request a service credit in writing",
-        "day_type": "unspecified",
-        "deadline_amount": 30.0,
-        "deadline_raw": "within thirty (30) days after the end of the calendar month in which the Downtime occurred",
-        "deadline_unit": "days",
         "obligee": "Quillhub",
         "obligor": "Vantage Logistics",
+        "trigger": "Downtime occurred",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "Downtime occurred"
+        "deadline_raw": "within thirty (30) days after the end of the calendar month in which the Downtime occurred",
+        "deadline_unit": "days",
+        "deadline_amount": 30.0
       },
       "readings": [],
       "raw_text": "Credit Request. Vantage Logistics must request a service credit in\n        writing within thirty (30) days after the end of the calendar month\n        in which the Downtime occurred.",
@@ -677,13 +684,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:40+00:00",
       "citations": [
         {
-          "id": 488,
-          "extraction_id": 555,
+          "id": 221,
+          "extraction_id": 248,
           "doc_id": "C1",
           "clause_id": "C1:3.3",
           "clause_ref": "§3.3",
@@ -699,20 +706,20 @@
       ]
     },
     {
-      "id": 556,
+      "id": 249,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_integration_support",
       "value": {
         "action": "provide up to forty (40) hours of integration support at no additional charge",
-        "day_type": "unspecified",
-        "deadline_amount": 6.0,
-        "deadline_raw": "within the first six (6) months following the Effective Date",
-        "deadline_unit": "months",
         "obligee": "Vantage Logistics",
         "obligor": "Quillhub",
+        "trigger": "Effective Date",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "Effective Date"
+        "deadline_raw": "within the first six (6) months following the Effective Date",
+        "deadline_unit": "months",
+        "deadline_amount": 6.0
       },
       "readings": [],
       "raw_text": "Integration Support. Quillhub will provide up to forty (40) hours of\n       integration support at no additional charge during the first six (6)\n       months following the Effective Date, to assist Vantage Logistics with\n       API integration into Vantage Logistics' warehouse management system.",
@@ -723,13 +730,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:41+00:00",
       "citations": [
         {
-          "id": 489,
-          "extraction_id": 556,
+          "id": 222,
+          "extraction_id": 249,
           "doc_id": "C1",
           "clause_id": "C1:H.2",
           "clause_ref": "Section H.2",
@@ -745,20 +752,20 @@
       ]
     },
     {
-      "id": 557,
+      "id": 250,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_scheduled_maintenance_notice",
       "value": {
         "action": "notify Vantage of Scheduled Maintenance at least 48 hours in advance via email",
-        "day_type": "unspecified",
-        "deadline_amount": 48.0,
-        "deadline_raw": "at least 48 hours in advance via email",
-        "deadline_unit": "hours",
         "obligee": "Vantage Logistics",
         "obligor": "Quillhub",
+        "trigger": "Scheduled Maintenance",
+        "day_type": "unspecified",
         "recurring": false,
-        "trigger": "Scheduled Maintenance"
+        "deadline_raw": "at least 48 hours in advance via email",
+        "deadline_unit": "hours",
+        "deadline_amount": 48.0
       },
       "readings": [],
       "raw_text": "Scheduled Maintenance means maintenance that Quillhub has notified Vantage Logistics about at least 48 hours in advance via email to the Customer's contact.",
@@ -769,13 +776,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:41+00:00",
       "citations": [
         {
-          "id": 490,
-          "extraction_id": 557,
+          "id": 223,
+          "extraction_id": 250,
           "doc_id": "C1",
           "clause_id": "C1:3.1",
           "clause_ref": "§3.1",
@@ -791,17 +798,17 @@
       ]
     },
     {
-      "id": 558,
+      "id": 251,
       "doc_id": "C1",
       "field_type": "obligation",
       "field_key": "obligation_exclusivity_licensing",
       "value": {
         "action": "not license any tier of Route Optimizer to any other third-party logistics company headquartered in Washington or Oregon that provides warehousing and last-mile delivery services during the Subscription Period without Vantage's prior written consent",
-        "day_type": "unspecified",
         "obligee": "Vantage Logistics",
         "obligor": "Quillhub",
-        "recurring": false,
-        "trigger": "Subscription Period"
+        "trigger": "Subscription Period",
+        "day_type": "unspecified",
+        "recurring": false
       },
       "readings": [],
       "raw_text": "Route Optimizer Exclusivity. During the Subscription Period, Quillhub\n        grants Vantage Logistics the exclusive right to use the Route\n        Optimizer platform (including all tiers: Standard, Pro, and\n        Enterprise) within the Pacific Northwest third-party logistics sector\n        (defined as third-party logistics companies headquartered in the\n        states of Washington and Oregon that provide warehousing and last-mile\n        delivery services). Quillhub will not license any tier of Route\n        Optimizer to any other third-party logistics company headquartered in\n        Washington or Oregon that provides warehousing and last-mile delivery\n        services during the Subscription Period without Vantage Logistics'\n        prior written consent.",
@@ -812,13 +819,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:41+00:00",
       "citations": [
         {
-          "id": 491,
-          "extraction_id": 558,
+          "id": 224,
+          "extraction_id": 251,
           "doc_id": "C1",
           "clause_id": "C1:4.1",
           "clause_ref": "§4.1",
@@ -834,21 +841,21 @@
       ]
     },
     {
-      "id": 559,
+      "id": 252,
       "doc_id": "C1",
       "field_type": "penalty",
       "field_key": "penalty_service_credit",
       "value": {
-        "amount_raw": "ten percent (10%) of the Monthly Fee",
-        "beneficiary": "Vantage Logistics",
-        "claim_window_days": 30,
-        "claim_window_raw": "within thirty (30) days after the end of the calendar month in which the Downtime occurred",
-        "day_type": "unspecified",
-        "formula": "credit against next invoice",
         "kind": "service_credit",
         "payer": "Quillhub",
+        "formula": "credit against next invoice",
+        "trigger": "Monthly Uptime Percentage falls below the Vantage Uptime Target in any calendar month",
+        "day_type": "unspecified",
+        "amount_raw": "ten percent (10%) of the Monthly Fee",
+        "beneficiary": "Vantage Logistics",
         "sole_remedy": true,
-        "trigger": "Monthly Uptime Percentage falls below the Vantage Uptime Target in any calendar month"
+        "claim_window_raw": "within thirty (30) days after the end of the calendar month in which the Downtime occurred",
+        "claim_window_days": 30
       },
       "readings": [],
       "raw_text": "Service Credits. If the Monthly Uptime Percentage falls below the\n        Vantage Uptime Target in any calendar month, Quillhub will credit\n        Vantage Logistics ten percent (10%) of the Monthly Fee for that month\n        against Vantage Logistics' next invoice.",
@@ -859,13 +866,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:42+00:00",
       "citations": [
         {
-          "id": 492,
-          "extraction_id": 559,
+          "id": 225,
+          "extraction_id": 252,
           "doc_id": "C1",
           "clause_id": "C1:3.2",
           "clause_ref": "§3.2",
@@ -879,8 +886,8 @@
           "source_type": "clause"
         },
         {
-          "id": 493,
-          "extraction_id": 559,
+          "id": 226,
+          "extraction_id": 252,
           "doc_id": "C1",
           "clause_id": "C1:3.3",
           "clause_ref": "§3.3",
@@ -896,13 +903,13 @@
       ]
     },
     {
-      "id": 560,
+      "id": 253,
       "doc_id": "C1",
       "field_type": "governing_law",
       "field_key": "governing_law",
       "value": {
-        "courts": "Federal and state courts located in Multnomah County, Oregon",
-        "law": "State of Oregon"
+        "law": "State of Oregon",
+        "courts": "Federal and state courts located in Multnomah County, Oregon"
       },
       "readings": [],
       "raw_text": "Governing Law:    State of Oregon\n  Chosen Courts:    Federal and state courts located in Multnomah County,\n                    Oregon",
@@ -913,13 +920,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:42+00:00",
       "citations": [
         {
-          "id": 494,
-          "extraction_id": 560,
+          "id": 227,
+          "extraction_id": 253,
           "doc_id": "C1",
           "clause_id": "C1:G",
           "clause_ref": "Section G",
@@ -935,7 +942,7 @@
       ]
     },
     {
-      "id": 561,
+      "id": 254,
       "doc_id": "C1",
       "field_type": "liability_cap",
       "field_key": "liability_cap",
@@ -952,13 +959,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:42+00:00",
       "citations": [
         {
-          "id": 495,
-          "extraction_id": 561,
+          "id": 228,
+          "extraction_id": 254,
           "doc_id": "C1",
           "clause_id": "C1:F",
           "clause_ref": "Section F",
@@ -974,15 +981,15 @@
       ]
     },
     {
-      "id": 562,
+      "id": 255,
       "doc_id": "C1",
       "field_type": "cross_reference",
       "field_key": "cross_reference_incorporation",
       "value": {
+        "to_doc": "STD",
         "from_doc": "C1",
         "ref_type": "incorporation",
         "target_clause": "C1:preamble",
-        "to_doc": "STD",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -994,13 +1001,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:43+00:00",
       "citations": [
         {
-          "id": 496,
-          "extraction_id": 562,
+          "id": 229,
+          "extraction_id": 255,
           "doc_id": "C1",
           "clause_id": "C1:preamble",
           "clause_ref": "Preamble",
@@ -1016,16 +1023,16 @@
       ]
     },
     {
-      "id": 563,
+      "id": 256,
       "doc_id": "C1",
       "field_type": "cross_reference",
       "field_key": "cross_reference_precedence",
       "value": {
-        "controlling_doc": "C1",
-        "ref_type": "precedence",
         "scope": "any point",
-        "subordinate_doc": "STD",
-        "target_clause": "C1:preamble"
+        "ref_type": "precedence",
+        "target_clause": "C1:preamble",
+        "controlling_doc": "C1",
+        "subordinate_doc": "STD"
       },
       "readings": [],
       "raw_text": "If this Cover Page and the Standard Terms conflict on any point, this Cover Page controls.",
@@ -1036,13 +1043,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:43+00:00",
       "citations": [
         {
-          "id": 497,
-          "extraction_id": 563,
+          "id": 230,
+          "extraction_id": 256,
           "doc_id": "C1",
           "clause_id": "C1:preamble",
           "clause_ref": "Preamble",
@@ -1058,15 +1065,15 @@
       ]
     },
     {
-      "id": 564,
+      "id": 257,
       "doc_id": "C1",
       "field_type": "cross_reference",
       "field_key": "cross_reference_section5_1",
       "value": {
+        "to_doc": "STD",
         "from_doc": "C1",
         "ref_type": "reference",
         "target_clause": "Section 5.1",
-        "to_doc": "STD",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -1078,13 +1085,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:44+00:00",
       "citations": [
         {
-          "id": 498,
-          "extraction_id": 564,
+          "id": 231,
+          "extraction_id": 257,
           "doc_id": "C1",
           "clause_id": "C1:B",
           "clause_ref": "Section B",
@@ -1100,15 +1107,15 @@
       ]
     },
     {
-      "id": 565,
+      "id": 258,
       "doc_id": "C1",
       "field_type": "cross_reference",
       "field_key": "cross_reference_section12_4",
       "value": {
+        "to_doc": "STD",
         "from_doc": "C1",
         "ref_type": "reference",
         "target_clause": "Section 12.4",
-        "to_doc": "STD",
         "to_doc_resolved": true
       },
       "readings": [],
@@ -1120,13 +1127,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": null,
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:45+00:00",
       "citations": [
         {
-          "id": 499,
-          "extraction_id": 565,
+          "id": 232,
+          "extraction_id": 258,
           "doc_id": "C1",
           "clause_id": "C1:B",
           "clause_ref": "Section B",
@@ -1142,7 +1149,7 @@
       ]
     },
     {
-      "id": 566,
+      "id": 259,
       "doc_id": "C1",
       "field_type": "compliance",
       "field_key": "compliance_missing",
@@ -1156,13 +1163,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": "The model returned nothing for this field type; recorded as missing by Thor.",
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:47+00:00",
       "citations": []
     },
     {
-      "id": 567,
+      "id": 260,
       "doc_id": "C1",
       "field_type": "termination",
       "field_key": "termination_missing",
@@ -1176,13 +1183,13 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": "The model returned nothing for this field type; recorded as missing by Thor.",
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:47+00:00",
       "citations": []
     },
     {
-      "id": 568,
+      "id": 261,
       "doc_id": "C1",
       "field_type": "indemnity",
       "field_key": "indemnity_missing",
@@ -1196,15 +1203,15 @@
       "version": 1,
       "is_current": true,
       "supersedes_id": null,
-      "run_id": "thor-20261025T144153-2a1d1a",
+      "run_id": "thor-20261025T170425-3b1491",
       "notes": "The model returned nothing for this field type; recorded as missing by Thor.",
-      "created_at": "2026-10-25T09:15:28+00:00",
+      "created_at": "2026-10-25T11:37:47+00:00",
       "citations": []
     }
   ],
   "flags": [
     {
-      "id": 76,
+      "id": 35,
       "doc_id": "C1",
       "clause_id": null,
       "type": "missing",
@@ -1214,11 +1221,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:37:47+00:00"
     },
     {
-      "id": 77,
+      "id": 36,
       "doc_id": "C1",
       "clause_id": null,
       "type": "missing",
@@ -1228,11 +1235,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:37:48+00:00"
     },
     {
-      "id": 78,
+      "id": 37,
       "doc_id": "C1",
       "clause_id": null,
       "type": "missing",
@@ -1242,11 +1249,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:37:48+00:00"
     },
     {
-      "id": 79,
+      "id": 38,
       "doc_id": "C1",
       "clause_id": null,
       "type": "missing",
@@ -1256,11 +1263,11 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:37:48+00:00"
     },
     {
-      "id": 80,
+      "id": 39,
       "doc_id": "C1",
       "clause_id": null,
       "type": "missing",
@@ -1270,58 +1277,58 @@
       "evidence": null,
       "evidence_verified": null,
       "status": "open",
-      "run_id": "thor-20261025T144153-2a1d1a",
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "run_id": "thor-20261025T170425-3b1491",
+      "created_at": "2026-10-25T11:37:48+00:00"
     }
   ],
   "relations": [
     {
-      "id": 40,
+      "id": 18,
       "from_doc": "C1",
       "to_doc": "STD",
       "type": "incorporates",
       "clause_id": "C1:preamble",
       "citation": {
-        "char_end": 559,
-        "char_start": 278,
-        "clause_id": "C1:preamble",
-        "clause_ref": "Preamble",
-        "direction_corrected": false,
-        "operation": null,
         "quote": "This Cover Page incorporates by reference the Common Paper Cloud Service\nAgreement Standard Terms Version 2.0, a copy of which is maintained at\nSTD.txt in this bundle (the \"Standard Terms\"). If this Cover Page and the\nStandard Terms conflict on any point, this Cover Page controls.",
-        "target_clause": "C1:preamble",
+        "char_end": 559,
+        "verified": true,
+        "clause_id": "C1:preamble",
+        "operation": null,
+        "char_start": 278,
+        "clause_ref": "Preamble",
+        "target_clause": null,
         "target_clause_id": null,
         "target_clause_raw": "C1:preamble",
-        "verified": true
+        "direction_corrected": false
       },
-      "extraction_id": 562,
+      "extraction_id": 255,
       "raised_by": "thor",
       "verified": true,
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "created_at": "2026-10-25T11:37:43+00:00"
     },
     {
-      "id": 41,
+      "id": 19,
       "from_doc": "C1",
       "to_doc": "STD",
       "type": "references",
       "clause_id": "C1:B",
       "citation": {
-        "char_end": 2751,
-        "char_start": 2696,
-        "clause_id": "C1:B",
-        "clause_ref": "Section B",
-        "direction_corrected": false,
-        "operation": null,
         "quote": "in accordance with Section 5.1 of the\n  Standard Terms.",
+        "char_end": 2751,
+        "verified": true,
+        "clause_id": "C1:B",
+        "operation": null,
+        "char_start": 2696,
+        "clause_ref": "Section B",
         "target_clause": "Section 5.1",
         "target_clause_id": "STD:5.1",
         "target_clause_raw": "Section 5.1",
-        "verified": true
+        "direction_corrected": false
       },
-      "extraction_id": 564,
+      "extraction_id": 257,
       "raised_by": "thor",
       "verified": true,
-      "created_at": "2026-10-25T09:15:28+00:00"
+      "created_at": "2026-10-25T11:37:45+00:00"
     }
   ]
 }

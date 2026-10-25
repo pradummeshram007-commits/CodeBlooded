@@ -1,6 +1,7 @@
 """Shared state schemas for all Odin agents.
 
-Row models mirror the SQLite tables in ``store.py`` one-to-one. Value models describe the
+Row models mirror the tables one-to-one (SQLite schema in ``store.py``, Postgres schema in
+``supabase/migrations``). Value models describe the
 JSON stored in ``extractions.value`` per ``field_type`` so downstream agents (Norns, Loki,
 Heimdall, Tyr) and the dashboard can rely on stable keys. Value models are permissive
 (every key optional, unknown keys kept) because absent facts must stay absent, not be
@@ -10,14 +11,19 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # --------------------------------------------------------------------------- enums
 
 DocKind = Literal["contract", "standard_terms", "amendment", "addendum"]
 DocStatus = Literal["pending", "extracting", "complete", "partial", "failed"]
+TextSource = Literal["txt", "pdf_extracted"]
+# parsed = clause numbering recognised; fallback = paragraph chunks; unparseable = no text (e.g. scanned PDF)
+ParseStatus = Literal["parsed", "fallback", "unparseable"]
+FileRole = Literal["text_source", "original", "attachment"]
 ExtractionStatus = Literal["extracted", "ambiguous", "missing", "contradictory"]
 SourceKind = Literal["sourced", "analysis"]  # sourced = read from a clause (Thor); analysis = derived by a later agent
 FlagType = Literal[
@@ -157,7 +163,9 @@ class PenaltyValue(_Value):
     claim_window_raw: str | None = None
     claim_window_days: int | None = None
     day_type: DayType | None = None
-    sole_remedy: bool | None = None
+    # true / false only when the text says so plainly; a qualified rule keeps its words verbatim,
+    # e.g. "sole and exclusive remedy … except as otherwise provided in the Agreement".
+    sole_remedy: bool | str | None = None
 
 
 class ComplianceValue(_Value):
@@ -204,10 +212,18 @@ class IndemnityValue(_Value):
     conditions: str | None = None
 
 
+RefType = Literal["incorporates", "amends", "references", "precedence", "notwithstanding"]
+# Names used before step 2B; still accepted on input.
+LEGACY_REF_TYPES = {"incorporation": "incorporates", "amendment": "amends", "reference": "references"}
+
+
 class CrossReferenceValue(_Value):
-    ref_type: Literal["incorporation", "amendment", "precedence", "notwithstanding", "reference"] | None = None
+    # incorporates / amends / references become doc_relations edges; precedence and
+    # notwithstanding stay extractions (priority rules, not links).
+    ref_type: RefType | None = None
     from_doc: str | None = None         # the document that incorporates / amends / refers
     to_doc: str | None = None           # the document incorporated / amended / referred to (bundle doc_id when resolvable)
+    target_doc: str | None = None       # same as to_doc; the name the amendment contract uses
     to_doc_resolved: bool | None = None
     target_clause: str | None = None    # clause reference as written in the target, e.g. "Section 3.2"
     operation: Literal["replace", "insert", "delete", "modify"] | None = None
@@ -219,6 +235,27 @@ class CrossReferenceValue(_Value):
     scope: str | None = None
     effective_raw: str | None = None
     effective_iso: str | None = None
+    effective_date: str | None = None   # ISO, same as effective_iso
+
+    @field_validator("ref_type", mode="before")
+    @classmethod
+    def _legacy_ref_type(cls, v: Any) -> Any:
+        return LEGACY_REF_TYPES.get(v, v) if isinstance(v, str) else v
+
+    @field_validator("effective_date")
+    @classmethod
+    def _effective_date_iso(cls, v: Any) -> Any:
+        if v is not None and (not isinstance(v, str) or not ISO_DATE_RE.match(v)):
+            raise ValueError(f"effective_date must be YYYY-MM-DD or null, got {v!r}")
+        return v
+
+    @model_validator(mode="after")
+    def _sync_aliases(self) -> "CrossReferenceValue":
+        self.to_doc = self.to_doc or self.target_doc
+        self.target_doc = self.target_doc or (self.to_doc if self.ref_type == "amends" else None)
+        self.effective_date = self.effective_date or self.effective_iso
+        self.effective_iso = self.effective_iso or self.effective_date
+        return self
 
 
 FIELD_VALUE_MODELS: dict[str, type[_Value]] = {
@@ -262,10 +299,32 @@ class Document(BaseModel):
     status_reason: str | None = None
     coverage: float | None = None       # % of leaf clauses processed by Thor
     external_id: str | None = None      # "CONTRACT ID" / "DOCUMENT ID" printed in the document
-    source: str = "bundle"              # bundle | drop1 | drop2 ...: where the document arrived from
+    source: str = "bundle"              # bundle | upload | drop1 | drop2 ...: where the document arrived from
     extracted_sha256: str | None = None # sha256 of the text Thor last finished extracting
+    text: str | None = None             # full text; clause offsets index into it. None only for pre-2A rows
+    text_source: TextSource | None = None
+    parse_status: ParseStatus | None = None
+    storage_path: str | None = None     # viewable original in the file store: {doc_id}/{sha256}/{filename}
+    original_filename: str | None = None
+    mime_type: str | None = None
+    uploaded_at: str | None = None
     ingested_at: str = Field(default_factory=utcnow)
     updated_at: str = Field(default_factory=utcnow)
+
+
+class DocumentFile(BaseModel):
+    """Every file stored for a document (the .txt text source, the .pdf original, ...)."""
+
+    id: int | None = None
+    doc_id: str
+    role: FileRole
+    sha256: str
+    storage_path: str
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    similarity: float | None = None     # PDF text vs the .txt text source, when both exist
+    uploaded_at: str = Field(default_factory=utcnow)
 
 
 class Clause(BaseModel):
@@ -396,6 +455,10 @@ class Resource(BaseModel):
     kind: str                           # manifest | company_context | ledger | holidays | events | clock
     title: str | None = None
     sha256: str
+    storage_path: str | None = None     # copy in the file store (events drops live only there until Heimdall reads them)
+    mime_type: str | None = None
+    size_bytes: int | None = None
+    text: str | None = None             # full text for small text resources (company context)
     loaded_at: str = Field(default_factory=utcnow)
 
 
@@ -437,3 +500,121 @@ class Checkpoint(BaseModel):
     idx: int                            # 0 = start_date
     date: str
     label: str                          # start | checkpoint
+
+
+# --------------------------------------------------------------------------- Norns (timeline agent)
+
+RuleKind = Literal["payment", "notice", "renewal", "report", "cure", "penalty_trigger", "credit"]
+InstanceStatus = Literal["paid_on_time", "paid_late", "partial", "unpaid", "upcoming", "met", "missed", "triggered"]
+
+
+class ObligationRule(BaseModel):
+    """A dated duty or right derived from Thor's extractions (never read from a contract directly)."""
+
+    rule_id: str                        # "A1:payment:monthly_fee@2026-08-01"
+    contract: str                       # root contract of the family ("A1", "B1")
+    doc_id: str                         # document whose clause states the term
+    kind: RuleKind
+    name: str
+    payer: str | None = None
+    payee: str | None = None
+    anchor: str                         # invoice_date | term_end | month_end | due_date | fixed | event:<type>
+    anchor_date: str | None = None
+    offset_amount: int | None = None
+    offset_unit: str | None = None      # days | hours | months
+    offset_direction: str | None = None # after | before
+    day_type: DayType | None = None
+    recurrence: dict[str, Any] | None = None
+    amount: Decimal | None = None
+    formula: str | None = None
+    currency: str | None = None
+    escalations: list[dict[str, Any]] = []
+    caps: list[dict[str, Any]] = []
+    conditions: list[Any] = []          # text conditions, or structured ones (credit tiers by uptime)
+    valid_from: str | None = None       # ISO; the version of the term in force from this date
+    valid_to: str | None = None         # ISO, exclusive
+    citations: list[dict[str, Any]] = []   # {extraction_id, doc_id, clause_id, clause_ref, quote, verified}
+    flags: list[str] = []
+    source_kind: SourceKind = "analysis"
+    built_at: str = Field(default_factory=utcnow)
+
+
+class ObligationInstance(BaseModel):
+    id: int | None = None
+    as_of: str
+    instance_key: str
+    rule_id: str
+    contract: str
+    kind: str
+    name: str
+    period: str | None = None
+    anchor_date: str | None = None
+    due_date: str | None = None
+    due_date_calendar: str | None = None
+    due_date_business: str | None = None
+    day_type: str | None = None
+    amount: Decimal | None = None
+    currency: str | None = None
+    payer: str | None = None
+    payee: str | None = None
+    status: InstanceStatus
+    paid_amount: Decimal | None = None
+    paid_date: str | None = None
+    ledger_lines: list[int] = []
+    days_remaining: int | None = None
+    severity: str | None = None
+    flags: list[str] = []
+    citations: list[dict[str, Any]] = []
+
+
+class ClockState(BaseModel):
+    id: int = 1
+    current_as_of: str
+    updated_at: str = Field(default_factory=utcnow)
+
+
+class ClockEvent(BaseModel):
+    id: int | None = None
+    ts: str = Field(default_factory=utcnow)
+    action: str
+    from_as_of: str | None = None
+    to_as_of: str
+    note: str | None = None
+
+
+class TimelineSnapshot(BaseModel):
+    id: int | None = None
+    as_of: str
+    created_at: str = Field(default_factory=utcnow)
+    summary: dict[str, Any] = {}
+    chart_data: dict[str, Any] = {}
+
+
+class ExposureItem(BaseModel):
+    id: int | None = None
+    as_of: str
+    scenario: Literal["worst_case", "on_time"]
+    contract: str
+    category: str
+    amount: Decimal | None = None       # None = the contract gives no number (status unquantified)
+    status: Literal["quantified", "unquantified"]
+    accrues_on: str | None = None
+    description: str
+    formula: str | None = None
+    inputs: dict[str, Any] = {}
+    citations: list[dict[str, Any]] = []
+    source_kind: SourceKind = "analysis"
+    created_at: str = Field(default_factory=utcnow)
+
+
+class Writeup(BaseModel):
+    id: int | None = None
+    as_of: str
+    label: str                          # "AI-generated analysis" / "Template writeup (...)"
+    generated_by: Literal["llm", "template"]
+    text: str
+    model: str | None = None
+    prompt_hash: str | None = None
+    check_passed: bool | None = None
+    meta: dict[str, Any] = {}
+    created_at: str = Field(default_factory=utcnow)

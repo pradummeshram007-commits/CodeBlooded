@@ -10,4 +10,5 @@ __pycache__/
 # runtime state (outputs/state_export.json is the shareable snapshot)
 state/*.db
 state/*.db-*
+state/files/
 .cache/

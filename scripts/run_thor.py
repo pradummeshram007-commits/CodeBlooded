@@ -1,12 +1,14 @@
-"""Ingest the bundle and run Thor on every contract document.
+"""Ingest the bundle and run Thor on every contract document, on the configured backend.
 
     python scripts/run_thor.py                 # ingest + extract (skips unchanged, complete docs)
     python scripts/run_thor.py --docs A1,A3    # only these documents
     python scripts/run_thor.py --force         # re-extract even if unchanged (LLM cache still applies)
     python scripts/run_thor.py --no-llm        # ingest + segment only, no API calls
     python scripts/run_thor.py --details       # also print failed citations, flags and relations
+    python scripts/run_thor.py --relink --docs A3   # re-derive relations from stored extractions, no LLM
 
-Writes outputs/thor/<doc_id>.json and outputs/state_export.json.
+Writes outputs/thor/<doc_id>.json and outputs/state_export.json. STATE_BACKEND (sqlite |
+supabase) picks the store; ingestion is the same idempotent seeding as scripts/seed_bundle.py.
 """
 from __future__ import annotations
 
@@ -21,8 +23,10 @@ sys.path.insert(0, str(ROOT))
 
 from odin.agents.thor import DocResult, Thor  # noqa: E402
 from odin.config import load_config  # noqa: E402
-from odin.ingest.loader import ingest_bundle  # noqa: E402
-from odin.llm import LLMClient  # noqa: E402
+from odin.ingest.bundle import ingest_bundle  # noqa: E402
+from odin.llm import LLMClient, llm_config_problem  # noqa: E402
+from odin.state.backend import open_file_store, open_store  # noqa: E402
+from odin.state.errors import StoreError  # noqa: E402
 from odin.state.store import StateStore  # noqa: E402
 
 COLUMNS = ["doc", "clauses", "fields", "amb", "miss", "contra", "cit ok", "cit fail", "LLM calls", "cached", "tokens",
@@ -41,23 +45,6 @@ def result_row(r: DocResult) -> list[str]:
     return [r.doc_id, str(r.clauses), str(r.fields), str(r.ambiguous), str(r.missing), str(r.contradictory),
             str(r.citations_verified), str(r.citations_failed), str(r.llm_calls), str(r.cache_hits), f"{r.tokens:,}",
             f"{r.coverage:.0f}", status]
-
-
-PLACEHOLDER_MARKS = ("<", "your-", "changeme", "xxxx", "replace-me")
-
-
-def llm_config_problem(cfg) -> str | None:
-    """Catch unfilled .env templates before any API call is attempted."""
-    model, key = cfg.llm.model or "", cfg.llm.api_key or ""
-    if not model:
-        return f"LLM_MODEL is empty (required for provider {cfg.llm.provider})"
-    if any(m in model.lower() for m in PLACEHOLDER_MARKS):
-        return f"LLM_MODEL looks like a placeholder: {model!r}"
-    if cfg.llm.provider == "openai_compat" and not key:
-        return "no API key: set LLM_API_KEY (or OPENAI_API_KEY)"
-    if key and any(key.lower().startswith(m) for m in PLACEHOLDER_MARKS):
-        return "the API key in .env looks like a placeholder"
-    return None
 
 
 def print_details(store: StateStore) -> None:
@@ -100,16 +87,34 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=4, help="parallel LLM calls (default 4)")
     ap.add_argument("--no-llm", action="store_true", help="ingest and segment only")
     ap.add_argument("--details", action="store_true", help="print failed citations, flags and relations")
+    ap.add_argument("--relink", action="store_true",
+                    help="re-derive doc_relations from the stored extractions (types legacy rows; no LLM calls)")
     ap.add_argument("--config", help="path to config.yaml")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
-    store = StateStore(cfg.paths.db_path)
-    report = ingest_bundle(store, cfg)
+    try:
+        return run(args, cfg)
+    except StoreError as exc:
+        print(f"error: {exc}")
+        return 3
+
+
+def run(args: argparse.Namespace, cfg) -> int:
+    store = open_store(cfg)
+    report = ingest_bundle(store, cfg, open_file_store(cfg))
+    print(f"State: {store.describe()}")
     print(f"Bundle: {cfg.paths.bundle_dir}")
     print("Ingested: " + ", ".join(f"{d.doc_id}({d.status}, {d.clauses} clauses, {d.method})" for d in report.documents))
 
     out_dir = cfg.paths.outputs_dir
+    if args.relink:
+        docs = [d.strip() for d in args.docs.split(",")] if args.docs else [d.doc_id for d in store.list_documents(include_text=False)]
+        for doc_id, lines in Thor(store, None, cfg).relink(docs).items():
+            print(f"{doc_id}: " + ("; ".join(lines) if lines else "nothing to relink"))
+        if args.details:
+            print_details(store)
+        return 0
     if args.no_llm:
         store.export_json(out_dir / "state_export.json")
         print(f"--no-llm: wrote {out_dir / 'state_export.json'}")

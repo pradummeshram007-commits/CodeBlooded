@@ -1,13 +1,13 @@
 {
-  "run_id": "thor-20261025T144153-2a1d1a",
+  "run_id": "thor-20261025T170425-3b1491",
   "provider": "openai_compat",
   "model": "openai/gpt-oss-20b",
   "llm": {
-    "calls": 1,
-    "cache_hits": 9,
-    "input_tokens": 5249,
-    "output_tokens": 14126,
-    "failures": 5
+    "calls": 2,
+    "cache_hits": 10,
+    "input_tokens": 10322,
+    "output_tokens": 15485,
+    "failures": 2
   },
   "documents": [
     {
@@ -65,15 +65,15 @@
       "doc_id": "A3",
       "status": "complete",
       "clauses": 7,
-      "fields": 15,
+      "fields": 19,
       "ambiguous": 0,
       "missing": 7,
       "contradictory": 0,
-      "citations_verified": 13,
+      "citations_verified": 17,
       "citations_failed": 2,
       "llm_calls": 1,
       "cache_hits": 1,
-      "tokens": 0,
+      "tokens": 10653,
       "coverage": 100.0,
       "reason": null,
       "skipped": false
@@ -122,28 +122,28 @@
       "contradictory": 0,
       "citations_verified": 20,
       "citations_failed": 0,
-      "llm_calls": 3,
-      "cache_hits": 0,
-      "tokens": 19375,
+      "llm_calls": 0,
+      "cache_hits": 1,
+      "tokens": 0,
       "coverage": 100.0,
       "reason": null,
       "skipped": false
     },
     {
       "doc_id": "D1",
-      "status": "failed",
+      "status": "partial",
       "clauses": 55,
-      "fields": 0,
+      "fields": 28,
       "ambiguous": 0,
-      "missing": 0,
+      "missing": 4,
       "contradictory": 0,
-      "citations_verified": 0,
+      "citations_verified": 28,
       "citations_failed": 0,
-      "llm_calls": 2,
+      "llm_calls": 3,
       "cache_hits": 0,
-      "tokens": 0,
-      "coverage": 0.0,
-      "reason": "part 1/2: LLMError: provider asks to wait 2574s (over rate_limit_max_wait_s=240); likely a daily cap: openai_compat transient error: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m5s38kq0ebbt8recw4ta1a5n` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 200000, Requested 5957. Please try again in 42m53.424s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}; part 2/2: LLMError: provider asks to wait 2316s (over rate_limit_max_wait_s=240); likely a daily cap: openai_compat transient error: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m5s38kq0ebbt8recw4ta1a5n` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 200000, Requested 5360. Please try again in 38m35.52s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "tokens": 15154,
+      "coverage": 56.8,
+      "reason": "part 2/2 failed: LLMError: provider asks to wait 4850s (over rate_limit_max_wait_s=240); likely a daily cap: openai_compat transient error: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m5s38kq0ebbt8recw4ta1a5n` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 200000, Requested 11226. Please try again in 1h20m49.632s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
       "skipped": false
     }
   ]
