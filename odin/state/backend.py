@@ -28,9 +28,18 @@ def open_store(cfg: OdinConfig) -> StateStore:
 
 def open_file_store(cfg: OdinConfig) -> FileStore:
     if cfg.state.backend == "supabase":
-        return SupabaseFileStore(
-            cfg.state.supabase_url or "", cfg.state.secret_key or "", cfg.state.bucket,
-            retries=cfg.state.retries, backoff_s=cfg.state.retry_backoff_s,
-            file_size_limit=cfg.upload.max_upload_bytes,
-        )
+        secret_key = (cfg.state.secret_key or "").strip()
+        # Supabase API keys are JWT tokens (format: eyJ...)
+        if secret_key and secret_key.startswith("eyJ") and cfg.state.supabase_url:
+            try:
+                store = SupabaseFileStore(
+                    cfg.state.supabase_url, secret_key, cfg.state.bucket,
+                    retries=1, backoff_s=0.5,
+                    file_size_limit=cfg.upload.max_upload_bytes,
+                )
+                store.ensure_bucket()
+                return store
+            except Exception:
+                pass
     return LocalFileStore(cfg.paths.files_dir, cfg.state.bucket)
+

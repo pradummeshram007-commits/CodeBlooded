@@ -39,7 +39,7 @@ export default function FinalCTA() {
 
         <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
           <button
-            onClick={() => navigate('/thor')}
+            onClick={() => navigate('/dashboard')}
             className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-cream text-dark-olive font-mono text-xs sm:text-sm font-bold transition-all duration-200 active:scale-95 shadow-md hover:bg-ivory hover:shadow-[0_4px_20px_rgba(252,250,243,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cream"
           >
             <span>Launch ODIN</span>

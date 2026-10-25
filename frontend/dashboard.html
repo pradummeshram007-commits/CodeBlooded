@@ -1,0 +1,764 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>ODIN // Contract Command Center</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "odin-cream": "#F5F1E6",
+            "odin-ivory": "#FCFAF3",
+            "odin-forest": "#303B28",
+            "odin-dark": "#252E1F",
+            "odin-panel": "#1B2218",
+            "odin-sage": "#7D866E",
+            "odin-palesage": "#DDF1E6",
+            "odin-muted": "#727665",
+            "odin-border": "#DCDCCB",
+            "odin-border-subtle": "#E5E3D5",
+            "odin-red": "#C83D3D",
+            "odin-darkred": "#8F2929",
+            "odin-amber": "#B79A59",
+            "odin-darkamber": "#C78A32"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .bg-grid-warm {
+      background-image: radial-gradient(#D5CEBE 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    @keyframes alert-pulse {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.06); }
+    }
+    .animate-alert-glow {
+      animation: alert-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+<style>
+  /* Elegant olive green drop shadow system */
+  .bg-odin-ivory {
+    box-shadow: 0 6px 24px -4px rgba(48, 59, 40, 0.13), 0 2px 8px -2px rgba(48, 59, 40, 0.08) !important;
+  }
+  .bg-odin-ivory:hover {
+    box-shadow: 0 10px 28px -4px rgba(48, 59, 40, 0.17), 0 4px 10px -2px rgba(48, 59, 40, 0.10) !important;
+  }
+  /* Inner interactive item cards */
+  .bg-odin-ivory .bg-white {
+    box-shadow: 0 2px 10px -1px rgba(48, 59, 40, 0.08), 0 1px 4px -1px rgba(48, 59, 40, 0.05);
+  }
+</style></head>
+<body class="bg-odin-cream text-odin-dark antialiased font-sans min-h-screen flex flex-col bg-grid-warm selection:bg-odin-forest selection:text-odin-ivory">
+<!-- ========================================================================= -->
+<!-- HORIZONTAL TOP NAVIGATION BAR (Forest Olive #303B28)                     -->
+<!-- ========================================================================= -->
+<header class="w-full h-16 bg-odin-forest text-odin-cream border-b border-[#21281B] px-6 lg:px-8 flex items-center justify-between z-50 sticky top-0 shadow-sm flex-shrink-0">
+<!-- Left: Brand mark & telemetric status -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#252E1F] border border-odin-sage/40 flex items-center justify-center text-odin-cream font-bold font-mono text-sm shadow-inner">
+<span class="material-symbols-outlined text-odin-palesage text-base" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-bold text-base tracking-wider text-white font-mono">ODIN</span>
+<span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-odin-panel text-odin-palesage border border-odin-sage/30">v4.2</span>
+</div>
+<span class="text-[10px] text-odin-muted tracking-tight">Enterprise Intelligence</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden xl:flex items-center gap-1 font-mono text-xs">
+<a class="px-3 py-1.5 rounded bg-[#3D4B33] text-white font-semibold flex items-center gap-1.5 shadow-sm border border-odin-sage/30" href="#dashboard">
+<span class="w-1.5 h-1.5 rounded-full bg-odin-palesage"></span>
+          Dashboard
+        </a>
+<a class="px-3 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors" href="#contracts">
+          Contracts
+        </a>
+<a class="px-3 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors flex items-center gap-1" href="#thor">
+<span class="material-symbols-outlined text-xs text-odin-amber">bolt</span>
+          THOR — Extraction
+        </a>
+<a class="px-3 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors flex items-center gap-1" href="#norns">
+<span class="material-symbols-outlined text-xs text-odin-palesage">schedule</span>
+          NORNS — Timeline
+        </a>
+<a class="px-3 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors" href="#agents">
+          Agent Activity
+        </a>
+<a class="px-3 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors" href="#actions">
+          Actions &amp; Notices
+        </a>
+</nav>
+</div>
+<!-- Right utility controls -->
+<div class="flex items-center gap-3">
+<!-- Search Input -->
+<div class="relative hidden md:block w-64 lg:w-72">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-odin-sage text-sm">search</span>
+<input class="w-full pl-8 pr-10 py-1.5 text-xs bg-odin-panel text-odin-cream placeholder:text-odin-muted rounded border border-odin-sage/30 focus:outline-none focus:border-odin-palesage font-mono" placeholder="Search contracts, clauses, hashes (§)..." type="text">
+<kbd class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1 py-0.5 rounded bg-[#252E1F] text-odin-sage border border-odin-sage/20">⌘K</kbd>
+</div>
+<!-- Engine Status Chip -->
+<div class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-odin-panel border border-odin-sage/25 text-[11px] font-mono text-odin-cream/90">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="">Deterministic Engine v2.4</span>
+</div>
+<!-- Worst-Case Timeline High-Contrast Red Button -->
+<a class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-odin-red hover:bg-odin-darkred text-white text-xs font-mono font-semibold transition-all shadow-sm active:scale-95" href="#worst-case">
+<span class="material-symbols-outlined text-xs">warning</span>
+<span class="">Worst-Case Timeline</span>
+<span class="text-xs">↗</span>
+</a>
+<!-- Deploy Agent / Trigger Audit Action -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-odin-palesage text-odin-dark hover:bg-white text-xs font-mono font-semibold transition-all shadow-sm active:scale-95" type="button">
+<span class="material-symbols-outlined text-xs text-odin-forest">smart_toy</span>
+<span class="">Deploy Agent</span>
+</button>
+<!-- User Operator Identifier -->
+<div class="w-8 h-8 rounded bg-odin-panel border border-odin-sage/40 flex items-center justify-center font-mono text-xs font-bold text-odin-cream shadow-inner" title="Operator Key">
+        EO-9
+      </div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN FULL-WIDTH WORKSPACE CANVAS                                          -->
+<!-- ========================================================================= -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-6 lg:px-8 py-6 flex flex-col gap-6">
+<!-- 1. DASHBOARD HEADER & WORKSPACE SCOPE -->
+<section class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-odin-border">
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="font-mono text-[11px] font-semibold text-odin-forest uppercase tracking-widest">ODIN COMMAND // ENTERPRISE CONTRACT INTELLIGENCE</span>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-odin-ivory text-odin-dark font-medium border border-odin-border">NODE_74</span>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-odin-palesage text-odin-forest font-medium border border-odin-sage/30">PARALLEL VERIFIED</span>
+</div>
+<h1 class="text-2xl lg:text-3xl font-extrabold text-odin-dark tracking-tight">Contract Command Center</h1>
+<p class="text-xs lg:text-sm text-odin-muted mt-0.5">See exposure. Surface conflicts. Act before deadlines.</p>
+</div>
+<div class="flex flex-wrap items-center gap-3 self-stretch lg:self-auto">
+<!-- Scope Selector -->
+<div class="flex items-center gap-2 px-3 py-1.5 bg-odin-ivory border border-odin-border rounded shadow-sm text-xs text-odin-dark font-medium">
+<span class="material-symbols-outlined text-odin-forest text-sm">hub</span>
+<span class="">Global Portfolio (Active Contracts)</span>
+<span class="material-symbols-outlined text-odin-muted text-xs ml-1">arrow_drop_down</span>
+</div>
+<!-- Freshness Pill -->
+<div class="flex items-center gap-1.5 px-3 py-1.5 bg-odin-ivory border border-odin-border rounded font-mono text-xs text-odin-muted">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span class="">Synced 2m ago · Deterministic Engine v2.4</span>
+</div>
+<!-- Trigger Portfolio Audit Button -->
+<button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-odin-forest hover:bg-odin-dark text-white text-xs font-mono font-semibold transition-all shadow-sm active:scale-95" type="button">
+<span class="material-symbols-outlined text-xs text-odin-palesage">sync</span>
+<span class="">Trigger Portfolio Audit</span>
+</button>
+</div>
+</section>
+<!-- 2. PRIORITY ALERT STRIP (High-Contrast Red Accent) -->
+<section class="bg-odin-ivory border border-odin-red/40 rounded-lg p-4 shadow-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-odin-red"></div>
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pl-2">
+<div class="flex items-start lg:items-center gap-3">
+<div class="w-9 h-9 rounded bg-[#FBEBEB] border border-odin-red/30 flex items-center justify-center flex-shrink-0 text-odin-red shadow-sm">
+<span class="material-symbols-outlined text-lg">emergency</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-sm lg:text-base font-bold text-odin-red">2 Critical Items Require Action</span>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-odin-red text-white uppercase font-bold tracking-wider">Immediate</span>
+</div>
+<p class="text-xs text-odin-muted mt-0.5">Autonomous agents detected contract liability violations and multi-clause collisions requiring counsel intervention.</p>
+</div>
+</div>
+<!-- Actionable alert tiles -->
+<div class="flex flex-col sm:flex-row gap-3">
+<!-- Item 1: SLA Payment -->
+<a class="flex items-center justify-between gap-4 px-3.5 py-2.5 rounded bg-white border border-odin-red/25 hover:border-odin-red transition-all shadow-sm group" href="#norns">
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-odin-dark group-hover:text-odin-red transition-colors">Overdue SLA True-Up Payment</span>
+<span class="font-mono text-[11px] text-odin-red font-semibold">$42,500.00 — CloudScale MLA § 18.2 (4d late)</span>
+</div>
+<span class="font-mono text-xs text-odin-forest font-semibold flex items-center gap-1 group-hover:underline">
+              Review in NORNS <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</span>
+</a>
+<!-- Item 2: Clause Collision -->
+<a class="flex items-center justify-between gap-4 px-3.5 py-2.5 rounded bg-white border border-odin-red/25 hover:border-odin-red transition-all shadow-sm group" href="#consensus">
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-odin-dark group-hover:text-odin-red transition-colors">Conflicting Escalation Cap Clause</span>
+<span class="font-mono text-[11px] text-odin-red font-semibold">LOKI: CPI + 3% vs Fixed 5% (MSA § 4.2 &amp; Amend 1)</span>
+</div>
+<span class="font-mono text-xs text-odin-forest font-semibold flex items-center gap-1 group-hover:underline">
+              Inspect Conflict <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</span>
+</a>
+</div>
+</div>
+</section>
+<!-- 3. SUMMARY INDICATOR CARDS (4-Column Bento Grid) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Card 1: Financial Exposure -->
+<div class="p-4 rounded-lg bg-odin-ivory border border-odin-border hover:border-odin-sage transition-all shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="text-xs font-mono font-semibold uppercase tracking-wider text-odin-muted">Financial Exposure</span>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-[#FBEBEB] text-odin-red border border-odin-red/30 flex items-center gap-1 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-odin-red animate-pulse"></span>
+            Variance Live
+          </span>
+</div>
+<div>
+<div class="text-2xl lg:text-3xl font-extrabold text-odin-dark tracking-tight">$148,700</div>
+<div class="mt-2.5 flex items-center justify-between border-t border-odin-border-subtle pt-2 text-xs font-mono">
+<span class="text-odin-muted">Confirmed: <strong class="text-odin-red font-bold">$42,500</strong></span>
+<span class="text-odin-muted">Conditional: <strong class="text-odin-forest font-bold">$106,200</strong></span>
+</div>
+</div>
+</div>
+<!-- Card 2: Upcoming Deadlines -->
+<div class="p-4 rounded-lg bg-odin-ivory border border-odin-border hover:border-odin-sage transition-all shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="text-xs font-mono font-semibold uppercase tracking-wider text-odin-muted">Upcoming Deadlines (30D)</span>
+<span class="material-symbols-outlined text-odin-sage text-base">calendar_month</span>
+</div>
+<div>
+<div class="text-2xl lg:text-3xl font-extrabold text-odin-dark tracking-tight">8 Milestones</div>
+<div class="mt-2.5 flex items-center gap-2 border-t border-odin-border-subtle pt-2 text-xs font-mono">
+<span class="text-odin-red font-bold">2 Critical</span>
+<span class="text-odin-border">•</span>
+<span class="text-odin-forest font-semibold">3 Renewals</span>
+<span class="text-odin-border">•</span>
+<span class="text-odin-muted">3 Attestations</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Critical Obligations -->
+<div class="p-4 rounded-lg bg-odin-ivory border border-odin-border hover:border-odin-sage transition-all shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="text-xs font-mono font-semibold uppercase tracking-wider text-odin-muted">Critical Obligations</span>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-[#FBEBEB] text-odin-red font-bold border border-odin-red/25">
+            ACTION NEEDED
+          </span>
+</div>
+<div>
+<div class="text-2xl lg:text-3xl font-extrabold text-odin-red tracking-tight">2 Overdue</div>
+<div class="mt-2.5 border-t border-odin-border-subtle pt-2 text-xs text-odin-muted truncate font-sans">
+            Compounding penalty exposure under § 18.2 MLA
+          </div>
+</div>
+</div>
+<!-- Card 4: Open Contractual Conflicts -->
+<div class="p-4 rounded-lg bg-odin-ivory border border-odin-border hover:border-odin-sage transition-all shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="text-xs font-mono font-semibold uppercase tracking-wider text-odin-muted">Contractual Conflicts</span>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-odin-palesage text-odin-forest border border-odin-sage/30 font-semibold">
+            AGENT LOKI
+          </span>
+</div>
+<div>
+<div class="text-2xl lg:text-3xl font-extrabold text-odin-forest tracking-tight">1 Collision Flagged</div>
+<div class="mt-2.5 border-t border-odin-border-subtle pt-2 text-xs text-odin-muted truncate font-sans">
+            Adversarial reconciliation pipeline active
+          </div>
+</div>
+</div>
+</section>
+<!-- 4. VISUALIZATION GRID: Graph Canvas (8 cols) & Analytical Gauges (4 cols) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left/Main: Interactive Contract Relationship Graph (8 cols) -->
+<div class="lg:col-span-8 bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm relative">
+<!-- Top bar controls inside graph card -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-odin-border-subtle mb-3">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="text-base font-bold text-odin-dark">Contract Relationship Graph</h2>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-odin-palesage text-odin-forest border border-odin-sage/30 font-semibold">Interactive Canvas</span>
+</div>
+<p class="text-xs text-odin-muted">Contracts · Clauses · Parties — Dependency &amp; Collision Mapping</p>
+</div>
+<!-- Canvas Controls & Filter Toggles -->
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-white border border-odin-border rounded p-0.5 shadow-xs font-mono text-xs">
+<button class="px-2 py-1 text-odin-dark hover:bg-odin-cream rounded font-bold" title="Zoom in">+</button>
+<button class="px-2 py-1 text-odin-dark hover:bg-odin-cream rounded font-bold" title="Zoom out">−</button>
+<button class="px-2 py-1 text-odin-muted hover:text-odin-dark hover:bg-odin-cream rounded text-[11px]" title="Reset Canvas">Reset</button>
+</div>
+<div class="flex items-center gap-1 font-mono text-xs">
+<span class="px-2 py-1 rounded bg-odin-forest text-white font-medium">Contracts</span>
+<span class="px-2 py-1 rounded bg-white text-odin-muted hover:text-odin-dark border border-odin-border cursor-pointer">Clauses</span>
+<span class="px-2 py-1 rounded bg-white text-odin-muted hover:text-odin-dark border border-odin-border cursor-pointer">Parties</span>
+</div>
+</div>
+</div>
+<!-- SVG Visual Graph Canvas (Olive & Cream Palette) -->
+<div class="w-full h-96 relative bg-white rounded border border-odin-border overflow-hidden flex items-center justify-center shadow-inner">
+<svg class="w-full h-full" fill="none" viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="30" id="graph-grid" patternUnits="userSpaceOnUse" width="30">
+<circle cx="15" cy="15" fill="#D5CEBE" r="0.8"></circle>
+</pattern>
+</defs>
+<!-- Grid backdrop -->
+<rect fill="url(#graph-grid)" height="100%" width="100%"></rect>
+<!-- Subtle radial orientation rings -->
+<circle cx="410" cy="200" fill="none" r="170" stroke="#DCDCCB" stroke-dasharray="4 4"></circle>
+<circle cx="410" cy="200" fill="none" r="90" stroke="#DCDCCB" stroke-dasharray="3 3"></circle>
+<!-- EDGES (Sage & Forest connectors) -->
+<!-- Apex to Party -->
+<path d="M 180 120 L 90 60" stroke="#7D866E" stroke-opacity="0.5" stroke-width="1.5"></path>
+<!-- Apex to Clauses -->
+<path d="M 180 120 L 270 55" stroke="#7D866E" stroke-opacity="0.5" stroke-width="1.5"></path>
+<path d="M 180 120 L 275 145" stroke="#7D866E" stroke-opacity="0.6" stroke-width="1.5"></path>
+<!-- CloudScale to Party -->
+<path d="M 430 210 L 560 120" stroke="#7D866E" stroke-opacity="0.6" stroke-width="1.5"></path>
+<!-- CloudScale to Clauses -->
+<path d="M 430 210 L 330 295" stroke="#303B28" stroke-opacity="0.7" stroke-width="2"></path>
+<path d="M 430 210 L 490 305" stroke="#C83D3D" stroke-opacity="0.8" stroke-width="2"></path>
+<!-- DataWeave to Party -->
+<path d="M 660 250 L 730 180" stroke="#7D866E" stroke-opacity="0.5" stroke-width="1.5"></path>
+<path d="M 660 250 L 680 340" stroke="#7D866E" stroke-opacity="0.5" stroke-width="1.5"></path>
+<!-- CRITICAL RED COLLISION EDGE: § 4.2 vs Amend 1 § 2.1 -->
+<path d="M 275 145 Q 380 120 490 305" stroke="#C83D3D" stroke-dasharray="6 4" stroke-linecap="round" stroke-width="2.5">
+<animate attributeName="stroke-dashoffset" dur="4s" from="80" repeatCount="indefinite" to="0"></animate>
+</path>
+<!-- Conflict Marker Beacon -->
+<g transform="translate(385, 185)">
+<circle class="animate-ping" cx="0" cy="0" fill="#C83D3D" fill-opacity="0.15" r="14" stroke="#C83D3D" stroke-width="1.5"></circle>
+<circle cx="0" cy="0" fill="#8F2929" r="9" stroke="#FCFAF3" stroke-width="1.5"></circle>
+<text fill="#FCFAF3" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle" x="0" y="3">!</text>
+</g>
+<!-- PARTY NODES -->
+<!-- Party 1: Apex Logistics -->
+<g transform="translate(90, 60)">
+<rect fill="#FCFAF3" height="26" rx="4" stroke="#DCDCCB" stroke-width="1.2" width="100" x="-50" y="-13"></rect>
+<text fill="#727665" font-family="JetBrains Mono" font-size="9.5" text-anchor="middle" x="0" y="3.5">Apex Logistics</text>
+</g>
+<!-- Party 2: CloudScale Corp -->
+<g transform="translate(560, 120)">
+<rect fill="#FCFAF3" height="26" rx="4" stroke="#DCDCCB" stroke-width="1.2" width="110" x="-55" y="-13"></rect>
+<text fill="#727665" font-family="JetBrains Mono" font-size="9.5" text-anchor="middle" x="0" y="3.5">CloudScale Corp</text>
+</g>
+<!-- Party 3: DataWeave Sys -->
+<g transform="translate(730, 180)">
+<rect fill="#FCFAF3" height="26" rx="4" stroke="#DCDCCB" stroke-width="1.2" width="110" x="-55" y="-13"></rect>
+<text fill="#727665" font-family="JetBrains Mono" font-size="9.5" text-anchor="middle" x="0" y="3.5">DataWeave Sys</text>
+</g>
+<!-- CLAUSE NODES -->
+<!-- Clause: § 14.3 Renewal -->
+<g transform="translate(270, 55)">
+<rect fill="#F5F1E6" height="24" rx="4" stroke="#7D866E" stroke-width="1.2" width="100" x="-50" y="-12"></rect>
+<text fill="#252E1F" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="0" y="3.5">§ 14.3 Renewal</text>
+</g>
+<!-- Clause: § 4.2 Escalation (Conflict Source) -->
+<g transform="translate(275, 145)">
+<rect fill="#FBEBEB" height="26" rx="4" stroke="#C83D3D" stroke-width="1.8" width="120" x="-60" y="-13"></rect>
+<text fill="#8F2929" font-family="JetBrains Mono" font-size="9.5" font-weight="bold" text-anchor="middle" x="0" y="3.5">§ 4.2 Escalation</text>
+</g>
+<!-- Clause: § 18.2 SLA True-Up (Overdue) -->
+<g transform="translate(330, 295)">
+<rect fill="#FBEBEB" height="26" rx="4" stroke="#C83D3D" stroke-width="1.8" width="120" x="-60" y="-13"></rect>
+<circle cx="-50" cy="0" fill="#C83D3D" r="3"></circle>
+<text fill="#8F2929" font-family="JetBrains Mono" font-size="9.5" font-weight="bold" text-anchor="middle" x="3" y="3.5">§ 18.2 SLA True-Up</text>
+</g>
+<!-- Clause: Amend 1 § 2.1 (Collision target) -->
+<g transform="translate(490, 305)">
+<rect fill="#FBEBEB" height="26" rx="4" stroke="#C83D3D" stroke-width="1.8" width="130" x="-65" y="-13"></rect>
+<circle cx="-54" cy="0" fill="#C83D3D" r="3"></circle>
+<text fill="#8F2929" font-family="JetBrains Mono" font-size="9.5" font-weight="bold" text-anchor="middle" x="4" y="3.5">Amend 1 § 2.1 (CPI)</text>
+</g>
+<!-- Clause: § 22.1 Variance -->
+<g transform="translate(680, 340)">
+<rect fill="#F5F1E6" height="24" rx="4" stroke="#7D866E" stroke-width="1.2" width="100" x="-50" y="-12"></rect>
+<text fill="#252E1F" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="0" y="3.5">§ 22.1 Variance</text>
+</g>
+<!-- CONTRACT NODES -->
+<!-- Apex Global MSA -->
+<g transform="translate(180, 120)">
+<rect fill="#303B28" height="34" rx="5" stroke="#1B2218" stroke-width="1.5" width="130" x="-65" y="-17"></rect>
+<text fill="#FCFAF3" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold" text-anchor="middle" x="0" y="4.5">Apex Global MSA</text>
+</g>
+<!-- CloudScale MLA (ACTIVE TARGET WITH BOLD SAGE HIGHLIGHT) -->
+<g transform="translate(430, 210)">
+<rect fill="#1B2218" height="40" rx="6" stroke="#7D866E" stroke-width="2.5" width="150" x="-75" y="-20"></rect>
+<circle cx="-58" cy="0" fill="#DDF1E6" r="4.5"></circle>
+<text fill="#DDF1E6" font-family="Plus Jakarta Sans" font-size="12" font-weight="bold" text-anchor="middle" x="6" y="5">CloudScale MLA</text>
+</g>
+<!-- DataWeave SOW -->
+<g transform="translate(660, 250)">
+<rect fill="#303B28" height="34" rx="5" stroke="#1B2218" stroke-width="1.5" width="130" x="-65" y="-17"></rect>
+<text fill="#FCFAF3" font-family="Plus Jakarta Sans" font-size="11" font-weight="bold" text-anchor="middle" x="0" y="4.5">DataWeave SOW</text>
+</g>
+</svg>
+<!-- Floating Inspector Pill -->
+<div class="absolute bottom-3 left-3 bg-odin-forest text-white rounded p-3 max-w-xs shadow-md border border-odin-sage/30 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-odin-palesage"></span>
+<div class="flex flex-col">
+<span class="text-xs font-bold font-sans">Selected: CloudScale MLA</span>
+<span class="text-[10px] font-mono text-odin-palesage">4 Obligations · 1 Active Breach Risk</span>
+</div>
+</div>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-odin-red text-white font-bold">CRITICAL</span>
+</div>
+<!-- Collision Legend Tag -->
+<div class="absolute top-3 right-3 bg-white border border-odin-border rounded px-2.5 py-1 flex items-center gap-2 font-mono text-xs shadow-xs">
+<span class="w-4 h-0.5 border-b-2 border-dashed border-odin-red inline-block"></span>
+<span class="text-odin-red font-semibold text-[11px]">LOKI Collision Edge</span>
+</div>
+</div>
+<!-- Graph Telemetry Footer -->
+<div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2 text-odin-muted font-mono text-[11px]">
+<span class="">ENTITIES: 3 CONTRACTS · 6 CLAUSES · 3 PARTIES</span>
+<span class="text-odin-forest font-semibold">GRAPH ENGINE: DETERMINISTIC_NEO4J_SYNCED</span>
+</div>
+</div>
+<!-- Right: Stacked Analytical Visualizations (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- 1. Financial Exposure Gauge -->
+<div class="bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between border-b border-odin-border-subtle pb-2 mb-3">
+<div>
+<h3 class="text-sm font-bold text-odin-dark">Financial Exposure Gauge</h3>
+<span class="text-[10px] font-mono text-odin-muted uppercase">Risk Calibration</span>
+</div>
+<span class="font-mono text-xs font-bold text-odin-red px-2 py-0.5 rounded bg-[#FBEBEB] border border-odin-red/25">
+              68% / Guarded-High
+            </span>
+</div>
+<!-- Gauge Semicircle SVG -->
+<div class="flex flex-col items-center justify-center my-2">
+<div class="relative w-56 h-28 flex items-end justify-center">
+<svg class="w-56 h-28 overflow-visible" viewBox="0 0 200 100">
+<!-- Base Gray Arc -->
+<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#E5E3D5" stroke-linecap="round" stroke-width="14"></path>
+<!-- Low Risk Band (Pale Sage #DDF1E6) -->
+<path d="M 20 100 A 80 80 0 0 1 70 35" fill="none" stroke="#7D866E" stroke-dasharray="1 1000" stroke-linecap="round" stroke-width="14"></path>
+<!-- Guarded Band (Gold/Amber #B79A59) -->
+<path d="M 68 37 A 80 80 0 0 1 132 37" fill="none" stroke="#B79A59" stroke-width="14"></path>
+<!-- Critical Band (Deep Alert Red #C83D3D) -->
+<path d="M 130 35 A 80 80 0 0 1 180 100" fill="none" stroke="#C83D3D" stroke-linecap="round" stroke-width="14"></path>
+<!-- Needle Pointer -->
+<g transform="translate(100, 100) rotate(32)">
+<line stroke="#252E1F" stroke-linecap="round" stroke-width="2.5" x1="0" x2="0" y1="0" y2="-72"></line>
+<circle cx="0" cy="0" fill="#252E1F" r="6"></circle>
+<circle cx="0" cy="0" fill="#FCFAF3" r="2.5"></circle>
+</g>
+</svg>
+<div class="absolute bottom-0 text-center">
+<span class="text-2xl font-extrabold text-odin-dark block tracking-tight font-sans">$148.7k</span>
+<span class="text-[10px] font-mono text-odin-muted uppercase">Portfolio Total</span>
+</div>
+</div>
+<!-- Legend Markers -->
+<div class="w-full flex justify-between px-6 text-[10px] font-mono text-odin-muted mt-3">
+<span class="text-odin-forest font-semibold">LOW ($0)</span>
+<span class="text-odin-darkamber font-semibold">GUARDED</span>
+<span class="text-odin-red font-semibold">CRITICAL ($200k+)</span>
+</div>
+</div>
+<!-- Itemized Breakdown -->
+<div class="flex flex-col gap-2 mt-3 pt-3 border-t border-odin-border-subtle text-xs">
+<div class="flex justify-between font-mono">
+<span class="text-odin-muted">Direct Invoices (Overdue)</span>
+<span class="text-odin-red font-bold">$42,500</span>
+</div>
+<div class="w-full bg-[#EFECE0] h-1.5 rounded-full overflow-hidden">
+<div class="bg-odin-red h-full rounded-full" style="width: 28.5%"></div>
+</div>
+<div class="flex justify-between font-mono mt-1">
+<span class="text-odin-muted">Calculated Escalators (Conflict)</span>
+<span class="text-odin-darkamber font-bold">$74,200</span>
+</div>
+<div class="w-full bg-[#EFECE0] h-1.5 rounded-full overflow-hidden">
+<div class="bg-odin-amber h-full rounded-full" style="width: 50%"></div>
+</div>
+<div class="flex justify-between font-mono mt-1">
+<span class="text-odin-muted">Penalty Exposure (Compounding)</span>
+<span class="text-odin-forest font-bold">$32,000</span>
+</div>
+<div class="w-full bg-[#EFECE0] h-1.5 rounded-full overflow-hidden">
+<div class="bg-odin-forest h-full rounded-full" style="width: 21.5%"></div>
+</div>
+</div>
+</div>
+<!-- 2. Risk Heatmap: 3D Multi-Clause Matrix -->
+<div class="bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between border-b border-odin-border-subtle pb-2 mb-3">
+<div>
+<h3 class="text-sm font-bold text-odin-dark">Risk Heatmap</h3>
+<span class="text-[10px] font-mono text-odin-muted uppercase">Contract × Clause Matrix</span>
+</div>
+<span class="text-[10px] font-mono text-odin-forest font-semibold px-2 py-0.5 rounded bg-odin-palesage">Q2 AUDIT</span>
+</div>
+<!-- Heatmap Table Matrix -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-mono text-[11px]">
+<thead>
+<tr class="text-odin-muted border-b border-odin-border-subtle">
+<th class="py-1.5 px-2 font-medium">Contract</th>
+<th class="py-1.5 px-1 text-center font-medium">Pay</th>
+<th class="py-1.5 px-1 text-center font-medium">Renew</th>
+<th class="py-1.5 px-1 text-center font-medium">Penal</th>
+<th class="py-1.5 px-1 text-center font-medium">Term</th>
+<th class="py-1.5 px-1 text-center font-medium">Compl</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-odin-border-subtle">
+<!-- Row 1: Apex Global -->
+<tr>
+<td class="py-2 px-2 text-odin-dark font-sans font-medium truncate max-w-[95px]">Apex Global</td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-odin-palesage text-odin-forest font-semibold text-[10px]">LOW</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">MOD</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-odin-palesage text-odin-forest font-semibold text-[10px]">LOW</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#EAE6D8] text-odin-muted font-semibold text-[10px]">MIN</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">MOD</div></td>
+</tr>
+<!-- Row 2: CloudScale MLA -->
+<tr>
+<td class="py-2 px-2 text-odin-dark font-sans font-bold truncate max-w-[95px]">CloudScale</td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#FBEBEB] text-odin-red font-bold text-[10px] animate-pulse">CRIT</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#EAE6D8] text-odin-muted font-semibold text-[10px]">MIN</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#FBEBEB] text-odin-red font-bold text-[10px]">CRIT</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">MOD</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-odin-palesage text-odin-forest font-semibold text-[10px]">LOW</div></td>
+</tr>
+<!-- Row 3: DataWeave SOW -->
+<tr>
+<td class="py-2 px-2 text-odin-dark font-sans font-medium truncate max-w-[95px]">DataWeave</td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">MOD</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-odin-palesage text-odin-forest font-semibold text-[10px]">LOW</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">MOD</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#EAE6D8] text-odin-muted font-semibold text-[10px]">MIN</div></td>
+<td class="p-1"><div class="w-full py-1 rounded text-center bg-[#FBEBEB] text-odin-red font-bold text-[10px]">CRIT</div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Heatmap Legend -->
+<div class="flex items-center justify-between pt-3 mt-2 border-t border-odin-border-subtle font-mono text-[10px]">
+<span class="flex items-center gap-1 text-odin-muted"><span class="w-2 h-2 rounded bg-odin-palesage border border-odin-sage/30"></span>Low</span>
+<span class="flex items-center gap-1 text-odin-muted"><span class="w-2 h-2 rounded bg-[#F4ECDB] border border-odin-amber/30"></span>Moderate</span>
+<span class="flex items-center gap-1 text-odin-muted"><span class="w-2 h-2 rounded bg-odin-amber text-white"></span>Elevated</span>
+<span class="flex items-center gap-1 text-odin-red font-semibold"><span class="w-2 h-2 rounded bg-odin-red"></span>Critical</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. LOWER OPERATIONAL SECTION: Deliberation, Priority Queue, Actions & Notices -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<!-- Column 1: Agent Deliberation Pipeline -->
+<div class="bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm">
+<div>
+<div class="flex items-center justify-between border-b border-odin-border-subtle pb-2.5 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-odin-forest text-lg">psychology</span>
+<h3 class="text-sm font-bold text-odin-dark">Agent Deliberation</h3>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-odin-panel text-odin-palesage font-semibold">
+              TRIPARTITE CONSENSUS
+            </span>
+</div>
+<!-- Stepper Pipeline -->
+<div class="flex flex-col gap-3 font-mono">
+<!-- 01 LOKI: Challenge -->
+<div class="p-3 rounded bg-white border border-odin-border border-l-4 border-l-odin-red shadow-xs">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 text-xs font-bold text-odin-red">
+<span class="">01</span>
+<span class="">LOKI · Challenge</span>
+</div>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-[#FBEBEB] text-odin-red font-semibold">High Severity</span>
+</div>
+<p class="text-xs text-odin-muted font-sans mt-0.5">
+                Flagged dual-clause collision on price escalator (§ 4.2 vs Amend 1 § 2.1). Ambiguity index: 0.89.
+              </p>
+</div>
+<!-- 02 HEIMDALL: Verification -->
+<div class="p-3 rounded bg-white border border-odin-border border-l-4 border-l-odin-amber shadow-xs">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 text-xs font-bold text-odin-darkamber">
+<span class="">02</span>
+<span class="">HEIMDALL · Verification</span>
+</div>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-[#F4ECDB] text-odin-darkamber font-semibold">Ledger Check</span>
+</div>
+<p class="text-xs text-odin-muted font-sans mt-0.5">
+                Verified against ledger; detected 5.8% bill exceeding 5.0% cap. Discrepancy confirmed.
+              </p>
+</div>
+<!-- 03 TYR: Ruling -->
+<div class="p-3 rounded bg-white border border-odin-border border-l-4 border-l-odin-forest shadow-xs">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 text-xs font-bold text-odin-forest">
+<span class="">03</span>
+<span class="">TYR · Ruling</span>
+</div>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-odin-palesage text-odin-forest font-semibold">Partner Pending</span>
+</div>
+<p class="text-xs text-odin-dark font-sans font-medium mt-0.5">
+                Proposed remedy: Enforce 5.0% cap with credit adjustment ($3,120) on pending disbursement.
+              </p>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-2 border-t border-odin-border-subtle flex items-center justify-between font-mono text-[11px]">
+<span class="text-odin-muted flex items-center gap-1.5 font-sans">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            Consensus protocol synchronized.
+          </span>
+<span class="text-odin-forest font-semibold">Human approval req.</span>
+</div>
+</div>
+<!-- Column 2: Priority Queue (Actionable Stream) -->
+<div class="bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm">
+<div>
+<div class="flex items-center justify-between border-b border-odin-border-subtle pb-2.5 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-odin-forest text-lg">format_list_numbered</span>
+<h3 class="text-sm font-bold text-odin-dark">Priority Queue</h3>
+</div>
+<span class="font-mono text-[10px] text-odin-muted">4 IN FLIGHT</span>
+</div>
+<!-- Queue Stream -->
+<div class="flex flex-col gap-2.5">
+<!-- Item 1: Overdue -->
+<div class="p-3 rounded bg-white border border-odin-red/40 hover:border-odin-red transition-all shadow-xs flex flex-col gap-0.5">
+<div class="flex items-center justify-between font-mono text-[11px]">
+<span class="px-1.5 py-0.5 rounded bg-odin-red text-white font-bold text-[10px]">OVERDUE</span>
+<span class="text-odin-red font-semibold">4d overdue</span>
+</div>
+<div class="text-xs font-bold text-odin-dark mt-1 font-sans">Quarterly SLA True-Up ($42.5k)</div>
+<span class="text-[11px] text-odin-muted font-sans">CloudScale Corp · Compound penalty clause active</span>
+</div>
+<!-- Item 2: Renewal Window -->
+<div class="p-3 rounded bg-white border border-odin-border hover:border-odin-forest transition-all shadow-xs flex flex-col gap-0.5">
+<div class="flex items-center justify-between font-mono text-[11px]">
+<span class="px-1.5 py-0.5 rounded bg-odin-palesage text-odin-forest font-semibold text-[10px]">RENEWAL WINDOW</span>
+<span class="text-odin-forest font-semibold">12d remaining</span>
+</div>
+<div class="text-xs font-bold text-odin-dark mt-1 font-sans">90-Day Notice Deadline</div>
+<span class="text-[11px] text-odin-muted font-sans">Apex Global · Prior to 12m auto-lock period</span>
+</div>
+<!-- Item 3: Compliance -->
+<div class="p-3 rounded bg-white border border-odin-border hover:border-odin-forest transition-all shadow-xs flex flex-col gap-0.5">
+<div class="flex items-center justify-between font-mono text-[11px]">
+<span class="px-1.5 py-0.5 rounded bg-[#F4ECDB] text-odin-darkamber font-semibold text-[10px]">COMPLIANCE</span>
+<span class="text-odin-dark font-medium">Due Today</span>
+</div>
+<div class="text-xs font-bold text-odin-dark mt-1 font-sans">ISO27001 Annual Attestation</div>
+<span class="text-[11px] text-odin-muted font-sans">FinGuard Systems · Auditor hash ready</span>
+</div>
+<!-- Item 4: Cure Period -->
+<div class="p-3 rounded bg-white border border-odin-border hover:border-odin-forest transition-all shadow-xs flex flex-col gap-0.5">
+<div class="flex items-center justify-between font-mono text-[11px]">
+<span class="px-1.5 py-0.5 rounded bg-odin-cream text-odin-muted font-semibold text-[10px]">CURE PERIOD</span>
+<span class="text-odin-muted">9d cure window</span>
+</div>
+<div class="text-xs font-bold text-odin-dark mt-1 font-sans">Variance Notice Delivery</div>
+<span class="text-[11px] text-odin-muted font-sans">DataWeave · SLA response threshold tracking</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-2 border-t border-odin-border-subtle flex justify-end">
+<a class="font-mono text-xs text-odin-forest hover:text-odin-dark flex items-center gap-1 font-semibold hover:underline" href="#norns">
+<span class="">View complete timeline in NORNS</span>
+<span class="material-symbols-outlined text-xs">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Column 3: Actions & Notices -->
+<div class="bg-odin-ivory border border-odin-border rounded-lg p-5 flex flex-col justify-between shadow-sm">
+<div>
+<div class="flex items-center justify-between border-b border-odin-border-subtle pb-2.5 mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-odin-forest text-lg">edit_document</span>
+<h3 class="text-sm font-bold text-odin-dark">Actions &amp; Notices</h3>
+</div>
+<span class="font-mono text-[10px] text-odin-forest font-semibold px-2 py-0.5 rounded bg-odin-palesage">2 DRAFTS READY</span>
+</div>
+<!-- Drafts List -->
+<div class="flex flex-col gap-3 font-sans">
+<!-- Draft 1: Notice of Non-Renewal -->
+<div class="p-3 rounded bg-white border border-odin-border flex flex-col gap-2 shadow-xs">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-xs font-bold text-odin-dark block">Notice of Non-Renewal</span>
+<span class="text-[11px] text-odin-muted font-mono">§ 14.3 Written Notice · Apex Global</span>
+</div>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-odin-palesage text-odin-forest font-semibold">Ready</span>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-odin-border-subtle font-mono text-[11px]">
+<span class="text-odin-muted text-[10px]">Status: Awaiting Partner Sign-off</span>
+<a class="text-odin-forest hover:underline font-bold flex items-center gap-0.5" href="#draft1">
+                  Review Draft <span class="material-symbols-outlined text-xs">north_east</span>
+</a>
+</div>
+</div>
+<!-- Draft 2: Breach Dispute Letter -->
+<div class="p-3 rounded bg-white border border-odin-border flex flex-col gap-2 shadow-xs">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-xs font-bold text-odin-dark block">Breach Dispute &amp; Fee True-Up</span>
+<span class="text-[11px] text-odin-muted font-mono">§ 18.2 Recourse · CloudScale Corp</span>
+</div>
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#F4ECDB] text-odin-darkamber font-semibold">In Review</span>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-odin-border-subtle font-mono text-[11px]">
+<span class="text-odin-muted text-[10px]">Status: LOKI Adversarial Verification</span>
+<a class="text-odin-forest hover:underline font-bold flex items-center gap-0.5" href="#draft2">
+                  Review Draft <span class="material-symbols-outlined text-xs">north_east</span>
+</a>
+</div>
+</div>
+<!-- Dispatch Action Box -->
+<div class="p-3.5 rounded bg-[#FAF6EC] border border-odin-sage/30 flex flex-col gap-2 shadow-xs">
+<div class="flex items-center justify-between font-mono text-xs">
+<span class="flex items-center gap-1.5 font-bold text-odin-forest">
+<span class="material-symbols-outlined text-odin-forest text-sm">mark_email_read</span>
+                  Email Dispatch Action
+                </span>
+<span class="font-mono text-[10px] text-odin-red font-bold">DUAL KEY REQ.</span>
+</div>
+<p class="text-xs text-odin-muted">
+                Certified E-Notice dispatch requires cryptographic sign-off from Lead Counsel and General Risk Officer.
+              </p>
+<button class="w-full mt-1 py-2 px-3 rounded bg-odin-forest hover:bg-odin-dark text-white font-mono text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95" type="button">
+<span class="material-symbols-outlined text-xs text-odin-palesage">key</span>
+<span class="">Dispatch via Certified E-Notice</span>
+</button>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-2 border-t border-odin-border-subtle flex items-center justify-between font-mono text-[10px] text-odin-muted">
+<span class="">SECURE ENCLAVE ACTIVE</span>
+<span class="">RSA-4096 SIGNED</span>
+</div>
+</div>
+</section>
+</main>
+
+
+</body></html>

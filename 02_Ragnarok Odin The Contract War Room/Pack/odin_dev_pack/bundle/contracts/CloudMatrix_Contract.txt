@@ -1,0 +1,32 @@
+================================================================================
+                    CLOUD SERVICES AGREEMENT
+================================================================================
+This Cloud Services Agreement is entered into by and between CloudMatrix Inc. (Provider)
+and Global Logistics Corp. (Customer) effective as of March 1, 2026.
+
+SECTION 1: TERM AND DURATION
+The Initial Term shall be 24 months from the Effective Date.
+
+SECTION 2: RENEWAL
+This Agreement automatically renews for successive 12-month periods unless either
+party gives written notice of non-renewal at least 60 calendar days prior to expiration.
+
+SECTION 3: FEES AND PAYMENT SCHEDULE
+Customer shall pay a recurring monthly fee of $25,000 USD. Invoices shall be paid
+within net 30 days of invoice date.
+
+SECTION 4: OBLIGATIONS
+Provider shall maintain system availability and daily encrypted backups of Customer data.
+Customer shall maintain administrative account credentials with multi-factor authentication.
+
+SECTION 5: PENALTIES AND SERVICE CREDITS
+If monthly availability falls below 99.5%, Customer is entitled to a 15% service credit
+against the monthly fee.
+
+SECTION 6: COMPLIANCE AND SECURITY
+Each party warrants compliance with applicable laws, including GDPR data protection
+regulations and SOC 2 Type II security measures.
+
+SECTION 7: TERMINATION
+Either party may terminate this Agreement for cause upon 30 days written notice if
+the other party commits a material breach and fails to cure within 30 days.

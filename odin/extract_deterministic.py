@@ -32,6 +32,8 @@ def extract_contract_fields_deterministic(
     index = ClauseIndex(doc.doc_id, clauses, full_text)
     extractions_added: list[int] = []
 
+    existing_keys = {e.field_key for e in store.current_extractions(doc.doc_id, "thor")}
+
     # Helper to create citation-backed extraction
     def record_field(
         field_type: str,
@@ -42,6 +44,8 @@ def extract_contract_fields_deterministic(
         raw_text: str,
         notes: str = ""
     ):
+        if field_key in existing_keys:
+            return None
         v_cite = verify_citation(index, clause_id, quote)
         cite_obj = Citation(
             doc_id=doc.doc_id,
@@ -72,6 +76,7 @@ def extract_contract_fields_deterministic(
         )
         ex_id = store.add_extraction(ex, [cite_obj])
         extractions_added.append(ex_id)
+        existing_keys.add(field_key)
         return ex_id
 
     # 1. PARTIES

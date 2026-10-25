@@ -45,7 +45,7 @@ export default function HeroSection() {
           {/* CTAs */}
           <div className="pt-2 flex flex-wrap items-center gap-4 animate-fade-slide-up [animation-delay:400ms]">
             <button
-              onClick={() => navigate('/thor')}
+              onClick={() => navigate('/dashboard')}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-primary-dark text-cream font-mono text-xs font-semibold transition-all duration-200 active:scale-95 shadow-md hover:bg-dark-olive hover:shadow-[0_4px_18px_rgba(48,59,40,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span>Launch ODIN</span>

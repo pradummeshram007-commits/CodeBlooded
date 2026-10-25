@@ -63,7 +63,7 @@ export default function Navbar() {
         </button>
 
         {/* Desktop Nav Links */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-8">
+        <nav aria-label="Main Navigation" className="hidden lg:flex items-center gap-6">
           {[
             { id: 'hero', label: 'Overview' },
             { id: 'agents', label: 'Agent Network' },
@@ -85,24 +85,38 @@ export default function Navbar() {
               )}
             </button>
           ))}
-        </nav>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+          <div className="h-4 w-px bg-border-subtle" />
+
+          {/* Quick Page Jump Links */}
           <button
-            onClick={() => navigate('/norns')}
-            className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-2 rounded-lg border border-border-subtle text-secondary-olive hover:text-dark-olive hover:border-primary transition-all duration-200 focus:outline-none"
-            id="nav-norns"
+            onClick={() => navigate('/dashboard')}
+            className="font-mono text-xs font-semibold text-primary hover:text-primary-dark transition-colors"
           >
-            <span>NORNS</span>
-            <ArrowUpRight className="w-3 h-3" />
+            Dashboard
           </button>
           <button
             onClick={() => navigate('/thor')}
-            className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold px-4 py-2 rounded-lg bg-primary-dark text-cream hover:bg-dark-olive transition-all duration-200 active:scale-95 shadow-sm hover:shadow-[0_2px_12px_rgba(48,59,40,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            id="nav-launch-odin"
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
           >
             <span>THOR</span>
+          </button>
+          <button
+            onClick={() => navigate('/norns')}
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+          >
+            <span>NORNS</span>
+          </button>
+        </nav>
+
+        {/* Action Button */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold px-4 py-2 rounded-lg bg-primary-dark text-cream hover:bg-dark-olive transition-all duration-200 active:scale-95 shadow-sm hover:shadow-[0_2px_12px_rgba(48,59,40,0.3)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            id="nav-launch-site"
+          >
+            <span>Launch Dashboard</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
 
@@ -138,22 +152,30 @@ export default function Navbar() {
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                navigate('/thor');
+                navigate('/dashboard');
               }}
               className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2.5 rounded-lg bg-primary-dark text-cream font-semibold"
             >
-              <span>THOR — Contract Extraction</span>
+              <span>Dashboard</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/thor');
+              }}
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
+            >
+              <span>THOR — Extraction</span>
             </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 navigate('/norns');
               }}
-              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2.5 rounded-lg border border-border-subtle text-dark-olive font-semibold"
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
             >
-              <span>NORNS — Timeline Intelligence</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>NORNS — Timeline</span>
             </button>
           </div>
         </div>

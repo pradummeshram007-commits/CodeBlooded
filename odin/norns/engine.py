@@ -209,13 +209,13 @@ class Norns(Agent):
         self.rules = rules
         return rules
 
-    def load(self, rebuild: bool = False) -> None:
+    def load(self, rebuild: bool = False, persist: bool = False) -> None:
         if self._loaded and not rebuild:
             return
         self.calendar = BusinessCalendar(self.store.list_holidays())
         self.ledger: list[LedgerEntry] = self.store.list_ledger()
         self.checkpoint_dates = [to_date(p.date) for p in self.store.list_checkpoints()]
-        self.build_rules(persist=True)
+        self.build_rules(persist=persist)
         self.horizon = add_months(max(self.checkpoint_dates), self.cfg.norns.horizon_months) if self.checkpoint_dates \
             else add_months(date.today(), self.cfg.norns.horizon_months)
         self.external_ids = {f.external_id: c for c, f in self.families.items() if f.external_id}

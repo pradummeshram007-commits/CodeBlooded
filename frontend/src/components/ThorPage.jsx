@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ThorNavbar from './thor/ThorNavbar';
+import OdinTopNav from './common/OdinTopNav';
 import ThorHeroIntro from './thor/ThorHeroIntro';
 import ContractUploadPanel from './thor/ContractUploadPanel';
 import FindingsList from './thor/FindingsList';
@@ -70,6 +70,14 @@ export default function ThorPage() {
         }
         setLoading(false);
       }
+
+      // Notify dashboard and other tabs immediately of new document
+      try {
+        window.dispatchEvent(new CustomEvent('odin-doc-updated', { detail: uploadResult }));
+        localStorage.setItem('odin_last_upload', Date.now().toString());
+      } catch (e) {
+        // Ignore in non-browser context
+      }
     }
   };
 
@@ -82,6 +90,8 @@ export default function ThorPage() {
           const updated = data.extractions.find((e) => e.id === res.new_ids[0]);
           if (updated) setSelectedExtraction(updated);
         }
+        // Notify dashboard of updated extractions
+        window.dispatchEvent(new CustomEvent('odin-doc-updated', { detail: { docId: selectedDocId } }));
       })
       .catch(console.error);
   };
@@ -91,8 +101,8 @@ export default function ThorPage() {
 
   return (
     <div className="min-h-screen bg-cream text-dark-olive selection:bg-sage/40 selection:text-dark-olive flex flex-col">
-      {/* Top Application Navbar */}
-      <ThorNavbar activeNav={activeNav} setActiveNav={setActiveNav} />
+      {/* Universal Top Application Navbar */}
+      <OdinTopNav activePage="thor" />
 
       {/* Main Workspace Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">

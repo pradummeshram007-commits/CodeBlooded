@@ -20,6 +20,21 @@
   background-image: radial-gradient(circle, rgba(102, 115, 74, 0.12) 1px, transparent 1px);
 }
 
+.bg-grid-warm {
+  background-image: radial-gradient(#D5CEBE 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.06); }
+}
+
+.animate-alert-glow {
+  animation: alert-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
 /* Flow line dash array for interactive flow */
 .flow-line {
   stroke-dasharray: 6 6;

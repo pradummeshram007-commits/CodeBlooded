@@ -533,22 +533,35 @@ export default function NornsObligationsWorkspace() {
     setAsOf(d.toISOString().split('T')[0]);
   }, [dateOffset, today]);
 
-  // Load timeline & obligations whenever asOf / doc changes
+  // Debounced load timeline & obligations whenever asOf / doc changes
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      fetchNornsTimeline(asOf, selectedDocId),
-      fetchNornsObligations(asOf, selectedDocId, activeTab === 'all' ? null : activeTab, PAGE_SIZE, offset),
-    ])
-      .then(([tl, ob]) => {
-        setTimeline(tl);
-        setObligations(ob.obligations || []);
-        setTotalObligs(ob.total || 0);
-        if (!selectedItem && ob.obligations?.length > 0) setSelectedItem(ob.obligations[0]);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    let isCancelled = false;
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+      Promise.all([
+        fetchNornsTimeline(asOf, selectedDocId),
+        fetchNornsObligations(asOf, selectedDocId, activeTab === 'all' ? null : activeTab, PAGE_SIZE, offset),
+      ])
+        .then(([tl, ob]) => {
+          if (isCancelled) return;
+          setTimeline(tl);
+          setObligations(ob?.obligations || []);
+          setTotalObligs(ob?.total || 0);
+          if (!selectedItem && ob?.obligations?.length > 0) setSelectedItem(ob.obligations[0]);
+        })
+        .catch((e) => {
+          if (!isCancelled) setError(e.message);
+        })
+        .finally(() => {
+          if (!isCancelled) setLoading(false);
+        });
+    }, 150);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [asOf, selectedDocId, activeTab, offset]);
 
   const loadWorstCase = useCallback(() => {

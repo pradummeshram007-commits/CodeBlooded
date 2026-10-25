@@ -229,3 +229,43 @@ export async function fetchNornsWorstCase(asOf, docId, projectionMonths = 12) {
     flags: ['Worst-case engine requires backend connection.'],
   };
 }
+
+// ========================================================
+// DASHBOARD — Command Center API
+// ========================================================
+
+/** Fetch aggregated dashboard intelligence metrics. */
+export async function fetchDashboard(asOf) {
+  const params = new URLSearchParams();
+  if (asOf) params.set('as_of', asOf);
+
+  try {
+    const data = await safeFetchJson(`${API_BASE}/dashboard?${params}`);
+    if (data) return data;
+  } catch (err) {
+    console.warn('Dashboard API unreachable:', err.message);
+  }
+  return null;
+}
+
+/** Dispatch a certified legal notice with authoritative clause citations. */
+export async function sendCertifiedNotice(payload) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/notices/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    throw new Error('ODIN API backend unreachable. Ensure server is running on port 8000.');
+  }
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Notice dispatch failed with HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
