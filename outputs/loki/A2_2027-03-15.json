@@ -1,0 +1,68 @@
+{
+  "doc_id": "A2",
+  "as_of": "2027-03-15",
+  "run_id": "loki-20261026T020734-d4fb99",
+  "status": "failed",
+  "reason": "part 1/1 failed: LLMError: giving up after 5 attempts: openai_compat transient error: Error code: 429 - {'error': {'code': None, 'message': 'gpt-oss-120b-32k is currently experiencing high demand. Please try again later!', 'param': None, 'type': ''}, 'request_id': '60973cfa-f28b-4e99-8b38-ccebb038e351'}; no call succeeded; earlier findings for this date, if any, were kept",
+  "stored": false,
+  "provider": "openai_compat",
+  "model": "gpt-oss-120b",
+  "counterparty": "StratoNode Inc.",
+  "standard_terms": "referenced",
+  "context_notes": [
+    "A2 references STD without incorporating it: cited clauses STD:13.13"
+  ],
+  "parts": [
+    {
+      "part": "1/1",
+      "clause_ids": [
+        "A2:preamble",
+        "A2:1",
+        "A2:1.1",
+        "A2:1.2",
+        "A2:1.3",
+        "A2:1.4",
+        "A2:2",
+        "A2:2.1",
+        "A2:3",
+        "A3:2",
+        "A3:1",
+        "A2:3.3",
+        "A2:3.4",
+        "A2:4",
+        "A2:4.1",
+        "A2:4.2",
+        "A2:5",
+        "A2:5.1",
+        "A2:5.2",
+        "A2:5.3",
+        "A2:5.4",
+        "A2:5.5",
+        "A2:6",
+        "A2:6.1",
+        "A2:closing",
+        "STD:13.13"
+      ],
+      "est_input_tokens": 3836,
+      "status": "failed",
+      "error": "LLMError: giving up after 5 attempts: openai_compat transient error: Error code: 429 - {'error': {'code': None, 'message': 'gpt-oss-120b-32k is currently experiencing high demand. Please try again later!', 'param': None, 'type': ''}, 'request_id': '60973cfa-f28b-4e99-8b38-ccebb038e351'}",
+      "model": null,
+      "seconds": 43.0,
+      "llm_calls": 0,
+      "cache_hits": 0,
+      "failed_attempts": 5,
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  ],
+  "llm": {
+    "llm_calls": 0,
+    "cache_hits": 0,
+    "failed_attempts": 5,
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "seconds": 58.0,
+  "llm_seconds": 43.0,
+  "findings": []
+}

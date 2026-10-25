@@ -12,13 +12,18 @@ Per document:
      force on as_of (``effective_clause``; amended text carries the amendment's own clause
      id), the Standard Terms (all of them when incorporated, only the cited clauses when
      referenced), Thor's open flags and an index of its extractions as hints, and the trimmed
-     company context. Over the input budget, the text is split by top-level section, with
-     incorporated Standard Terms as their own part(s).
-  2. one LLM call per part (``prompts/loki_review.md``).
-  3. code checks, no LLM: citations verified with Thor's verifier, clause ids and figures
-     checked against the store and the cited text, ambiguities need two readings. A failing
-     finding is stored as rejected with the reason, never re-prompted. Duplicates are merged;
-     impact is looked up in Norns' exposure_items (Loki never computes an amount).
+     company context. Only over the input budget (loki.max_input_tokens, or the model's
+     max_request_tokens less max_tokens when lower) is the text split by top-level section,
+     with incorporated Standard Terms as their own part(s).
+  2. one LLM call per document (per part when split; ``prompts/loki_review.md``). With
+     ``run(..., parallel=N)`` the documents' calls run at the same time in worker threads, unless
+     the model allows one request at a time (Groq). A part the provider refuses as too large
+     (413, with retry_413 off) is split in two and each half tried once.
+  3. code checks, no LLM: citations verified with Thor's verifier, short clause references in
+     the attack path ("2.2", "§D") rewritten as full ids from the cited documents, clause ids
+     and figures checked against the store and the cited text, ambiguities need two readings.
+     A failing finding is stored as rejected with the reason, never re-prompted. Duplicates are
+     merged; impact is looked up in Norns' exposure_items (Loki never computes an amount).
   4. the document's findings for as_of replace any earlier ones; Loki's status per document
      goes to the workstreams, and the result to outputs/loki/<doc_id>_<as_of>.json.
 
@@ -30,6 +35,8 @@ from __future__ import annotations
 import json
 import math
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -43,7 +50,7 @@ from odin.citations import ClauseIndex, verify_citation
 from odin.effective import effective_clause
 from odin.ingest.loader import document_text, load_clock, read_text_exact
 from odin.ingest.segmenter import DECORATION_RE
-from odin.llm import BudgetExceeded, CallRecord, LLMError
+from odin.llm import BudgetExceeded, CallRecord, LLMError, LLMTooLarge
 from odin.state.models import (
     Clause,
     Document,
@@ -109,6 +116,15 @@ FIGURE_RE = re.compile(
     re.I,
 )
 STEP_NUMBER_RE = re.compile(r"^\s*(?:step\s*)?\d+\s*[.):\-]\s*", re.I)
+
+# Short clause references in an attack path: "Section 2.2", "Sec. 2.2", "Clause 4", "§2.2", "§D", and a bare
+# dotted number "2.2" that is not an amount, percentage or duration.
+SHORT_REF_RE = re.compile(
+    r"(?:(?i:\bsections?|\bsec\.|\bclauses?)\s*|§§?\s*)(?P<pref>\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)(?!\w)"
+    r"|(?<![\w.,:$§/-])(?P<bare>\d+(?:\.\d+)+)(?![\w%])"
+    r"(?!\s*(?i:%|percent|per\s?cent|x\b|times\b|(?:(?:business|calendar|working)\s+)?"
+    r"(?:seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b))"
+)
 
 
 def _number(token: str) -> float:
@@ -250,10 +266,11 @@ class ReviewPart:
     flags: list[str]
     extractions: list[str]
     est_tokens: int = 0
+    suffix: str = ""          # "a" / "b": a half of a part the provider refused as too large
 
     @property
     def label(self) -> str:
-        return f"{self.index}/{self.total}"
+        return f"{self.index}{self.suffix}/{self.total}"
 
 
 @dataclass
@@ -286,9 +303,12 @@ class ReviewContext:
 @dataclass
 class PartResult:
     part: ReviewPart
+    purpose: str = ""
     output: ReviewOut | None = None
     error: str | None = None
     calls: list[CallRecord] = field(default_factory=list)
+    seconds: float = 0.0
+    too_large: bool = False   # the provider refused the request as too large (413)
 
     @property
     def model(self) -> str | None:
@@ -306,12 +326,15 @@ class PartResult:
 class DocReview:
     doc_id: str
     as_of: str
-    status: str                       # complete | partial | failed | skipped
+    status: str                       # complete | partial | failed | skipped (pending: context built, not reviewed yet)
     reason: str | None = None
     context: ReviewContext | None = None
     parts: list[PartResult] = field(default_factory=list)
     findings: list[LokiFinding] = field(default_factory=list)
     stored: bool = False
+    seconds: float = 0.0              # wall clock spent on this document: context, LLM call(s), checks
+    llm_seconds: float = 0.0          # of which LLM call(s), including client-side rate-limit waits
+    output_path: Path | None = None
 
     @property
     def accepted(self) -> list[LokiFinding]:
@@ -391,18 +414,44 @@ class Loki(Agent):
 
     # ================================================================== public API
 
-    def run(self, doc_ids: list[str], as_of: date | str) -> list[DocReview]:
+    def run(self, doc_ids: list[str], as_of: date | str, parallel: int = 1) -> list[DocReview]:
+        """Review each document. With ``parallel`` > 1 the documents' LLM calls run at the same time in worker
+        threads; contexts, checks and every store write stay on this thread (as in Thor)."""
         day = _iso(as_of)
+        doc_ids = list(dict.fromkeys(doc_ids))
+        workers = self.workers(parallel)
         self.log("run_start", ",".join(doc_ids), day, model=self.llm.model if self.llm else None,
-                 max_llm_calls=self.llm.limits.max_llm_calls if self.llm else None)
-        reviews = [self.review(doc_id, day) for doc_id in doc_ids]
+                 max_llm_calls=self.llm.limits.max_llm_calls if self.llm else None, parallel=workers)
+        if workers <= 1 or len(doc_ids) <= 1:
+            reviews = [self.review(doc_id, day) for doc_id in doc_ids]
+        else:
+            reviews = [self._prepare(doc_id, day) for doc_id in doc_ids]
+            pending = [r for r in reviews if r.status == "pending"]
+            if pending:
+                with ThreadPoolExecutor(max_workers=min(workers, len(pending))) as pool:
+                    list(pool.map(self._call_llm, pending))
+                self.flush_llm_log()
+            reviews = [self._conclude(r) if r.status == "pending" else r for r in reviews]
         self.log("run_end", None, None, llm_calls=self.llm.stats.calls if self.llm else 0,
                  tokens=self.llm.stats.tokens if self.llm else 0,
                  statuses={r.doc_id: r.status for r in reviews})
         return reviews
 
+    def workers(self, parallel: int) -> int:
+        """Documents reviewed at the same time: ``parallel``, within the model's max_concurrent (Groq: 1)."""
+        limit = self.llm.settings.max_concurrent if self.llm else 0
+        return max(1, min(parallel, limit) if limit else parallel)
+
     def review(self, doc_id: str, as_of: date | str) -> DocReview:
-        day = _iso(as_of)
+        review = self._prepare(doc_id, _iso(as_of))
+        if review.status != "pending":
+            return review
+        self._call_llm(review)
+        return self._conclude(review)
+
+    def _prepare(self, doc_id: str, day: str) -> DocReview:
+        """The document's review context ("pending"); a document that can't be reviewed is finished here."""
+        t0 = time.monotonic()
         doc = self.store.get_document(doc_id, include_text=False)
         if doc is None:
             return DocReview(doc_id, day, "failed", f"document {doc_id!r} is not in the store")
@@ -422,13 +471,38 @@ class Loki(Agent):
                             counterparty=ctx.counterparty, est_tokens=[p.est_tokens for p in ctx.parts], notes=ctx.notes)
         except (LookupError, ValueError, OSError) as exc:
             return self._finish(DocReview(doc_id, day, "failed", f"review context: {type(exc).__name__}: {exc}"))
-        review = DocReview(doc_id, day, "failed", context=ctx)
+        review = DocReview(doc_id, day, "pending", context=ctx, seconds=time.monotonic() - t0)
         if not ctx.parts:
-            review.reason = "no clause text in force on this date"
+            review.status, review.reason = "failed", "no clause text in force on this date"
             return self._finish(review)
+        return review
 
+    def _call_llm(self, review: DocReview) -> None:
+        """The document's LLM call(s). No store access, so it can run in a worker thread."""
+        ctx = review.context
+        assert ctx is not None
+        t0 = time.monotonic()
         for part in ctx.parts:
-            review.parts.append(self._review_part(ctx, part))
+            result = self._review_part(ctx, part)
+            halves = self._halves(ctx, part) if result.too_large else []
+            if halves:
+                # Refused as too large (413): split in two, each half tried once; never retried unchanged.
+                ctx.notes.append(f"part {part.label} was refused as too large (413): split into "
+                                 f"{' and '.join(f'{h.label} ({h.est_tokens} est. tokens)' for h in halves)}")
+                review.parts += [self._review_part(ctx, h) for h in halves]
+            else:
+                review.parts.append(result)
+        review.llm_seconds = time.monotonic() - t0
+
+    def _conclude(self, review: DocReview) -> DocReview:
+        """Log the calls, run the code checks, store the findings and set the document's status."""
+        t0 = time.monotonic()
+        ctx, doc_id, day = review.context, review.doc_id, review.as_of
+        assert ctx is not None
+        for p in review.parts:
+            self.log("review_part", p.purpose, f"{len(p.output.findings)} finding(s)" if p.output else None,
+                     error=p.error, est_tokens=p.part.est_tokens, clause_ids=p.part.clause_ids,
+                     seconds=round(p.seconds, 1), **p.usage())
 
         failed = [p for p in review.parts if p.output is None]
         try:
@@ -439,20 +513,19 @@ class Loki(Agent):
                                 rejected={f.title: f.rejection_reason for f in review.rejected})
                 self.store.replace_loki_findings(doc_id, day, review.findings)
                 review.stored = True
+            reasons = [f"part {p.part.label} failed: {p.error}" for p in failed]
+            if not failed:
+                review.status = "complete"
+            elif len(failed) < len(review.parts):
+                review.status = "partial"
+            else:
+                review.status = "failed"
+                reasons.append("no call succeeded; earlier findings for this date, if any, were kept")
+            review.reason = "; ".join(reasons) or None
         except Exception as exc:  # noqa: BLE001 - reported as the document's status, with the reason
             review.status, review.reason = "failed", f"checks failed: {type(exc).__name__}: {exc}"
             review.findings, review.stored = [], False
-            return self._finish(review)
-
-        reasons = [f"part {p.part.label} failed: {p.error}" for p in failed]
-        if not failed:
-            review.status = "complete"
-        elif len(failed) < len(review.parts):
-            review.status = "partial"
-        else:
-            review.status = "failed"
-            reasons.append("no call succeeded; earlier findings for this date, if any, were kept")
-        review.reason = "; ".join(reasons) or None
+        review.seconds += review.llm_seconds + (time.monotonic() - t0)
         return self._finish(review)
 
     # ================================================================== 1. review context (read-only)
@@ -764,11 +837,38 @@ class Loki(Agent):
         part.est_tokens = self._estimate(ctx, part)
         return part
 
+    def _input_budget(self) -> int:
+        """Estimated input tokens per call: loki.max_input_tokens, and within the model's per-request cap when it
+        has one (input + max_tokens <= max_request_tokens, e.g. Groq's free tier)."""
+        budget = self.cfg.loki.max_input_tokens
+        s = self.llm.settings if self.llm else None
+        if s is not None and s.max_request_tokens:
+            budget = min(budget, s.max_request_tokens - s.max_output_tokens)
+        return budget
+
+    def _halves(self, ctx: ReviewContext, part: ReviewPart) -> list[ReviewPart]:
+        """A part in two, at the top-level section boundary nearest its middle (else the clause boundary); [] for
+        a single clause."""
+        ids = part.clause_ids
+        if len(ids) < 2:
+            return []
+        by_id = ctx.by_id()
+        sizes = [len(self._block(by_id[i])) for i in ids]
+        unit = [(by_id[i].group, by_id[i].top_id) for i in ids]
+        cuts = [k for k in range(1, len(ids)) if unit[k] != unit[k - 1]] or list(range(1, len(ids)))
+        cut = min(cuts, key=lambda k: abs(sum(sizes[:k]) - sum(sizes) / 2))
+        halves = []
+        for suffix, chunk in (("a", ids[:cut]), ("b", ids[cut:])):
+            half = self._make_part(ctx, chunk, part.index, part.total)
+            half.suffix = suffix
+            halves.append(half)
+        return halves
+
     def _plan_parts(self, ctx: ReviewContext) -> list[ReviewPart]:
         """One part if it fits the input budget; otherwise split by top-level section, incorporated STD apart."""
         if not ctx.clauses:
             return []
-        budget = self.cfg.loki.max_input_tokens
+        budget = self._input_budget()
         whole = self._make_part(ctx, [c.clause_id for c in ctx.clauses], 1, 1)
         if whole.est_tokens <= budget:
             return [whole]
@@ -808,12 +908,13 @@ class Loki(Agent):
         super()._on_llm_call(rec)
 
     def _review_part(self, ctx: ReviewContext, part: ReviewPart) -> PartResult:
-        purpose = f"loki.review:{ctx.doc.doc_id}@{ctx.as_of}:part{part.index}/{part.total}"
-        start = len(self._calls)
-        result = PartResult(part)
+        """One part's call, with re-prompts. No store access (worker thread when documents run in parallel)."""
+        purpose = f"loki.review:{ctx.doc.doc_id}@{ctx.as_of}:part{part.label}"
+        result = PartResult(part, purpose)
         tpl = self._template()
         if self.llm is None:
             raise RuntimeError("Loki was constructed without an LLM client")
+        t0 = time.monotonic()
         try:
             # The prompt states the output schema itself, so llm.py does not append the JSON Schema (saves input tokens).
             result.output = self.llm.call_json(tpl.render(**self._values(ctx, part)), ReviewOut, system=tpl.system,
@@ -822,9 +923,10 @@ class Loki(Agent):
             result.error = f"BudgetExceeded: {exc}"
         except LLMError as exc:
             result.error = f"{type(exc).__name__}: {exc}"
-        result.calls = self._calls[start:]
-        self.log("review_part", purpose, f"{len(result.output.findings)} finding(s)" if result.output else None,
-                 error=result.error, est_tokens=part.est_tokens, clause_ids=part.clause_ids, **result.usage())
+            result.too_large = isinstance(exc, LLMTooLarge)
+        result.seconds = time.monotonic() - t0
+        # Matched by purpose (re-prompts add "#v1", ...): other documents' calls may be running at the same time.
+        result.calls = [r for r in list(self._calls) if r.purpose.split("#", 1)[0] == purpose]
         return result
 
     # ================================================================== 3. code checks (no LLM)
@@ -866,12 +968,11 @@ class Loki(Agent):
         if not cites:
             reasons.append("no verified citation" + (f" ({len(dropped)} dropped)" if dropped else ""))
 
-        named = self._clause_ids_in(steps)
-        unknown = [cid for cid in named if not self._exists(cid)]
+        steps, ref_notes = self._normalise_refs(steps, cites)
+        notes += ref_notes
+        unknown = [cid for cid in self._clause_ids_in(steps) if not self._exists(cid)]
         if unknown:
             reasons.append(f"attack path names clause id(s) that do not exist: {', '.join(unknown)}")
-        elif steps and not named:
-            reasons.append("attack path names no clause id")
 
         if cites:
             invented = self._invented_figures(ctx, title, steps, cites)
@@ -926,6 +1027,31 @@ class Loki(Agent):
         for s in steps:
             found += [m.group(0) for m in self._clause_id_re.finditer(s) if m.group(0) not in found]
         return found
+
+    def _normalise_refs(self, steps: list[str], cites: list[FindingCitation]) -> tuple[list[str], list[str]]:
+        """Short clause references in the steps rewritten as full clause ids ("2.2" -> "STD:2.2").
+
+        A reference is looked up in the documents the finding cites and rewritten only when exactly one of them
+        has that clause in the store; anything else stays as written (it is then not a clause id to check).
+        """
+        docs = list(dict.fromkeys(c.doc_id for c in cites if c.doc_id))
+        read_as: dict[str, str] = {}
+        unclear: dict[str, list[str]] = {}
+
+        def full_id(m: re.Match[str]) -> str:
+            ref = m.group("pref") or m.group("bare")
+            hits = sorted({cid for d in docs if (cid := self._index(d).resolve(ref)) and self._exists(cid)})
+            if len(hits) == 1:
+                read_as[m.group(0)] = hits[0]
+                return hits[0]
+            if hits:
+                unclear[m.group(0)] = hits
+            return m.group(0)
+
+        out = [SHORT_REF_RE.sub(full_id, s) for s in steps]
+        notes = [f"attack path: {ref!r} read as {cid}" for ref, cid in read_as.items()]
+        notes += [f"attack path: {ref!r} left as written (matches {' and '.join(ids)})" for ref, ids in unclear.items()]
+        return out, notes
 
     def _verify_citations(self, ctx: ReviewContext, raw: list[CitationOut]) -> tuple[list[FindingCitation], list[str]]:
         """Thor's verifier, limited to the clauses shown (in force on as_of). Unverified citations are dropped."""
@@ -1058,7 +1184,7 @@ class Loki(Agent):
     def _finish(self, review: DocReview) -> DocReview:
         self.transition(f"loki:{review.doc_id}@{review.as_of}", None, review.status, review.reason)
         self.update_workstreams(review)
-        self.write_output(review)
+        review.output_path = self.write_output(review)
         return review
 
     def update_workstreams(self, review: DocReview) -> None:
@@ -1103,8 +1229,9 @@ class Loki(Agent):
             "context_notes": ctx.notes if ctx else [],
             "parts": [{"part": p.part.label, "clause_ids": p.part.clause_ids, "est_input_tokens": p.part.est_tokens,
                        "status": "ok" if p.output is not None else "failed", "error": p.error, "model": p.model,
-                       **p.usage()} for p in review.parts],
+                       "seconds": round(p.seconds, 1), **p.usage()} for p in review.parts],
             "llm": review.usage(),
+            "seconds": round(review.seconds, 1), "llm_seconds": round(review.llm_seconds, 1),
             "findings": [f.model_dump(mode="json") for f in review.findings],
         }
 

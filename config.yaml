@@ -47,10 +47,27 @@ norns:                         # timeline agent (deterministic dates and money)
 
 loki:                          # adversarial review agent (reads Thor's output; code checks every finding)
   max_findings_per_doc: 8
-  max_input_tokens: 6000       # per call, estimated; larger documents are split by top-level section
+  max_input_tokens: 100000     # per call, estimated: one call per document; only a larger one is split by section
   chars_per_token: 4.0         # estimate for that split (Thor's logged calls: 4.3 chars per token)
   context_tokens: 600          # company/context.txt is trimmed to about this
-  max_llm_calls: 5             # real API calls per run_loki.py process (cache hits are free)
+  max_llm_calls: 8             # real API calls per run_loki.py process (cache hits are free)
+  llm:                         # Loki's own model, used only when LOKI_LLM_* is set in .env (provider, base URL,
+                               # model and key come from there); these update the llm section for Loki only
+    request_timeout_s: 180
+    reasoning_effort: ""       # openai_compat; "" = not sent (gemma-4-31b-it rejected it: "Thinking level is
+                               # not supported for this model.", 2026-10-26)
+    json_mode: false           # the prompt asks for JSON only; lenient_json takes it out of fences / text
+    max_output_tokens: 8192    # 8 findings are about 3-4k tokens
+    lenient_json: true         # strip ```json fences and text around the JSON before validating
+    requests_per_minute: 12    # client-side cap: documents run in parallel (run_loki.py --parallel)
+  llm_for_host:                # further updates when Loki's base URL is on this host (Loki only)
+    api.groq.com:              # Groq free tier (gpt-oss-20b: 8,000 tokens per minute)
+      max_output_tokens: 3000
+      reasoning_effort: low    # gpt-oss; dropped if rejected
+      max_request_tokens: 7000 # estimated input + max_tokens per call: larger parts are split
+      tokens_per_minute: 7500  # calls wait so Loki stays under this per rolling minute
+      max_concurrent: 1        # documents and parts one after another
+      retry_413: false         # a 413 splits that part in two, each tried once; never retried unchanged
 
 state:                         # shared state + uploaded originals
   backend: sqlite              # sqlite | supabase   (env STATE_BACKEND)

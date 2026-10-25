@@ -36,6 +36,19 @@ class LLMSettings(BaseModel):
     json_mode: bool = True
     max_output_tokens: int = 32000
     request_timeout_s: float = 600.0
+    # openai_compat only: reasoning_effort sent with each request ("" = not sent). Dropped for the rest of
+    # the process when the endpoint rejects it.
+    reasoning_effort: str = ""
+    # openai_compat only: the system text opens the first user message instead of a system message. Also
+    # switched on for the rest of the process when the endpoint rejects a system message.
+    system_in_user: bool = False
+    # The JSON is taken out of ```json fences and any text before or after it before validation.
+    lenient_json: bool = False
+    requests_per_minute: int = 0       # client-side cap on requests sent (0 = none)
+    tokens_per_minute: int = 0         # client-side cap on estimated input + max_tokens per rolling minute (0 = none)
+    max_request_tokens: int = 0        # estimated input + max_tokens per request; callers split to fit (0 = none)
+    max_concurrent: int = 0            # requests in flight at once (0 = no limit, 1 = one after another)
+    retry_413: bool = True             # False: a 413 (request too large) is raised at once, for the caller to split
 
 
 class Limits(BaseModel):
@@ -83,10 +96,14 @@ class LokiSettings(BaseModel):
     """Adversarial review agent. Reads Thor's output only; the LLM finds, code checks every finding."""
 
     max_findings_per_doc: int = 8
-    max_input_tokens: int = 6000          # per call (estimated); a larger document is split by top-level section
+    max_input_tokens: int = 100_000       # per call (estimated); only a larger document is split by top-level section
     chars_per_token: float = 4.0          # estimate for that split; Thor's logged calls measured 4.3 (gpt-oss-20b)
     context_tokens: int = 600             # company/context.txt is trimmed to about this
-    max_llm_calls: int = 5                # real API calls per run_loki.py process (cache hits are free)
+    max_llm_calls: int = 8                # real API calls per run_loki.py process (cache hits are free)
+    # Loki's own model, used only when LOKI_LLM_* is set: these fields update the llm section for Loki.
+    llm: dict[str, Any] = {}
+    # Further updates when Loki's base URL is on that host, e.g. api.groq.com: the free tier's limits.
+    llm_for_host: dict[str, dict[str, Any]] = {}
 
 
 class StateSettings(BaseModel):
@@ -130,6 +147,7 @@ class Paths(BaseModel):
 
 class OdinConfig(BaseModel):
     llm: LLMSettings = LLMSettings()
+    agent_llm: dict[str, LLMSettings] = {}   # per-agent override (loki: LOKI_LLM_*); every other agent uses llm
     limits: Limits = Limits()
     loops: LoopLimits = LoopLimits()
     thor: ThorSettings = ThorSettings()
@@ -139,6 +157,14 @@ class OdinConfig(BaseModel):
     upload: UploadSettings = UploadSettings()
     paths: Paths = Paths()
 
+    def llm_for(self, agent: str) -> LLMSettings:
+        """The agent's own LLM settings when it has an override, else the shared llm section."""
+        return self.agent_llm.get(agent, self.llm)
+
+
+# Agents that may use their own model: <AGENT>_LLM_PROVIDER / _BASE_URL / _MODEL / _API_KEY in .env.
+AGENT_LLM_OVERRIDES = ("loki",)
+_AGENT_LLM_ENV = (("PROVIDER", "provider"), ("BASE_URL", "base_url"), ("MODEL", "model"), ("API_KEY", "api_key"))
 
 _URL_UNSAFE_IN_PASSWORD = set("@/?#[] %")
 
@@ -232,6 +258,20 @@ def load_config(path: str | Path | None = None, *, env: dict[str, str] | None = 
         llm["api_key"] = env["OPENAI_API_KEY"]
     if not llm.get("model") and llm.get("provider") == "anthropic":
         llm["model"] = DEFAULT_ANTHROPIC_MODEL
+
+    # Per-agent override: when any <AGENT>_LLM_* variable is set, that agent uses the llm section updated with
+    # <agent>.llm from config.yaml and those variables. Base URL, model and key are never inherited, so the
+    # shared key is never sent to the agent's endpoint. Then <agent>.llm_for_host[<base URL host>], if any.
+    for agent in AGENT_LLM_OVERRIDES:
+        section = data[agent]
+        own = {field: env[f"{agent.upper()}_LLM_{key}"] for key, field in _AGENT_LLM_ENV
+               if env.get(f"{agent.upper()}_LLM_{key}")}
+        settings = ({**llm, "base_url": None, "model": "", "api_key": None, **(section.get("llm") or {}), **own}
+                    if own else dict(llm))
+        host = urlsplit(settings.get("base_url") or "").hostname or ""
+        for_host = (section.get("llm_for_host") or {}).get(host)
+        if own or for_host:
+            data["agent_llm"][agent] = {**settings, **(for_host or {})}
 
     for env_key, field in (("ODIN_MAX_LLM_CALLS", "max_llm_calls"), ("ODIN_MAX_TOKENS_BUDGET", "max_tokens_budget")):
         if env.get(env_key):

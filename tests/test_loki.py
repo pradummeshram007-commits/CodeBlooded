@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 
 from odin.agents.loki import Loki
+from odin.config import load_config
+from odin.llm import LLMTooLarge
 
 from .conftest import doc_id_of, make_llm
 
@@ -90,3 +92,50 @@ def test_duplicates_are_merged(ingested, cfg) -> None:
     assert merged.status == "rejected" and merged.rejection_reason.startswith("duplicate of")
     status = {w.id: w.agent_status for w in ingested.list_workstreams()}
     assert status.get("ws:A1", {}).get("loki:A1") == "complete"
+
+
+def test_short_clause_refs_become_clause_ids_in_a_parallel_run(ingested, cfg) -> None:
+    remedy = "Service Credits are Customer's sole and exclusive remedy"   # A2 3.4, verbatim
+    replies = {
+        "A1": [finding("hidden_liability", "Late interest on overdue amounts", [("A1:C", REAL)],
+                       ["StratoNode invoices Quillhub", "Under Section C it charges 1.5% per month"]),
+               finding("one_sided", "Interest runs without any notice", [("A1:C", REAL)],
+                       ["StratoNode waits for a late payment", "It charges interest without notice"])],
+        "A2": [finding("one_sided", "Credits are the only remedy for downtime", [("A2:3.4", remedy)],
+                       ["Uptime falls below the target", "StratoNode relies on 3.4 against §6.1"])],
+    }
+    llm, _ = make_llm(cfg, lambda system, messages: json.dumps({"findings": replies[doc_id_of(messages)]}))
+    reviews = Loki(ingested, llm, cfg).run(["A1", "A2"], AS_OF, parallel=2)
+    assert [r.status for r in reviews] == ["complete", "complete"]
+    a1 = {f.title: f for f in ingested.list_loki_findings("A1", AS_OF)}
+    [a2] = ingested.list_loki_findings("A2", AS_OF)
+    assert a1["Late interest on overdue amounts"].attack_path[1] == "Under A1:C it charges 1.5% per month"
+    assert a1["Interest runs without any notice"].status == "accepted"     # naming no clause id is not a rejection
+    assert a2.status == "accepted" and a2.attack_path[1] == "StratoNode relies on A2:3.4 against A2:6.1"
+    assert all(f.model == "fake-model" for f in [*a1.values(), a2])
+    assert all(r.output_path is not None and r.output_path.exists() for r in reviews)
+
+
+def test_groq_limits_small_parts_waits_and_a_413_splits_the_part_once(ingested, cfg) -> None:
+    groq = load_config(env={"LLM_PROVIDER": "openai_compat", "LLM_MODEL": "openai/gpt-oss-20b", "LLM_API_KEY": "k",
+                            "LLM_BASE_URL": "https://api.groq.com/openai/v1"}).llm_for("loki")
+    prompts: list[str] = []
+
+    def responder(system, messages):
+        prompts.append(messages[0]["content"])
+        if len(prompts) == 1:
+            raise LLMTooLarge("413 request too large")
+        return json.dumps({"findings": []})
+
+    llm, _ = make_llm(cfg, responder)
+    llm.settings, delays = groq, []
+    llm.sleep = delays.append
+    loki = Loki(ingested, llm, cfg)
+    [r] = loki.run(["A1"], AS_OF, parallel=4)
+    assert loki.workers(4) == 1 and r.status == "complete"
+    first, second = r.parts[0].part, r.parts[1].part
+    assert (first.index, first.suffix, second.index, second.suffix) == (1, "a", 1, "b")   # part 1 in two halves
+    assert len(prompts) == len(r.parts) + 1                       # the refused request was not retried unchanged
+    assert any("refused as too large (413)" in n for n in r.context.notes)
+    assert all(p.part.est_tokens <= 7000 - 3000 for p in r.parts)
+    assert len(delays) == len(prompts) - 1 and min(delays) >= 60   # each call waits for the token window

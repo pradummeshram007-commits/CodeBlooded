@@ -27,6 +27,7 @@ or none, is the right answer when the text gives no real attack.
    or attack path must appear in a clause the finding cites. Do not calculate or estimate money amounts.
 5. Every attack-path step that relies on contract text names the clause id it relies on, e.g.
    "Under K1:4.2, ...".
+6. In attack-path steps, write full clause ids exactly as given, e.g. STD:2.2.
 
 ## Severity (pick one)
 
