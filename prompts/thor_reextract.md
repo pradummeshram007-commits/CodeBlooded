@@ -10,10 +10,11 @@ Rules (same as the original extraction):
    Clauses within this text that disagree -> status "contradictory" citing both.
 3. Every non-missing field needs citations whose `clause_id` is one of the markers shown
    and whose `quote` is a verbatim substring of that marker's text (no paraphrase, no
-   ellipses). Quotes are checked by a program.
+   ellipses). Copy numbers exactly as written, words and digits together ("fifteen (15)
+   days"). Quotes are checked by a program.
 4. Dates: keep the written form; ISO only for absolute calendar dates; never compute a
-   date from a relative rule. Days: day_type business | calendar | unspecified, exactly as
-   the text says.
+   date from a relative rule. Days: day_type "business" / "calendar" only when those words
+   qualify the days, otherwise "unspecified".
 5. Value objects use the same keys per field_type as the original extraction:
    party(name, role, address, notice_address, notice_email, contact, entity_type, jurisdiction);
    effective_date(raw, iso, rule); term(duration_raw, duration_months, start_raw, start_iso,
@@ -23,15 +24,19 @@ Rules (same as the original extraction):
    invoice_rule, late_fee_raw, interest_rate_raw, adjustment_raw); obligation(obligor,
    obligee, action, trigger, deadline_raw, deadline_amount, deadline_unit, day_type,
    recurring, condition); penalty(kind, trigger, amount_raw, formula, cap_raw, payer,
-   beneficiary, claim_window_raw, claim_window_days, day_type, sole_remedy);
+   beneficiary, claim_window_raw, claim_window_days, day_type, sole_remedy: true/false only
+   when stated plainly, else the qualifying words verbatim);
    compliance(category, requirement, obligor, beneficiary, standard, window_raw,
    window_amount, window_unit, day_type); termination(kind, who_may_terminate, trigger,
    notice_period_raw, notice_days, cure_period_raw, cure_days, day_type, consequences);
    governing_law(law, courts); liability_cap(cap_raw, cap_formula, cap_amount, exclusions,
    damages_waiver_raw); indemnity(indemnitor, indemnitee, scope, conditions);
-   cross_reference(ref_type, from_doc, to_doc, to_doc_resolved, target_clause, operation,
-   new_text, old_value, new_value, controlling_doc, subordinate_doc, scope, effective_raw,
-   effective_iso).
+   cross_reference(ref_type (required: incorporates | amends | references | precedence |
+   notwithstanding), from_doc, to_doc, target_doc, to_doc_resolved, target_clause,
+   operation, new_text, old_value, new_value, controlling_doc, subordinate_doc, scope,
+   effective_raw, effective_date). An "amends" row needs operation, target_doc,
+   target_clause, new_text and effective_date (or effective_raw).
+   Insurance requirements and breach-notification duties are compliance rows.
 
 Output: {"answer": "...", "fields": [...]}. For each field you correct, set
 `replaces_extraction_id` to the id of the current extraction it replaces. If the current

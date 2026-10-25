@@ -541,3 +541,20 @@ def call_json(prompt: str, schema: type[T], **kwargs: Any) -> T:
     if _default_client is None:
         _default_client = LLMClient.from_config(load_config())
     return _default_client.call_json(prompt, schema, **kwargs)
+
+
+PLACEHOLDER_MARKS = ("<", "your-", "changeme", "xxxx", "replace-me")
+
+
+def llm_config_problem(cfg: OdinConfig) -> str | None:
+    """Catch unfilled .env templates before any API call is attempted (None = looks usable)."""
+    model, key = cfg.llm.model or "", cfg.llm.api_key or ""
+    if not model:
+        return f"LLM_MODEL is empty (required for provider {cfg.llm.provider})"
+    if any(m in model.lower() for m in PLACEHOLDER_MARKS):
+        return f"LLM_MODEL looks like a placeholder: {model!r}"
+    if cfg.llm.provider == "openai_compat" and not key:
+        return "no API key: set LLM_API_KEY (or OPENAI_API_KEY)"
+    if key and any(key.lower().startswith(m) for m in PLACEHOLDER_MARKS):
+        return "the API key in .env looks like a placeholder"
+    return None

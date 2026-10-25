@@ -6,7 +6,7 @@ from odin.agents.thor import CONFIDENCE_CAP_UNVERIFIED, Thor
 from odin.llm import LLMError, RetryableError
 from odin.state.models import FIELD_TYPES, Message
 
-from .conftest import doc_id_of, field, make_llm, reply
+from .conftest import A3_ALL, A3_RELATIONS_ONLY_SLA, doc_id_of, field, make_llm, reply
 
 GOOD = "Monthly Fee:     $8,000.00 (Eight Thousand U.S. Dollars)"
 FAKE = "Monthly Fee: $9,500.00 payable weekly"
@@ -20,10 +20,10 @@ def a1_responder(system, messages):
                   [("A1:C", GOOD)]),
             field("payment", "weekly_fee", {"item": "Weekly Fee", "amount": 9500}, [("A1:C", FAKE)], confidence=0.95),
             field("cross_reference", "incorporates_standard_terms",
-                  {"ref_type": "incorporation", "from_doc": "A1", "to_doc": "STD.txt", "to_doc_resolved": True},
+                  {"ref_type": "incorporates", "from_doc": "A1", "to_doc": "STD.txt", "to_doc_resolved": True},
                   [("A1:preamble", "This Cover Page incorporates by reference the Common Paper Cloud Service Agreement")]),
             field("cross_reference", "incorporates_sla",
-                  {"ref_type": "incorporation", "from_doc": "A1", "to_doc": "QH-STRATO-2026-SLA"},
+                  {"ref_type": "incorporates", "from_doc": "A1", "to_doc": "QH-STRATO-2026-SLA"},
                   [("A1:E", "which is incorporated into this Agreement by reference")]),
             field("renewal", "renewal", None, [("A1:B", "Non-Renewal Notice Period: 90 days before the end")],
                   status="ambiguous",
@@ -79,7 +79,7 @@ def test_relations_are_resolved_from_the_documents_own_ids(ingested, cfg) -> Non
 
 def test_links_the_text_never_identifies_are_not_recorded(ingested, cfg) -> None:
     # STD only mentions a generic "DPA"; mapping it to B2 would be an assumption.
-    bad = reply([field("cross_reference", "dpa_reference", {"ref_type": "reference", "from_doc": "STD", "to_doc": "B2"},
+    bad = reply([field("cross_reference", "dpa_reference", {"ref_type": "references", "from_doc": "STD", "to_doc": "B2"},
                        [("STD:3.1", "If the parties have a DPA, each party will comply with its obligations in the DPA")])])
     llm, _ = make_llm(cfg, lambda s, m: bad)
     Thor(ingested, llm, cfg).run(["STD"], workers=1)
@@ -90,7 +90,7 @@ def test_links_the_text_never_identifies_are_not_recorded(ingested, cfg) -> None
 def test_incorporation_direction_follows_the_quoted_grammar(ingested, cfg) -> None:
     # "This Addendum is incorporated into ... the Agreement": B1 incorporates B2, whatever the model wrote.
     flipped = reply([field("cross_reference", "addendum_part_of_agreement",
-                           {"ref_type": "incorporation", "from_doc": "B2", "to_doc": "QH-HARBOR-2026-001"},
+                           {"ref_type": "incorporates", "from_doc": "B2", "to_doc": "QH-HARBOR-2026-001"},
                            [("B2:preamble", "This Addendum is incorporated into and forms part of the Agreement.")])])
     llm, _ = make_llm(cfg, lambda s, m: flipped)
     Thor(ingested, llm, cfg).run(["B2"], workers=1)
@@ -100,10 +100,10 @@ def test_incorporation_direction_follows_the_quoted_grammar(ingested, cfg) -> No
 
 def test_target_clause_must_exist_in_the_target(ingested, cfg) -> None:
     wrong = reply([field("cross_reference", "unlimited_claims_ref",
-                         {"ref_type": "reference", "from_doc": "B2", "to_doc": "STD", "target_clause": "Section J"},
+                         {"ref_type": "references", "from_doc": "B2", "to_doc": "STD", "target_clause": "Section J"},
                          [("B2:8.1", "Unlimited Claims as specified in Section J of the Cover Page")]),
                    field("cross_reference", "breach_definition",
-                         {"ref_type": "reference", "from_doc": "B2", "to_doc": "B1", "target_clause": "Section 5.1"},
+                         {"ref_type": "references", "from_doc": "B2", "to_doc": "B1", "target_clause": "Section 5.1"},
                          [("B2:3.1", "as defined in Section 5.1 of the Agreement")])])
     llm, _ = make_llm(cfg, lambda s, m: wrong)
     Thor(ingested, llm, cfg).run(["B2"], workers=1)
@@ -116,7 +116,7 @@ def test_target_clause_must_exist_in_the_target(ingested, cfg) -> None:
 def test_target_clause_must_be_named_by_the_citing_clause(ingested, cfg) -> None:
     # B2 §5.1 talks about termination of "the Agreement" but never names B1 §5.1.
     confused = reply([field("cross_reference", "retention_ref",
-                            {"ref_type": "reference", "from_doc": "B2", "to_doc": "B1", "target_clause": "Section 5.1"},
+                            {"ref_type": "references", "from_doc": "B2", "to_doc": "B1", "target_clause": "Section 5.1"},
                             [("B2:5.1", "Upon termination or expiration of the Agreement")])])
     llm, _ = make_llm(cfg, lambda s, m: confused)
     Thor(ingested, llm, cfg).run(["B2"], workers=1)
@@ -134,10 +134,14 @@ def test_unrelated_issue_does_not_excuse_a_missed_amendment(ingested, cfg) -> No
 
 
 def test_invalid_model_output_is_reprompted(ingested, cfg) -> None:
+    links = [field("cross_reference", "incorporates_std", {"ref_type": "incorporates", "to_doc": "STD.txt"},
+                   [("A1:preamble", "This Cover Page incorporates by reference the Common Paper Cloud Service Agreement")]),
+             field("cross_reference", "incorporates_sla", {"ref_type": "incorporates", "to_doc": "QH-STRATO-2026-SLA"},
+                   [("A1:E", "which is incorporated into this Agreement by reference")])]
     replies = [
         # 'extracted' without citations violates the schema rules -> re-prompt
         reply([field("payment", "monthly_fee", {"amount": 8000}, [])]),
-        reply([field("payment", "monthly_fee", {"amount": 8000}, [("A1:C", GOOD)])]),
+        reply([field("payment", "monthly_fee", {"amount": 8000}, [("A1:C", GOOD)])] + links),
     ]
     llm, provider = make_llm(cfg, lambda s, m: replies[min(len(provider.calls) - 1, 1)])
     [res] = Thor(ingested, llm, cfg).run(["A1"], workers=1)
@@ -145,33 +149,6 @@ def test_invalid_model_output_is_reprompted(ingested, cfg) -> None:
     assert "no citations" in provider.calls[1][-1]["content"]
     assert ingested.citations_for(next(e for e in ingested.current_extractions("A1")
                                        if e.field_key == "monthly_fee").id)[0].verified
-
-
-A3_RELATIONS_ONLY_SLA = [
-    field("cross_reference", "amends_sla_3_2",
-          {"ref_type": "amendment", "from_doc": "A3", "to_doc": "QH-STRATO-2026-SLA", "target_clause": "Section 3.2",
-           "operation": "replace"},
-          [("A3:1", "Section 3.2 of the SLA is deleted in its entirety and replaced with the following")]),
-]
-A3_ALL = A3_RELATIONS_ONLY_SLA + [
-    field("cross_reference", "amends_sla",
-          {"ref_type": "amendment", "from_doc": "A3", "to_doc": "A2", "operation": "modify"},
-          [("A3:preamble", 'This Amendment No. 1 ("Amendment") amends the Service Level Agreement')]),
-    field("cross_reference", "amends_sla_3_1",
-          {"ref_type": "amendment", "from_doc": "A3", "to_doc": "A2", "target_clause": "Section 3.1",
-           "operation": "replace"},
-          [("A3:2", "Section 3.1 of the SLA is deleted in its entirety and replaced with the following")]),
-    field("cross_reference", "amends_cover_page_b",
-          {"ref_type": "amendment", "from_doc": "A3", "to_doc": "A1", "target_clause": "Section B", "operation": "modify",
-           "old_value": "90 days", "new_value": "60 days"},
-          [("A3:3", "Section B of the Cover Page (Contract ID: QH-STRATO-2026-001) is amended")]),
-    field("cross_reference", "sla_incorporated_into_agreement",
-          {"ref_type": "incorporation", "from_doc": "A1", "to_doc": "A2"},
-          [("A3:preamble", "which is\nincorporated by reference into the Cloud Service Agreement")]),
-    field("cross_reference", "amendment_controls",
-          {"ref_type": "precedence", "controlling_doc": "A3", "subordinate_doc": "A2"},
-          [("A3:preamble", "In the event of a conflict between this Amendment and the SLA, this Amendment controls.")]),
-]
 
 
 def test_cue_check_reprompts_for_missed_links(ingested, cfg) -> None:
@@ -195,8 +172,10 @@ def test_cues_still_missing_after_recheck_become_flags(ingested, cfg) -> None:
     Thor(ingested, llm, cfg).run(["A3"], workers=1)
     assert len(provider.calls) == 2                               # one re-check only, then accept
     leftover = [f for f in ingested.list_flags("A3") if "even after a re-check" in f.description]
-    assert {f.clause_id for f in leftover} >= {"A3:2", "A3:3", "A3:preamble"}
-    assert ingested.get_document("A3").status == "complete"
+    assert {f.clause_id for f in leftover} >= {"A3:2", "A3:3"}
+    # A stated amendment that never became an edge keeps the document from "complete".
+    doc = ingested.get_document("A3")
+    assert doc.status == "partial" and "unresolved cross-reference" in doc.status_reason and "A3:3" in doc.status_reason
 
 
 def test_failed_followup_keeps_the_main_answer(ingested, cfg) -> None:
@@ -209,7 +188,7 @@ def test_failed_followup_keeps_the_main_answer(ingested, cfg) -> None:
 
     llm, _ = make_llm(cfg, responder)
     [res] = Thor(ingested, llm, cfg).run(["A3"], workers=1)
-    assert res.status == "complete" and res.citations_verified >= 1
+    assert res.status == "partial" and res.citations_verified >= 1       # main answer kept, links still missing
     assert any("even after a re-check" in f.description for f in ingested.list_flags("A3"))
 
 
