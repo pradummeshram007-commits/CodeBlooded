@@ -13,6 +13,7 @@ from odin.llm import (
     OpenAICompatProvider,
     ProviderResponse,
     RetryableError,
+    _quota_gone,
     _retry_after,
     llm_config_problem,
 )
@@ -104,6 +105,34 @@ def test_retry_after_parsing() -> None:
     assert _retry_after(Exception("try again in 1m2.5s")) == 62.5
     assert _retry_after(Exception("try again in 250ms")) == 0.25
     assert _retry_after(Exception("no hint here")) is None
+
+
+# Google AI Studio's 429 (OpenAI-compatible endpoint), as the SDK prints it: the same words for a per-minute limit
+# as for a used-up quota.
+GOOGLE_PER_MINUTE = (
+    "Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan "
+    "and billing details. * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_"
+    "input_token_count, limit: 15000, model: gemma-4-31b Please retry in 37.4s.', 'status': 'RESOURCE_EXHAUSTED', "
+    "'details': [{'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier'}, "
+    "{'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '37s'}]}}]")
+GOOGLE_PER_DAY = GOOGLE_PER_MINUTE.replace("PerMinute", "PerDay").replace("input_token_count", "requests")
+
+
+def test_google_per_minute_429_waits_and_a_daily_one_moves_to_the_next_key() -> None:
+    assert _retry_after(Exception(GOOGLE_PER_MINUTE)) == 37.4
+    assert _retry_after(Exception("{'retryDelay': '12s'}")) == 12.0
+    assert not _quota_gone(GOOGLE_PER_MINUTE)            # clears in a minute: wait, same key
+    assert _quota_gone(GOOGLE_PER_DAY)                   # does not clear by waiting: next key
+    assert _quota_gone("Error code: 429 - insufficient_quota")
+
+
+def test_loki_on_google_ai_studio_splits_and_paces_its_calls() -> None:
+    c = load_config(env={"LOKI_LLM_PROVIDER": "openai_compat", "LOKI_LLM_MODEL": "gemma-4-31b-it",
+                         "LOKI_LLM_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/openai/",
+                         "LOKI_LLM_API_KEY": "k"})
+    s = c.llm_for("loki")
+    assert s.max_request_tokens and s.max_request_tokens - s.max_output_tokens < 12000   # A1 / B1 families split
+    assert s.tokens_per_minute and s.max_concurrent == 1
 
 
 def test_loki_override_keeps_other_agents_and_their_cache_keys(cfg) -> None:

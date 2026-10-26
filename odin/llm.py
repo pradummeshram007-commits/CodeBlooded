@@ -49,11 +49,13 @@ class RetryableError(LLMError):
         self.retry_after = retry_after
 
 
-_RETRY_IN_RE = re.compile(r"try again in\s+(?:(\d+)m)?\s*([\d.]+)\s*(ms|s)\b", re.I)
+_RETRY_IN_RE = re.compile(r"(?:try again|retry) in\s+(?:(\d+)m)?\s*([\d.]+)\s*(ms|s)\b", re.I)
+_RETRY_DELAY_RE = re.compile(r"retryDelay['\"]?\s*:\s*['\"]([\d.]+)s", re.I)   # Google's RetryInfo detail
 
 
 def _retry_after(exc: Exception) -> float | None:
-    """Seconds to wait, from a Retry-After header or a 'try again in 7.5s' message."""
+    """Seconds to wait, from a Retry-After header, a 'try again in 7.5s' / 'Please retry in 37s' message, or
+    Google's retryDelay."""
     response = getattr(exc, "response", None)
     headers = getattr(response, "headers", None) or {}
     value = headers.get("retry-after") if hasattr(headers, "get") else None
@@ -67,6 +69,9 @@ def _retry_after(exc: Exception) -> float | None:
         minutes = float(m.group(1) or 0)
         amount = float(m.group(2)) / (1000.0 if m.group(3).lower() == "ms" else 1.0)
         return minutes * 60 + amount
+    m = _RETRY_DELAY_RE.search(str(exc))
+    if m:
+        return float(m.group(1))
     return None
 
 
@@ -119,6 +124,14 @@ class KeyRejected(LLMError):
 # Groq's ordinary per-minute rate-limit message links to its billing page.)
 _QUOTA_GONE_RE = re.compile(r"insufficient_quota|exceeded your current quota|credit balance is too low|"
                             r"insufficient (?:credits|balance|funds)", re.I)
+# Google says "You exceeded your current quota" for its per-minute limits too (quotaId ...PerMinute...): those
+# clear within a minute, so the key only waits; a per-day quota does not clear by waiting.
+_PER_MINUTE_RE = re.compile(r"per ?minute", re.I)
+
+
+def _quota_gone(text: str) -> bool:
+    """A rate-limit reply that waiting will not clear: the key's credit or (daily) quota is used up."""
+    return bool(_QUOTA_GONE_RE.search(text)) and not _PER_MINUTE_RE.search(text)
 
 
 class BudgetExceeded(RuntimeError):
@@ -222,11 +235,11 @@ class AnthropicProvider:
             if self.fallbacks and "fallback" in text:
                 self.fallbacks = False
                 return self.complete(system, messages, max_tokens)
-            if _QUOTA_GONE_RE.search(text):
+            if _quota_gone(text):
                 raise KeyRejected(f"anthropic: this key is out of credit: {exc}") from exc
             raise LLMError(f"anthropic bad request: {exc}") from exc
         except (a.RateLimitError, a.APIConnectionError, a.InternalServerError) as exc:
-            if isinstance(exc, a.RateLimitError) and _QUOTA_GONE_RE.search(str(exc)):
+            if isinstance(exc, a.RateLimitError) and _quota_gone(str(exc)):
                 raise KeyRejected(f"anthropic: this key is out of quota: {exc}") from exc
             raise RetryableError(f"anthropic transient error: {exc}", _retry_after(exc)) from exc
         except a.APIStatusError as exc:
@@ -325,7 +338,7 @@ class OpenAICompatProvider:
                 return self.complete(system, messages, max_tokens)
             raise LLMError(f"openai_compat bad request: {exc}") from exc
         except (o.RateLimitError, o.APIConnectionError, o.InternalServerError) as exc:
-            if isinstance(exc, o.RateLimitError) and _QUOTA_GONE_RE.search(str(exc)):
+            if isinstance(exc, o.RateLimitError) and _quota_gone(str(exc)):
                 raise KeyRejected(f"openai_compat: this key is out of quota: {exc}") from exc
             raise RetryableError(f"openai_compat transient error: {exc}", _retry_after(exc) or _window_wait(exc)) from exc
         except o.APIStatusError as exc:

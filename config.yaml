@@ -68,6 +68,11 @@ loki:                          # adversarial review agent (reads Thor's output; 
       tokens_per_minute: 7500  # calls wait so Loki stays under this per rolling minute
       max_concurrent: 1        # documents and parts one after another
       retry_413: false         # a 413 splits that part in two, each tried once; never retried unchanged
+    generativelanguage.googleapis.com:   # Google AI Studio free tier (Gemma / Gemini: about 15,000 input tokens
+      max_output_tokens: 4096  #   per minute). A whole contract family in one call (A1, B1: ~12-13k tokens)
+      max_request_tokens: 12000 #  does not fit the minute, so larger documents are split by section and the
+      tokens_per_minute: 14000 #   parts are paced: one part per minute instead of a 429
+      max_concurrent: 1
 
 heimdall:                      # event monitoring + task board (code maps first; the LLM only what code cannot)
   drop_release_checkpoints:    # a drop is released at this clock checkpoint (format_spec: initial / mid-cycle)
