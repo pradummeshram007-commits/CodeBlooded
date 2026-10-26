@@ -283,6 +283,9 @@ class OpenAICompatProvider:
         except o.BadRequestError as exc:
             text = str(exc).lower()
             # Adapt once to provider quirks, then retry the same request.
+            if self.reasoning_effort and "reasoning_effort" in text:
+                self.reasoning_effort = None
+                return self.complete(system, messages, max_tokens)
             if self.json_mode and ("response_format" in text or "json mode" in text):
                 self.json_mode = False
                 return self.complete(system, messages, max_tokens)

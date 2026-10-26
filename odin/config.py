@@ -34,6 +34,8 @@ class LLMSettings(BaseModel):
     fallbacks: bool = True
     # openai_compat only: ask for response_format={"type": "json_object"}.
     json_mode: bool = True
+    # openai_compat only: reasoning_effort for reasoning models (e.g. "low"); dropped if the provider rejects it.
+    reasoning_effort: str | None = None
     max_output_tokens: int = 32000
     request_timeout_s: float = 600.0
     # openai_compat only: reasoning_effort sent with each request ("" = not sent). Dropped for the rest of
@@ -106,6 +108,24 @@ class LokiSettings(BaseModel):
     llm_for_host: dict[str, dict[str, Any]] = {}
 
 
+class HeimdallSettings(BaseModel):
+    """Event monitoring. Code maps what it can; the LLM sees only the events code cannot map or classify."""
+
+    # A drop is released at this clock checkpoint (format_spec: drop 1 = initial analysis, drop 2 = mid-cycle).
+    drop_release_checkpoints: dict[str, int] = {"drop1": 1, "drop2": 2}
+    llm_batch_size: int = 10              # events per LLM call
+    max_llm_calls: int = 4                # real API calls per run_heimdall.py process (cache hits are free)
+    max_tokens: int = 3000                # output tokens per call, reasoning included
+    max_request_tokens: int = 7000        # estimated input + max_tokens per call (Groq free tier)
+    tokens_per_minute: int = 7500         # rolling 60 s budget across calls (input + output)
+    reasoning_effort: str | None = "low"  # openai_compat reasoning models; dropped if the provider rejects it
+    chars_per_token: float = 4.0          # input estimate (Thor's logged gpt-oss calls measured 4.3)
+    event_body_chars: int = 900           # event text shown to the LLM
+    task_window_days: int = 60            # tasks: overdue, due or upcoming within this many days
+    due_soon_days: int = 7                # alert "high"
+    due_month_days: int = 30              # alert "medium"; a renewal-notice deadline this close is "high"
+
+
 class StateSettings(BaseModel):
     """Where shared state and uploaded files live. sqlite = local file; supabase = Postgres + Storage."""
 
@@ -153,6 +173,7 @@ class OdinConfig(BaseModel):
     thor: ThorSettings = ThorSettings()
     norns: NornsSettings = NornsSettings()
     loki: LokiSettings = LokiSettings()
+    heimdall: HeimdallSettings = HeimdallSettings()
     state: StateSettings = StateSettings()
     upload: UploadSettings = UploadSettings()
     paths: Paths = Paths()

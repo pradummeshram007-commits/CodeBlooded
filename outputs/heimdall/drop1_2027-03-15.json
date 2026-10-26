@@ -1,0 +1,539 @@
+{
+  "drop": "drop1",
+  "as_of": "2027-03-15",
+  "run_id": "heimdall-20261026T044308-961f58",
+  "source": "storage:_bundle/events/8761ad1dd17d46a5ef3f1d977e05d1d2732f6f2b967a94cc9fad30efb7db9da3/events_drop1.jsonl",
+  "counts": {
+    "total": 7,
+    "mapped_by_code": 1,
+    "mapped_by_llm": 3,
+    "noise": 3,
+    "unmapped": 0,
+    "unparseable": 0,
+    "not_yet_visible": 3
+  },
+  "llm": {
+    "llm_calls": 1,
+    "cache_hits": 0,
+    "failed_attempts": 0,
+    "input_tokens": 4204,
+    "output_tokens": 645,
+    "rate_wait_s": 0.0
+  },
+  "worst_case": {
+    "before": "68296.00",
+    "after_events": "68696.00",
+    "live": "68696.00",
+    "by_contract": {
+      "A1": {
+        "after_events": "7616.00",
+        "live": "7616.00"
+      },
+      "B1": {
+        "after_events": "61080.00",
+        "live": "61080.00"
+      }
+    }
+  },
+  "events": [
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 1,
+      "event_id": "E-01",
+      "raw": "{\"event_id\": \"E-01\", \"timestamp\": \"2027-01-22T09:30:00Z\", \"channel\": \"email\", \"from\": \"Jordan Hale, StratoNode Support\", \"to\": \"Dana Kowalski, Quillhub\", \"subject\": \"Scheduled Maintenance Window — January 25\", \"body\": \"Hi Dana,\\n\\nThis is to notify you that StratoNode will perform scheduled maintenance on the CloudCore infrastructure on Saturday, January 25, 2027, from 02:00 to 05:00 UTC. During this window, the compute and networking services may experience brief interruptions.\\n\\nThis maintenance is part of our regular infrastructure upgrade cycle. No action is required on your end.\\n\\nPlease let us know if you have any questions.\\n\\nBest regards,\\nJordan Hale\\nVP Sales, StratoNode Inc.\"}",
+      "event_date": "2027-01-22",
+      "channel": "email",
+      "sender": "Jordan Hale, StratoNode Support",
+      "recipient": "Dana Kowalski, Quillhub",
+      "subject": "Scheduled Maintenance Window — January 25",
+      "status": "mapped",
+      "status_reason": null,
+      "type": "maintenance_notice",
+      "doc_ids": [
+        "A1"
+      ],
+      "clause_ids": [
+        "A1:I.1"
+      ],
+      "fact": {
+        "type": "other",
+        "description": "Scheduled maintenance notification for CloudCore infrastructure on 2027-01-25",
+        "source": "event",
+        "event_id": "E-01"
+      },
+      "is_noise": false,
+      "noise_reason": null,
+      "mapped_by": "llm",
+      "confidence": 0.9,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {},
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 2,
+      "event_id": "E-02",
+      "raw": "{\"event_id\": \"E-02\", \"timestamp\": \"2027-02-10T14:15:00Z\", \"channel\": \"email\", \"from\": \"Nora Chen, Harbor Retail\", \"to\": \"Raj Subramanian, Quillhub\", \"subject\": \"February uptime concerns\", \"body\": \"Raj,\\n\\nWe noticed two brief outages on Feb 3 and Feb 7, each lasting about 5 minutes. Our monitoring dashboard showed the Route Optimizer API returning 503 errors during those windows.\\n\\nCan you confirm whether these are being counted against our uptime commitment? We want to make sure our records match yours.\\n\\nThanks,\\nNora Chen\\nSVP Supply Chain, Harbor Retail\"}",
+      "event_date": "2027-02-10",
+      "channel": "email",
+      "sender": "Nora Chen, Harbor Retail",
+      "recipient": "Raj Subramanian, Quillhub",
+      "subject": "February uptime concerns",
+      "status": "noise",
+      "status_reason": null,
+      "type": "outage_report",
+      "doc_ids": [
+        "B1"
+      ],
+      "clause_ids": [
+        "B1:3.1"
+      ],
+      "fact": {
+        "type": "outage",
+        "date": "2027-02-03",
+        "contract": "B1",
+        "source": "event",
+        "event_id": "E-02",
+        "minutes": 10,
+        "single_incident_minutes": 5
+      },
+      "is_noise": true,
+      "noise_reason": "Norns: the outage fact changes no obligation instance and no worst-case exposure",
+      "mapped_by": "llm",
+      "confidence": 0.95,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {
+        "before": "68296.00",
+        "after": "68296.00",
+        "delta": "0.00",
+        "by_contract": {},
+        "changes": []
+      },
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 3,
+      "event_id": "E-03",
+      "raw": "{\"event_id\": \"E-03\", \"timestamp\": \"2027-02-28T16:00:00Z\", \"channel\": \"system\", \"from\": \"Pixelwright Design Studio\", \"to\": \"Quillhub Engineering\", \"subject\": \"M3 Deliverable Submission\", \"body\": \"Milestone M3 (Front-End Development) deliverable has been submitted via the project portal.\\n\\nDeliverable package includes:\\n- React component library (147 components)\\n- Unit test suite (84.2% code coverage)\\n- Build artifacts and deployment instructions\\n- Updated technical documentation\\n\\nSubmitted by: Elena Vasquez, Managing Director\\nSubmission date: February 28, 2027\\n\\nPlease review per the acceptance procedures in the agreement.\"}",
+      "event_date": "2027-02-28",
+      "channel": "system",
+      "sender": "Pixelwright Design Studio",
+      "recipient": "Quillhub Engineering",
+      "subject": "M3 Deliverable Submission",
+      "status": "mapped",
+      "status_reason": null,
+      "type": "deliverable_submitted",
+      "doc_ids": [
+        "D1"
+      ],
+      "clause_ids": [
+        "D1:4.1"
+      ],
+      "fact": {
+        "type": "other",
+        "description": "Milestone M3 deliverable submitted per agreement",
+        "source": "event",
+        "event_id": "E-03"
+      },
+      "is_noise": false,
+      "noise_reason": null,
+      "mapped_by": "llm",
+      "confidence": 0.95,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {},
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 4,
+      "event_id": "E-04",
+      "raw": "{\"event_id\": \"E-04\", \"timestamp\": \"2027-03-04T10:05:00Z\", \"channel\": \"status_log\", \"from\": \"StratoNode Status Page\", \"to\": \"All Customers\", \"subject\": \"Service Disruption — CloudCore Compute\", \"body\": \"Status: RESOLVED\\n\\nIncident start: 2027-03-03 10:05 UTC\\nIncident end: 2027-03-03 13:15 UTC\\nDuration: 190 minutes\\nAffected services: CloudCore Compute (us-west-2 region)\\nImpact: Customers hosted in us-west-2 experienced complete unavailability of compute services.\\nRoot cause: Network switch failure in the us-west-2a availability zone caused a cascading failure across the compute cluster.\\nResolution: Failover to backup switches and cluster restart.\\n\\nNo Scheduled Maintenance was in effect during this incident.\"}",
+      "event_date": "2027-03-04",
+      "channel": "status_log",
+      "sender": "StratoNode Status Page",
+      "recipient": "All Customers",
+      "subject": "Service Disruption — CloudCore Compute",
+      "status": "mapped",
+      "status_reason": null,
+      "type": "outage",
+      "doc_ids": [
+        "A1",
+        "A3"
+      ],
+      "clause_ids": [
+        "A3:2",
+        "A3:1"
+      ],
+      "fact": {
+        "type": "outage",
+        "date": "2027-03-03",
+        "contract": "A1",
+        "minutes": 190,
+        "single_incident_minutes": 190,
+        "source": "event",
+        "event_id": "E-04"
+      },
+      "is_noise": false,
+      "noise_reason": null,
+      "mapped_by": "code",
+      "confidence": 0.95,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {
+        "before": "68296.00",
+        "after": "68696.00",
+        "delta": "400.00",
+        "by_contract": {
+          "A1": "400.00"
+        },
+        "changes": [
+          "new credit: claim service credit for March 2027 (A1) $400.00 due 2027-04-15"
+        ]
+      },
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 5,
+      "event_id": "E-05",
+      "raw": "{\"event_id\": \"E-05\", \"timestamp\": \"2027-03-04T14:30:00Z\", \"channel\": \"email\", \"from\": \"Raj Subramanian, Quillhub\", \"to\": \"Nora Chen, Harbor Retail\", \"subject\": \"Service Disruption — March 3 Incident\", \"body\": \"Dear Nora,\\n\\nI'm writing to inform you of a service disruption that affected the Route Optimizer platform on March 3, 2027. Our hosting provider experienced an infrastructure failure that caused the platform to be unavailable from approximately 10:05 UTC to 13:15 UTC (approximately 190 minutes).\\n\\nNo Scheduled Maintenance was occurring at the time of the incident. We are reviewing the root cause with our infrastructure provider and will provide a full incident report within the timeframe specified in our agreement.\\n\\nWe sincerely apologize for the disruption and are taking steps to improve our failover capabilities.\\n\\nBest regards,\\nRaj Subramanian\\nHead of Customer Success, Quillhub Inc.\"}",
+      "event_date": "2027-03-04",
+      "channel": "email",
+      "sender": "Raj Subramanian, Quillhub",
+      "recipient": "Nora Chen, Harbor Retail",
+      "subject": "Service Disruption — March 3 Incident",
+      "status": "mapped",
+      "status_reason": null,
+      "type": "outage_report",
+      "doc_ids": [
+        "B1"
+      ],
+      "clause_ids": [
+        "B1:3.1"
+      ],
+      "fact": {
+        "type": "outage",
+        "date": "2027-03-03",
+        "contract": "B1",
+        "source": "event",
+        "event_id": "E-05",
+        "minutes": 190,
+        "single_incident_minutes": 190
+      },
+      "is_noise": false,
+      "noise_reason": null,
+      "mapped_by": "llm",
+      "confidence": 0.95,
+      "potential_breach": true,
+      "breach_reason": "B1: uptime below the committed target in 2027-03; Harbor Retail Group LLC may claim $6,000.00 by 2027-05-15 (B1:3.5)",
+      "exposure": {
+        "before": "68696.00",
+        "after": "68696.00",
+        "delta": "0.00",
+        "by_contract": {},
+        "changes": [
+          "new credit: claim service credit for March 2027 (B1) $6,000.00 due 2027-05-15"
+        ]
+      },
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 6,
+      "event_id": "E-06",
+      "raw": "{\"event_id\": \"E-06\", \"timestamp\": \"2027-03-10T11:00:00Z\", \"channel\": \"email\", \"from\": \"marketing@stratonode.com\", \"to\": \"newsletter-subscribers@stratonode.com\", \"subject\": \"StratoNode Q1 Product Update — New GPU Instances Available!\", \"body\": \"Dear StratoNode Customer,\\n\\nWe're excited to announce the general availability of our new GPU-optimized compute instances! Perfect for AI/ML workloads, video processing, and high-performance computing.\\n\\nKey features:\\n- NVIDIA H100 GPUs\\n- Up to 8 GPUs per instance\\n- NVLink interconnect for multi-GPU workloads\\n- Available in us-east-1 and us-west-2 regions\\n\\nExisting customers get 20% off for the first 3 months. Contact your account manager for details.\\n\\nAlso: Don't miss our webinar on March 20 — 'Optimizing Cloud Costs in 2027.'\\n\\nRegister here: https://stratonode.com/webinar-march2027\\n\\nBest,\\nThe StratoNode Marketing Team\\n\\nYou are receiving this email because you are subscribed to the StratoNode newsletter. Unsubscribe: https://stratonode.com/unsubscribe\"}",
+      "event_date": "2027-03-10",
+      "channel": "email",
+      "sender": "marketing@stratonode.com",
+      "recipient": "newsletter-subscribers@stratonode.com",
+      "subject": "StratoNode Q1 Product Update — New GPU Instances Available!",
+      "status": "noise",
+      "status_reason": null,
+      "type": "marketing",
+      "doc_ids": [],
+      "clause_ids": [],
+      "fact": null,
+      "is_noise": true,
+      "noise_reason": "marketing / newsletter from marketing@stratonode.com: no contract, clause, obligation or exposure",
+      "mapped_by": "code",
+      "confidence": 0.95,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {},
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "drop_name": "drop1",
+      "line_no": 7,
+      "event_id": "E-07",
+      "raw": "{\"event_id\": \"E-07\", \"timestamp\": \"2027-03-15T09:00:00Z\", \"channel\": \"system\", \"from\": \"Quillhub Monitoring\", \"to\": \"Quillhub Operations\", \"subject\": \"Monthly Uptime Report — February 2027\", \"body\": \"Route Optimizer Platform — Monthly Uptime Report\\nPeriod: February 1–28, 2027\\nTotal minutes in month: 40,320\\nDowntime minutes: 12 (Feb 3: 5 min, Feb 7: 7 min)\\nScheduled Maintenance minutes: 0\\nMonthly Uptime Percentage: 99.97%\\n\\nUptime target (Harbor): 99.9% — MET\\nUptime target (Vantage): 99.5% — MET (service not yet live)\\nUptime target (StratoNode SLA): 99.5% — MET (as customer)\"}",
+      "event_date": "2027-03-15",
+      "channel": "system",
+      "sender": "Quillhub Monitoring",
+      "recipient": "Quillhub Operations",
+      "subject": "Monthly Uptime Report — February 2027",
+      "status": "noise",
+      "status_reason": null,
+      "type": "uptime_report",
+      "doc_ids": [
+        "A1",
+        "B1",
+        "C1"
+      ],
+      "clause_ids": [],
+      "fact": null,
+      "is_noise": true,
+      "noise_reason": "uptime report: every target met (Harbor 99.9%, Vantage 99.5%, StratoNode SLA 99.5%); no credit, obligation or exposure changes",
+      "mapped_by": "code",
+      "confidence": 0.95,
+      "potential_breach": false,
+      "breach_reason": null,
+      "exposure": {},
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:26+00:00"
+    }
+  ],
+  "alerts": [
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "alert_key": "B1|B1:3.1|potential_breach|2027-03-04",
+      "severity": "critical",
+      "kind": "potential_breach",
+      "contract": "B1",
+      "clause_id": "B1:3.1",
+      "due_date": "2027-03-04",
+      "message": "E-05: B1: uptime below the committed target in 2027-03; Harbor Retail Group LLC may claim $6,000.00 by 2027-05-15 (B1:3.5)",
+      "citation": {
+        "doc_id": "B1",
+        "clause_id": "B1:3.1",
+        "quote": "§3.1  Uptime Commitment. Quillhub will make the Platform available at least"
+      },
+      "source": "event",
+      "event_id": "E-05",
+      "instance_key": null,
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:28+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "alert_key": "A1|A3:2|credit_claim|2027-04-15",
+      "severity": "low",
+      "kind": "credit_claim",
+      "contract": "A1",
+      "clause_id": "A3:2",
+      "due_date": "2027-04-15",
+      "message": "A1 claim the 2027-03 service credit ($400.00) from StratoNode Inc. by 2027-04-15 (31 days)",
+      "citation": {
+        "doc_id": "A3",
+        "clause_id": "A3:2",
+        "quote": "99.0% to < 99.5% 10% of Monthly Fee"
+      },
+      "source": "norns",
+      "event_id": null,
+      "instance_key": "A1:A3:credit:credit_claim_window_obligation_customer_submit_credit_request@2027-01-01|2027-03|2027-03-03",
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:28+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "alert_key": "A1|A1:C|payment_due|2027-05-01",
+      "severity": "low",
+      "kind": "payment_due",
+      "contract": "A1",
+      "clause_id": "A1:C",
+      "due_date": "2027-05-01",
+      "message": "A1 Monthly Fee April 2027: $8,000.00 due 2027-05-01 (47 days; Quillhub Inc. -> StratoNode Inc.)",
+      "citation": {
+        "doc_id": "A1",
+        "clause_id": "A1:C",
+        "quote": "Monthly Fee: $8,000.00 (Eight Thousand U.S. Dollars) Payment Process: Invoicing. StratoNode will issue invoices on the first business day of each calendar month for that month's Fee."
+      },
+      "source": "norns",
+      "event_id": null,
+      "instance_key": "A1:A1:payment:payment@2026-08-01|2027-04",
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:28+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "alert_key": "A1|A3:3|renewal_notice|2028-05-08",
+      "severity": "low",
+      "kind": "renewal_notice",
+      "contract": "A1",
+      "clause_id": "A3:3",
+      "due_date": "2028-05-08",
+      "message": "A1 non-renewal notice deadline 2028-05-08 (420 days) for the term ending 2028-07-31",
+      "citation": {
+        "doc_id": "A3",
+        "clause_id": "A3:3",
+        "quote": "The Agreement will automatically renew for successive Renewal Periods of 12 months each, unless either party delivers written notice of non-renewal to the other party's Notice Address at least 60 days before the end of the then-current Subs"
+      },
+      "source": "norns",
+      "event_id": null,
+      "instance_key": "A1:A3:renewal:non_renewal_notice@2027-01-01|2028-07-31",
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:28+00:00"
+    },
+    {
+      "id": null,
+      "as_of": "2027-03-15",
+      "alert_key": "B1|B1:B|renewal_notice|2029-01-05",
+      "severity": "low",
+      "kind": "renewal_notice",
+      "contract": "B1",
+      "clause_id": "B1:B",
+      "due_date": "2029-01-05",
+      "message": "B1 non-renewal notice deadline 2029-01-05 (662 days) for the term ending 2029-09-14",
+      "citation": {
+        "doc_id": "B1",
+        "clause_id": "B1:B",
+        "quote": "Renewal Period: successive 24-month periods"
+      },
+      "source": "norns",
+      "event_id": null,
+      "instance_key": "B1:B1:renewal:non_renewal_notice@start|2029-09-14",
+      "run_id": "heimdall-20261026T044308-961f58",
+      "created_at": "2026-10-25T23:13:28+00:00"
+    }
+  ],
+  "tasks": [
+    {
+      "as_of": "2027-03-15",
+      "task_id": "B1:B1:payment:payment_monthly_fee@2026-09-15|2027-02",
+      "title": "Monthly Fee February 2027",
+      "contract": "B1",
+      "kind": "payment",
+      "period": "2027-02",
+      "due_date": "2027-03-18",
+      "amount": "40000.00",
+      "citation": {
+        "doc_id": "B1",
+        "clause_id": "B1:C",
+        "quote": "Monthly Fee: $40,000.00 (Forty Thousand U.S. Dollars)"
+      },
+      "status": "Completed",
+      "status_source": "norns",
+      "norns_status": "paid_on_time",
+      "fact": null,
+      "payer": "Harbor Retail Group LLC",
+      "payee": "Quillhub Inc.",
+      "updated_at": "2026-10-25T23:13:27+00:00"
+    },
+    {
+      "as_of": "2027-03-15",
+      "task_id": "A1:A1:payment:payment@2026-08-01|2027-03",
+      "title": "Monthly Fee March 2027",
+      "contract": "A1",
+      "kind": "payment",
+      "period": "2027-03",
+      "due_date": "2027-03-31",
+      "amount": "8000.00",
+      "citation": {
+        "doc_id": "A1",
+        "clause_id": "A1:C",
+        "quote": "Monthly Fee: $8,000.00 (Eight Thousand U.S. Dollars) Payment Process: Invoicing. StratoNode will issue invoices on the first business day of each calendar month for that month's Fee."
+      },
+      "status": "Completed",
+      "status_source": "norns",
+      "norns_status": "paid_on_time",
+      "fact": null,
+      "payer": "Quillhub Inc.",
+      "payee": "StratoNode Inc.",
+      "updated_at": "2026-10-25T23:13:27+00:00"
+    },
+    {
+      "as_of": "2027-03-15",
+      "task_id": "A1:A3:credit:credit_claim_window_obligation_customer_submit_credit_request@2027-01-01|2027-03|2027-03-03",
+      "title": "claim service credit for March 2027",
+      "contract": "A1",
+      "kind": "credit",
+      "period": "2027-03",
+      "due_date": "2027-04-15",
+      "amount": "400.00",
+      "citation": {
+        "doc_id": "A3",
+        "clause_id": "A3:2",
+        "quote": "99.0% to < 99.5% 10% of Monthly Fee"
+      },
+      "status": "Not Complete",
+      "status_source": "user",
+      "norns_status": "upcoming",
+      "fact": null,
+      "payer": "StratoNode Inc.",
+      "payee": "Quillhub Inc.",
+      "updated_at": "2026-10-25T23:13:27+00:00"
+    },
+    {
+      "as_of": "2027-03-15",
+      "task_id": "B1:B1:payment:payment_monthly_fee@2026-09-15|2027-03",
+      "title": "Monthly Fee March 2027",
+      "contract": "B1",
+      "kind": "payment",
+      "period": "2027-03",
+      "due_date": "2027-04-15",
+      "amount": "40000.00",
+      "citation": {
+        "doc_id": "B1",
+        "clause_id": "B1:C",
+        "quote": "Monthly Fee: $40,000.00 (Forty Thousand U.S. Dollars)"
+      },
+      "status": "Completed",
+      "status_source": "norns",
+      "norns_status": "paid_on_time",
+      "fact": null,
+      "payer": "Harbor Retail Group LLC",
+      "payee": "Quillhub Inc.",
+      "updated_at": "2026-10-25T23:13:27+00:00"
+    },
+    {
+      "as_of": "2027-03-15",
+      "task_id": "A1:A1:payment:payment@2026-08-01|2027-04",
+      "title": "Monthly Fee April 2027",
+      "contract": "A1",
+      "kind": "payment",
+      "period": "2027-04",
+      "due_date": "2027-05-01",
+      "amount": "8000.00",
+      "citation": {
+        "doc_id": "A1",
+        "clause_id": "A1:C",
+        "quote": "Monthly Fee: $8,000.00 (Eight Thousand U.S. Dollars) Payment Process: Invoicing. StratoNode will issue invoices on the first business day of each calendar month for that month's Fee."
+      },
+      "status": "Not Complete",
+      "status_source": "user",
+      "norns_status": "upcoming",
+      "fact": null,
+      "payer": "Quillhub Inc.",
+      "payee": "StratoNode Inc.",
+      "updated_at": "2026-10-25T23:13:27+00:00"
+    }
+  ]
+}

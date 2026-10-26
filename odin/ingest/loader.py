@@ -117,8 +117,13 @@ def registry(store: StateStore) -> list[dict[str, Any]]:
 
 def load_events(path: Path, drop: str) -> list[Event]:
     """Parse a JSONL drop. Malformed lines are kept with parse_error set, never dropped silently."""
+    return parse_events(read_text_exact(path), drop)
+
+
+def parse_events(text: str, drop: str) -> list[Event]:
+    """The JSONL text of a drop (from the bundle or the file store), one Event per non-empty line."""
     events: list[Event] = []
-    for n, line in enumerate(read_text_exact(path).splitlines(), start=1):
+    for n, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
             continue
         try:

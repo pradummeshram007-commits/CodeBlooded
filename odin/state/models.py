@@ -688,3 +688,80 @@ class LokiFinding(BaseModel):
     rank: int = 0                       # order within the document: accepted first, most severe first
     notes: list[str] = []               # what the code checks changed (dropped citations, merged duplicates)
     created_at: str = Field(default_factory=utcnow)
+
+
+# --------------------------------------------------------------------------- Heimdall (event monitoring + task board)
+
+EventStatus = Literal["mapped", "unmapped", "noise", "unparseable"]
+AlertSeverity = Literal["critical", "high", "medium", "low"]
+TaskStatus = Literal["Not Complete", "In Progress", "Completed"]
+
+
+class HeimdallEvent(BaseModel):
+    """One line of an event drop as Heimdall saw it on the clock date ``as_of``."""
+
+    id: int | None = None
+    as_of: str
+    drop_name: str                      # drop1 | drop2
+    line_no: int
+    event_id: str | None = None         # E-01 ...; None when the line could not be parsed
+    raw: str
+    event_date: str | None = None       # UTC date of the timestamp
+    channel: str | None = None
+    sender: str | None = None
+    recipient: str | None = None
+    subject: str | None = None
+    status: EventStatus
+    status_reason: str | None = None    # why unmapped / unparseable
+    type: str | None = None             # outage, invoice_issued, maintenance_notice, ... (snake_case)
+    doc_ids: list[str] = []
+    clause_ids: list[str] = []
+    fact: dict[str, Any] | None = None  # the Norns fact: payment_made | outage | notice_sent | other
+    is_noise: bool = False
+    noise_reason: str | None = None
+    mapped_by: Literal["code", "llm"] | None = None
+    confidence: float | None = None
+    potential_breach: bool = False
+    breach_reason: str | None = None
+    exposure: dict[str, Any] = {}       # {before, after, delta, by_contract, changes}: worst case before / after its fact
+    run_id: str | None = None
+    created_at: str = Field(default_factory=utcnow)
+
+
+class HeimdallAlert(BaseModel):
+    id: int | None = None
+    as_of: str
+    alert_key: str                      # contract|clause|kind|due date: one alert per key
+    severity: AlertSeverity
+    kind: str                           # payment_overdue | payment_due | renewal_notice | deadline | potential_breach | ...
+    contract: str | None = None
+    clause_id: str | None = None
+    due_date: str | None = None
+    message: str                        # one line
+    citation: dict[str, Any] = {}       # {doc_id, clause_id, quote}
+    source: Literal["norns", "event"]
+    event_id: str | None = None
+    instance_key: str | None = None
+    run_id: str | None = None
+    created_at: str = Field(default_factory=utcnow)
+
+
+class HeimdallTask(BaseModel):
+    """A task-board card: one Norns obligation instance near the clock date (task_id = its instance key)."""
+
+    as_of: str
+    task_id: str
+    title: str
+    contract: str
+    kind: str
+    period: str | None = None
+    due_date: str | None = None
+    amount: Decimal | None = None
+    citation: dict[str, Any] = {}
+    status: TaskStatus = "Not Complete"
+    status_source: Literal["norns", "user"] = "user"   # norns = Norns marks it paid / met; the user cannot change it
+    norns_status: str | None = None     # Norns' own status for the instance
+    fact: dict[str, Any] | None = None  # the user's payment_made fact while the user has it Completed
+    payer: str | None = None
+    payee: str | None = None
+    updated_at: str = Field(default_factory=utcnow)

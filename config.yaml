@@ -69,6 +69,18 @@ loki:                          # adversarial review agent (reads Thor's output; 
       max_concurrent: 1        # documents and parts one after another
       retry_413: false         # a 413 splits that part in two, each tried once; never retried unchanged
 
+heimdall:                      # event monitoring + task board (code maps first; the LLM only what code cannot)
+  drop_release_checkpoints:    # a drop is released at this clock checkpoint (format_spec: initial / mid-cycle)
+    drop1: 1
+    drop2: 2
+  llm_batch_size: 10           # events per LLM call
+  max_llm_calls: 4             # real API calls per run_heimdall.py process
+  max_tokens: 3000             # output tokens per call (reasoning included)
+  max_request_tokens: 7000     # estimated input + max_tokens per call (Groq free tier)
+  tokens_per_minute: 7500      # rolling 60 s budget across calls
+  reasoning_effort: low        # sent to reasoning models; dropped if the provider rejects it
+  task_window_days: 60         # tasks: overdue, due or upcoming within this many days of the clock date
+
 state:                         # shared state + uploaded originals
   backend: sqlite              # sqlite | supabase   (env STATE_BACKEND)
   bucket: contracts            # private Supabase Storage bucket (env SUPABASE_BUCKET)
