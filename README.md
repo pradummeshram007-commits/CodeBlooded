@@ -5,12 +5,13 @@ LLM wrapper, config/limits, ingestion and **Thor** (extraction). **Step 2A:** th
 state moves to **Supabase** (Postgres + private Storage), with document upload and a
 "See the contract" viewer. **Step 3:** **Loki** reviews each contract as the counterparty's
 lawyer. **Step 4:** **Heimdall** maps the event drops to contracts and clauses, reassesses
-exposure through Norns, raises alerts and keeps a task board. Tyr and the rest of the
-dashboard plug into the same state store.
+exposure through Norns, raises alerts and keeps a task board. **Step 5:** **Odin**
+orchestrates them: one upload runs THOR -> NORNS -> LOKI -> HEIMDALL, with one LLM budget
+per run and API-key fallback. Tyr and the rest of the dashboard plug into the same state store.
 
 | Agent | Role | Status |
 |---|---|---|
-| Odin | orchestrator | later |
+| **Odin** | orchestrator: every upload runs THOR -> NORNS -> LOKI -> HEIMDALL; workstreams (FR1.2, FR1.3), per-run LLM budget, API-key fallback | **done** |
 | **Thor** | clause-cited extraction, cross-document references | **done** |
 | **Norns** | timeline, simulated clock, worst case | **done** (A1, B1 families) |
 | **Loki** | adversarial review per document (FR4.1, FR4.3); cross-contract conflicts and questions to Thor via `messages` later | **done** (per-document review) |
@@ -35,9 +36,10 @@ python scripts/clock.py play --step 7d --until 2027-06-01
 python scripts/worst_case.py --checkpoint 2     # exposure items, chart data, writeup
 python scripts/run_loki.py --docs A1,A2 --checkpoint 1   # Loki: adversarial review (--docs is required)
 python scripts/run_heimdall.py --drop 1 --checkpoint 1   # Heimdall: events -> facts, alerts, task board
+python scripts/run_pipeline.py --doc D1 --checkpoint 1   # Odin: THOR -> NORNS -> LOKI -> HEIMDALL on one document
 streamlit run app/Home.py               # upload + "See the contract" (/Contracts), task board (/Heimdall)
 python backend/run.py                   # FastAPI for the React app: http://localhost:8000/docs
-npm run dev                             # React app: http://localhost:3000 (/dashboard, /thor, /norns, /loki, /heimdall)
+npm run dev                             # React app: http://localhost:3000 (/dashboard, /odin, /thor, /norns, /loki, /heimdall)
 
 # Local backend (STATE_BACKEND=sqlite, the default): no migrate step, same commands otherwise
 python scripts/run_thor.py --no-llm     # ingest + segment only, no API calls
@@ -62,6 +64,8 @@ Written with Python 3.11 features only; tested on 3.14 (the interpreter on the d
 | `LLM_MODEL` | model id; anthropic defaults to `claude-opus-5-5`, openai_compat requires it |
 | `LLM_BASE_URL` | openai_compat endpoint (empty = api.openai.com). Gemini: `https://generativelanguage.googleapis.com/v1beta/openai/`; Groq: `https://api.groq.com/openai/v1`; OpenRouter: `https://openrouter.ai/api/v1` |
 | `LLM_API_KEY` (alias `ODIN_LLM_API_KEY`) | key for the chosen provider; falls back to `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` |
+| `LLM_API_KEY_2` ... `LLM_API_KEY_9` (or `LLM_API_KEYS=k1,k2,k3`) | fallback keys for the same provider and model (e.g. other people's accounts): when one is rate-limited, out of quota or rejected, the call moves to the next (see [Odin](#odin-orchestrator)) |
+| `LOKI_LLM_*` | Loki's own provider/model/keys (`LOKI_LLM_API_KEY`, `LOKI_LLM_API_KEY_2`, `_3`); unset = the shared `LLM_*` |
 | `LLM_EFFORT` | anthropic `output_config.effort` (default `high`) |
 | `LLM_FALLBACKS` | anthropic server-side refusal fallback `fallbacks: "default"` (default on) |
 | `LLM_JSON_MODE` | openai_compat `response_format=json_object` (default on, auto-disabled if rejected) |
@@ -120,6 +124,9 @@ prompts/loki_review.md, scripts/run_loki.py, supabase/migrations/003_loki.sql   
 odin/agents/heimdall.py  drop model, code-first + batched LLM mapping, Norns before/after, alerts, task board
 prompts/heimdall_map.md, scripts/run_heimdall.py, supabase/migrations/004_heimdall.sql   Heimdall prompt, CLI, tables
 app/pages/2_Heimdall.py, app/heimdall_tracker.py   alert strip, Kanban, progress tracker (no LLM)
+odin/agents/odin.py    the orchestrator: plan, THOR -> NORNS -> LOKI -> HEIMDALL, budgets, PipelineRunner (background)
+scripts/run_pipeline.py, supabase/migrations/005_odin.sql   Odin CLI, pipeline_runs table
+odin/api.py            FastAPI for the React app (frontend/): upload starts the pipeline; /api/odin/*
 docs/DATA_NOTES.md     numbering schemes, references, formats, day counting, traps
 tests/
 ```
@@ -502,6 +509,75 @@ streamlit run app/Home.py                                 # Heimdall page: /Heim
   (`streamlit-autorefresh`). It never calls the LLM: it constructs Heimdall without an LLM
   client.
 
+## Odin (orchestrator)
+
+Upload a contract and Odin takes it through the four agents, one after the other, on the
+clock date (`as_of`, default: the simulated clock's date):
+
+| Stage | What Odin has it do | Complete when |
+|---|---|---|
+| THOR | extract the document. Skipped (no LLM call) when its text is unchanged and already extracted completely. Without an LLM key the deterministic extractor fills the core fields, the document stays "not extracted" and the stage is `partial` | the document is extracted completely |
+| NORNS | rebuild the timeline and worst case of the followed contracts (`norns.contracts` plus every contract a pipeline has processed, so the upload joins the portfolio, the dashboard and the task board) and store them | at least one obligation of the document's contract is dated |
+| LOKI | review the document as the counterparty's lawyer: a contract or addendum itself, an amendment inside the documents it amends; standard terms are `not_applicable` | every review completes |
+| HEIMDALL | process the event drops released on `as_of` that were never processed for that date; re-map a processed drop whose events name the contract but were mapped before it was uploaded or re-extracted; rebuild the alerts and the task board | no event is left waiting for an LLM |
+
+A stage that cannot run says why (`skipped`: no LLM key, THOR failed, the run's budget used
+up). A run is `complete` only when every stage is complete or not applicable; otherwise it
+is `partial` (`failed` when THOR could not read the document), with every reason (NFR3).
+Each run is saved stage by stage in `pipeline_runs`, written to
+`outputs/odin/<run_id>.json` and traced, and its status goes to the document's workstream
+(`agent_status.odin`, `notes.odin`).
+
+**On the website.** "Upload & run ODIN pipeline" on the THOR page uploads the file and
+shows the four stages live; each finished stage links to its agent's page. The ODIN page
+(`/odin`) shows the runs, each agent's LLM access and key count, the budget and the
+workstreams, and runs the pipeline again on any stored document and clock date (re-extract,
+LOKI and HEIMDALL's LLM can be switched off per run). The API runs one pipeline at a time on
+a background thread; a run the server stopped is marked `interrupted`. An upload is stored
+in the state store and the file store only: nothing is written into the dataset folder or
+`frontend/public`. Identical text comes back as the stored document (no copy).
+
+**From the command line.**
+
+```bash
+python scripts/run_pipeline.py --doc D1 --checkpoint 1             # D1 on clock checkpoint 1
+python scripts/run_pipeline.py --doc A3 --as-of 2027-06-01 --force-thor
+python scripts/run_pipeline.py --doc D1 --no-loki --no-heimdall-llm  # fewest LLM calls
+```
+
+Exit code 0 only when the run is complete.
+
+**LLM budget.** One budget per run across the agents (`odin.max_llm_calls`,
+`odin.max_tokens_budget` in `config.yaml`), each agent within its own cap
+(`limits.max_llm_calls`, `loki.max_llm_calls`, `heimdall.max_llm_calls`). Cache hits are
+free, so a re-run on an unchanged document costs no call.
+
+**API-key fallback.** Same provider, same model, up to nine keys (for example three
+people's accounts, each with its own rate limits and quota):
+
+```
+LLM_API_KEY=...      # used first
+LLM_API_KEY_2=...    # takes over when the one before is rate-limited, out of quota or rejected
+LLM_API_KEY_3=...
+```
+
+Every agent's client shares one key pool per process (`odin.llm.KeyPool`). A call goes to the
+key that last worked; on a rate limit, an exhausted quota or an auth error that key rests (for
+the provider's `retry-after`, or an hour when it is rejected or out of quota) and the same
+request goes to the next key at once. The client waits only when every key is resting, and
+fails fast, naming each key's reason, when the soonest one is further away than
+`limits.rate_limit_max_wait_s` (a daily cap). Each logged call records the key slot that
+served it (`key_slot: "2/3"`), never the key. Loki's own model takes its own keys
+(`LOKI_LLM_API_KEY`, `LOKI_LLM_API_KEY_2`, `LOKI_LLM_API_KEY_3`).
+
+**API.** `POST /api/upload` (runs the pipeline unless `run_pipeline=false`; optional
+`as_of`) returns the queued run. `POST /api/odin/run {doc_id, as_of, force_thor, run_loki,
+heimdall_use_llm}`, `GET /api/odin/runs?doc_id=`, `GET /api/odin/runs/{run_id}`,
+`GET /api/odin/overview`.
+
+**Supabase.** Run `python scripts/db_migrate.py` once to add the `pipeline_runs` table
+(`supabase/migrations/005_odin.sql`); the Postgres store refuses to start on an older schema.
+
 ## For the next agents
 
 ```python
@@ -604,9 +680,10 @@ The Thor extraction pipeline was executed over the Quillhub contract bundle with
 ```
 
 - **Phase 1 (Complete)**: Thor extraction, document segmentation, citation verification, shared state store, LLM caching & rate-limit resilience.
-- **Phase 2 (Upcoming)**:
+- **Phase 2 (Complete except Tyr)**:
   - **Loki**: Adversarial cross-contract audit to identify superseding terms, conflicting liability caps, and silent amendments.
   - **Norns**: Timeline engine that simulates the contract clock and calculates absolute deadlines from relative rules.
   - **Heimdall**: Dynamic event processor reacting to incoming drops (`events_drop1.jsonl`, `events_drop2.jsonl`).
   - **Tyr**: Automated dispute resolution, arbitration decision engine, and legal notice generation.
+- **Phase 3 (Complete)**: **Odin** runs THOR -> NORNS -> LOKI -> HEIMDALL on every upload, with one LLM budget per run and API-key fallback (see "Odin (orchestrator)" above).
 

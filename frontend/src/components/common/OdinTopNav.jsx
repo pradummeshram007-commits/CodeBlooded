@@ -66,6 +66,18 @@ export default function OdinTopNav({
           </button>
 
           <button
+            onClick={() => navigate('/odin')}
+            className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer ${
+              activePage === 'odin'
+                ? 'bg-[#3D4B33] text-white font-semibold shadow-sm border border-odin-sage/30'
+                : 'text-odin-cream/80 hover:text-white hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-palesage">account_tree</span>
+            ODIN<span className="hidden 2xl:inline"> — Pipeline</span>
+          </button>
+
+          <button
             onClick={() => navigate('/thor')}
             className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer ${
               activePage === 'thor' || activePage === 'contracts'
@@ -231,6 +243,18 @@ export default function OdinTopNav({
             }`}
           >
             Command Dashboard
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/odin');
+            }}
+            className={`w-full text-left px-3 py-2 rounded transition-colors flex items-center gap-1.5 ${
+              activePage === 'odin' ? 'bg-[#3D4B33] text-white font-bold' : 'text-odin-cream/90 hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-palesage">account_tree</span>
+            ODIN — Pipeline &amp; Workstreams
           </button>
           <button
             onClick={() => {

@@ -4,6 +4,9 @@
   (OpenAI SDK pointed at OpenAI, Gemini, Groq, OpenRouter, ... via LLM_BASE_URL).
 * Retries API errors with exponential backoff; re-prompts with the validation error when
   the reply is not valid JSON for the schema.
+* Key fallback: LLM_API_KEY, LLM_API_KEY_2, LLM_API_KEY_3 (same provider and model, other
+  accounts' quota). A key that is rate-limited, out of quota or rejected hands the request to
+  the next key at once (``KeyPool``); the call waits only when every key is resting.
 * Disk cache keyed by a hash of (provider, model, system, messages, generation settings):
   an identical call is never sent twice, so re-runs are free and reproducible.
 * Counts real calls and tokens; raises BudgetExceeded before a call that would pass the limits.
@@ -25,7 +28,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Protocol, TypeVar
+from typing import Any, Callable, ClassVar, Protocol, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -107,6 +110,17 @@ class LLMValidationError(LLMError):
     pass
 
 
+class KeyRejected(LLMError):
+    """The provider refused this API key (invalid, no permission, out of credit or quota). Another key for the same
+    model may still work, so the client moves on to the next key instead of failing the call."""
+
+
+# A rate-limit reply that will not clear by waiting: the account's quota or credit is used up. (Not "billing":
+# Groq's ordinary per-minute rate-limit message links to its billing page.)
+_QUOTA_GONE_RE = re.compile(r"insufficient_quota|exceeded your current quota|credit balance is too low|"
+                            r"insufficient (?:credits|balance|funds)", re.I)
+
+
 class BudgetExceeded(RuntimeError):
     pass
 
@@ -136,6 +150,8 @@ class CallRecord:
     stop_reason: str | None = None
     error: str | None = None
     ts: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    key_slot: int = 1           # which API key served or failed it (1 = LLM_API_KEY, 2 = LLM_API_KEY_2, ...)
+    key_slots: int = 1          # how many keys the model has
 
     @property
     def tokens(self) -> int:
@@ -206,10 +222,16 @@ class AnthropicProvider:
             if self.fallbacks and "fallback" in text:
                 self.fallbacks = False
                 return self.complete(system, messages, max_tokens)
+            if _QUOTA_GONE_RE.search(text):
+                raise KeyRejected(f"anthropic: this key is out of credit: {exc}") from exc
             raise LLMError(f"anthropic bad request: {exc}") from exc
         except (a.RateLimitError, a.APIConnectionError, a.InternalServerError) as exc:
+            if isinstance(exc, a.RateLimitError) and _QUOTA_GONE_RE.search(str(exc)):
+                raise KeyRejected(f"anthropic: this key is out of quota: {exc}") from exc
             raise RetryableError(f"anthropic transient error: {exc}", _retry_after(exc)) from exc
         except a.APIStatusError as exc:
+            if exc.status_code in (401, 402, 403):
+                raise KeyRejected(f"anthropic status {exc.status_code}: this key was rejected: {exc}") from exc
             if exc.status_code == 413:
                 raise _too_large(413, "anthropic", exc) from exc
             if exc.status_code in (408, 409, 429) or exc.status_code >= 500:
@@ -303,8 +325,12 @@ class OpenAICompatProvider:
                 return self.complete(system, messages, max_tokens)
             raise LLMError(f"openai_compat bad request: {exc}") from exc
         except (o.RateLimitError, o.APIConnectionError, o.InternalServerError) as exc:
+            if isinstance(exc, o.RateLimitError) and _QUOTA_GONE_RE.search(str(exc)):
+                raise KeyRejected(f"openai_compat: this key is out of quota: {exc}") from exc
             raise RetryableError(f"openai_compat transient error: {exc}", _retry_after(exc) or _window_wait(exc)) from exc
         except o.APIStatusError as exc:
+            if exc.status_code in (401, 402, 403):
+                raise KeyRejected(f"openai_compat status {exc.status_code}: this key was rejected: {exc}") from exc
             if exc.status_code == 413:
                 if not self.retry_413:
                     raise LLMTooLarge(f"openai_compat 413 request too large: {exc}") from exc
@@ -419,6 +445,67 @@ def estimate_tokens(system: str | None, messages: list[dict[str, str]]) -> int:
     return int(chars / CHARS_PER_TOKEN_ESTIMATE) + 1
 
 
+KEY_REJECTED_REST_S = 3600.0     # a rejected key (invalid, out of credit or quota) is not tried again for this long
+
+
+class KeyPool:
+    """The API keys of one provider and model, in the order they are tried (LLM_API_KEY, LLM_API_KEY_2, ...).
+
+    A key the provider rate-limits rests for the wait it asks for; a key it rejects, or one that hit a daily cap,
+    rests for longer. Meanwhile the next key serves, and the last key that worked is tried first from then on.
+    ``KeyPool.shared`` keeps one pool per (provider, base URL, model, keys) in the process, so a key one agent found
+    exhausted is skipped by the next agent too. Only key positions are kept here, never the keys themselves.
+    """
+
+    _shared: ClassVar[dict[str, "KeyPool"]] = {}
+    _shared_lock: ClassVar[threading.Lock] = threading.Lock()
+
+    def __init__(self, size: int, clock: Callable[[], float] = time.monotonic):
+        self.size = max(1, size)
+        self.clock = clock
+        self.preferred = 0
+        self._until = [0.0] * self.size          # clock time each key may be used again
+        self._why: list[str | None] = [None] * self.size
+        self._lock = threading.Lock()
+
+    @classmethod
+    def shared(cls, settings: LLMSettings) -> "KeyPool":
+        keys = settings.api_keys()
+        ident = hashlib.sha256(json.dumps([settings.provider, settings.base_url or "", settings.model, keys]).encode())
+        with cls._shared_lock:
+            return cls._shared.setdefault(ident.hexdigest(), cls(len(keys)))
+
+    def pick(self, tried: set[int], waited: set[int]) -> int | None:
+        """The key to try next: the preferred one, then the others in order. Skips the keys already tried in this
+        round and keys still resting, except the ones the caller has just waited out."""
+        with self._lock:
+            now = self.clock()
+            for k in range(self.size):
+                i = (self.preferred + k) % self.size
+                if i not in tried and (i in waited or self._until[i] <= now):
+                    return i
+            return None
+
+    def rest(self, slot: int, seconds: float, why: str) -> None:
+        with self._lock:
+            self._until[slot] = max(self._until[slot], self.clock() + max(seconds, 0.0))
+            self._why[slot] = why
+
+    def worked(self, slot: int) -> None:
+        with self._lock:
+            self.preferred, self._until[slot], self._why[slot] = slot, 0.0, None
+
+    def remaining(self) -> list[float]:
+        """Seconds until each key may be used again (0 = now)."""
+        with self._lock:
+            now = self.clock()
+            return [max(0.0, u - now) for u in self._until]
+
+    def reasons(self) -> str:
+        with self._lock:
+            return "; ".join(f"key {i + 1}: {why}" for i, why in enumerate(self._why) if why)
+
+
 @dataclass
 class LLMStats:
     calls: int = 0
@@ -438,6 +525,7 @@ class LLMClient:
     limits: Limits
     cache_dir: Path | None
     provider: Provider | None = None
+    fallback_providers: list[Provider] = field(default_factory=list)   # given providers for keys 2, 3, ... (tests)
     on_call: Callable[[CallRecord], None] | None = None
     sleep: Callable[[float], None] = time.sleep
     stats: LLMStats = field(default_factory=LLMStats)
@@ -445,6 +533,13 @@ class LLMClient:
     _sent: deque[float] = field(default_factory=deque, repr=False)      # send times, for requests_per_minute
     _window: list[list[float]] = field(default_factory=list, repr=False)  # [time, tokens] per request, tokens_per_minute
     _rate_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _providers: dict[int, Provider] = field(default_factory=dict, repr=False)   # per key slot (slot 0 is .provider)
+    _providers_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _pool: KeyPool | None = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        # Providers handed in (tests) bring their own keys: the pool is theirs, not the process-wide one.
+        self._given = self.provider is not None
 
     @classmethod
     def from_config(cls, cfg: OdinConfig, agent: str | None = None, **kwargs: Any) -> "LLMClient":
@@ -453,10 +548,36 @@ class LLMClient:
         settings = cfg.llm_for(agent) if agent else cfg.llm
         return cls(**{"settings": settings, "limits": cfg.limits, "cache_dir": cfg.paths.llm_cache_dir, **kwargs})
 
-    def _provider(self) -> Provider:
-        if self.provider is None:
-            self.provider = make_provider(self.settings)
-        return self.provider
+    @property
+    def key_count(self) -> int:
+        """API keys this client can fall back across (1 when a single key, or none, is set)."""
+        if self._given:
+            return 1 + len(self.fallback_providers)
+        return max(1, len(self.settings.api_keys()))
+
+    @property
+    def pool(self) -> KeyPool:
+        if self._pool is None:
+            self._pool = KeyPool(self.key_count) if self._given else KeyPool.shared(self.settings)
+        return self._pool
+
+    def _provider(self, slot: int = 0) -> Provider:
+        """The provider that sends requests with key ``slot`` (0 = LLM_API_KEY). Each key gets its own client, with
+        the same model and settings."""
+        if slot == 0 and self.provider is not None:
+            return self.provider
+        if slot > 0 and self._given:
+            return self.fallback_providers[slot - 1]
+        with self._providers_lock:
+            if slot == 0 and self.provider is not None:
+                return self.provider
+            if slot not in self._providers:
+                keys = self.settings.api_keys()
+                settings = self.settings.model_copy(update={"api_key": keys[slot]}) if keys else self.settings
+                self._providers[slot] = make_provider(settings)
+            if slot == 0:
+                self.provider = self._providers[0]
+            return self._providers[slot]
 
     @property
     def model(self) -> str:
@@ -546,10 +667,15 @@ class LLMClient:
     def complete(
         self, system: str | None, messages: list[dict[str, str]], *, purpose: str = "", max_tokens: int | None = None
     ) -> ProviderResponse:
-        """One completion with cache, budget and retry/backoff."""
+        """One completion with cache, budget and retry/backoff.
+
+        With several API keys (LLM_API_KEY, LLM_API_KEY_2, ...) a key that is rate-limited, out of quota or rejected
+        hands the request straight to the next key; the call only waits when every key is resting, and fails when
+        every key is rejected or exhausted. A single key behaves as before: retries with backoff, honouring the wait
+        the provider asks for up to rate_limit_max_wait_s."""
         max_tokens = max_tokens or self.settings.max_output_tokens
         provider = self._provider()
-        key = self._cache_key(system, messages, max_tokens)
+        key = self._cache_key(system, messages, max_tokens)   # the request, whichever key serves it
         cached = self._cache_get(key)
         if cached is not None:
             with self._lock:
@@ -558,51 +684,75 @@ class LLMClient:
                                   cached.output_tokens, 0, 0, cached.stop_reason))
             return cached
 
+        pool, slots = self.pool, self.key_count
         last_exc: Exception | None = None
+        waited: set[int] = set()        # keys the last sleep waited out (usable again whatever the clock says)
         for attempt in range(self.limits.max_retries + 1):
-            with self._lock:  # check and reserve atomically: workers share one budget
-                self._check_budget()
-                self.stats.calls += 1
-            window_entry = self._throttle(system, messages, max_tokens)
-            t0 = time.monotonic()
-            try:
-                resp = provider.complete(system, messages, max_tokens)
-            except RetryableError as exc:
-                last_exc = exc
+            tried: set[int] = set()
+            while (slot := pool.pick(tried, waited)) is not None:
+                tried.add(slot)
+                waited.discard(slot)
+                provider = self._provider(slot)
+                with self._lock:  # check and reserve atomically: workers share one budget
+                    self._check_budget()
+                    self.stats.calls += 1
+                window_entry = self._throttle(system, messages, max_tokens)
+                t0 = time.monotonic()
+                try:
+                    resp = provider.complete(system, messages, max_tokens)
+                except (RetryableError, KeyRejected) as exc:
+                    last_exc = exc
+                    with self._lock:
+                        # The request never reached the model (rate limit, overload, rejected key): give the slot
+                        # back. Waits per call stay bounded by max_retries.
+                        self.stats.calls -= 1
+                        self.stats.failures += 1
+                    self._emit(CallRecord(purpose, provider.name, provider.model, key, False,
+                                          duration_ms=int((time.monotonic() - t0) * 1000), attempt=attempt,
+                                          error=str(exc), key_slot=slot + 1, key_slots=slots))
+                    if isinstance(exc, KeyRejected):
+                        pool.rest(slot, KEY_REJECTED_REST_S, str(exc))
+                    elif exc.retry_after and exc.retry_after > self.limits.rate_limit_max_wait_s:
+                        pool.rest(slot, exc.retry_after, f"provider asks to wait {exc.retry_after:.0f}s (over "
+                                  f"rate_limit_max_wait_s={self.limits.rate_limit_max_wait_s:.0f}); likely a daily "
+                                  f"cap: {exc}")
+                    else:
+                        pool.rest(slot, exc.retry_after or 0.0, str(exc))
+                    continue
+                except LLMError as exc:
+                    with self._lock:
+                        self.stats.failures += 1
+                    self._emit(CallRecord(purpose, provider.name, provider.model, key, False,
+                                          duration_ms=int((time.monotonic() - t0) * 1000), attempt=attempt,
+                                          error=str(exc), key_slot=slot + 1, key_slots=slots))
+                    raise
                 with self._lock:
-                    # The request never reached the model (rate limit / overload): give the slot back.
-                    # Retries per call stay bounded by max_retries.
-                    self.stats.calls -= 1
-                    self.stats.failures += 1
-                self._emit(CallRecord(purpose, provider.name, provider.model, key, False,
-                                      duration_ms=int((time.monotonic() - t0) * 1000), attempt=attempt, error=str(exc)))
-                if attempt >= self.limits.max_retries:
-                    break
-                delay = min(self.limits.backoff_base_s * (2 ** attempt), self.limits.backoff_max_s)
-                if exc.retry_after:  # the provider said how long to wait (e.g. a per-minute token window)
-                    if exc.retry_after > self.limits.rate_limit_max_wait_s:
-                        raise LLMError(f"provider asks to wait {exc.retry_after:.0f}s (over rate_limit_max_wait_s="
-                                       f"{self.limits.rate_limit_max_wait_s:.0f}); likely a daily cap: {exc}") from exc
-                    delay = max(delay, exc.retry_after + 0.5)
-                self.sleep(delay + random.uniform(0, min(delay / 4, 5.0)))
-                continue
-            except LLMError as exc:
-                with self._lock:
-                    self.stats.failures += 1
-                self._emit(CallRecord(purpose, provider.name, provider.model, key, False,
-                                      duration_ms=int((time.monotonic() - t0) * 1000), attempt=attempt, error=str(exc)))
-                raise
-            with self._lock:
-                self.stats.input_tokens += resp.input_tokens
-                self.stats.output_tokens += resp.output_tokens
-            if window_entry is not None:
-                with self._rate_lock:
-                    window_entry[0] = max(window_entry[0], time.monotonic())
-                    window_entry[1] = max(window_entry[1], float(resp.input_tokens + resp.output_tokens))
-            self._emit(CallRecord(purpose, provider.name, resp.model, key, False, resp.input_tokens,
-                                  resp.output_tokens, int((time.monotonic() - t0) * 1000), attempt, resp.stop_reason))
-            self._cache_put(key, resp, purpose)
-            return resp
+                    self.stats.input_tokens += resp.input_tokens
+                    self.stats.output_tokens += resp.output_tokens
+                if window_entry is not None:
+                    with self._rate_lock:
+                        window_entry[0] = max(window_entry[0], time.monotonic())
+                        window_entry[1] = max(window_entry[1], float(resp.input_tokens + resp.output_tokens))
+                pool.worked(slot)
+                self._emit(CallRecord(purpose, provider.name, resp.model, key, False, resp.input_tokens,
+                                      resp.output_tokens, int((time.monotonic() - t0) * 1000), attempt, resp.stop_reason,
+                                      key_slot=slot + 1, key_slots=slots))
+                self._cache_put(key, resp, purpose)
+                return resp
+
+            # No key can be tried right now: every key is resting, or failed in this round.
+            remaining = pool.remaining()
+            soonest = min(remaining)
+            if soonest > self.limits.rate_limit_max_wait_s:
+                prefix = f"every one of the {slots} API keys is rejected or exhausted: " if slots > 1 else ""
+                raise LLMError(prefix + (pool.reasons() or str(last_exc))) from last_exc
+            if attempt >= self.limits.max_retries:
+                break
+            delay = min(self.limits.backoff_base_s * (2 ** attempt), self.limits.backoff_max_s)
+            if soonest > 0:  # the provider said how long to wait (e.g. a per-minute token window)
+                delay = max(delay, soonest + 0.5)
+            waited = {i for i, r in enumerate(remaining) if r <= delay}
+            self.sleep(delay + random.uniform(0, min(delay / 4, 5.0)))
         raise LLMError(f"giving up after {self.limits.max_retries + 1} attempts: {last_exc}")
 
     def call_json(
@@ -671,4 +821,18 @@ def llm_config_problem(cfg: OdinConfig, agent: str | None = None) -> str | None:
         return f"no API key: set {var}API_KEY" + ("" if own else " (or OPENAI_API_KEY)")
     if key and any(key.lower().startswith(m) for m in PLACEHOLDER_MARKS):
         return "the API key in .env looks like a placeholder"
+    for n, extra in enumerate(llm.fallback_api_keys, start=2):
+        if any(extra.lower().startswith(m) for m in PLACEHOLDER_MARKS):
+            return f"{var}API_KEY_{n} in .env looks like a placeholder"
     return None
+
+
+def llm_unavailable(cfg: OdinConfig, agent: str | None = None) -> str | None:
+    """Why ``agent`` cannot call its LLM from the server or the orchestrator (None = it can): an unfilled .env, or no
+    API key at all (the scripts may still use an SDK login; a server run never does)."""
+    problem = llm_config_problem(cfg, agent)
+    settings = cfg.llm_for(agent) if agent else cfg.llm
+    if problem is None and not settings.api_keys():
+        var = f"{agent.upper()}_LLM_API_KEY" if agent and agent in cfg.agent_llm else "LLM_API_KEY"
+        problem = f"no API key set ({var} in .env)"
+    return problem

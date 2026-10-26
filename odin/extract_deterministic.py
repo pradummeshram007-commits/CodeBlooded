@@ -302,6 +302,6 @@ def extract_contract_fields_deterministic(
                 clause.clause_id, quote, quote, "Contract termination condition"
             )
 
-    # Mark document status as complete with 100% clause coverage
-    store.set_document_status(doc.doc_id, "complete", coverage=100.0, extracted_sha256=doc.sha256)
+    # The document's status stays THOR's: these fields fill gaps, they do not make an extraction complete (NFR3),
+    # and a document marked complete here would never be extracted again once an LLM key is set.
     return extractions_added

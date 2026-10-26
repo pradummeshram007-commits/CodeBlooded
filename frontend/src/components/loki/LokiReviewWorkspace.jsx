@@ -478,7 +478,7 @@ export default function LokiReviewWorkspace() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider bg-[#F4ECDB] text-dark-olive">
-                ODIN AGENT 04 · ADVERSARIAL REVIEW
+                ODIN AGENT 03 · ADVERSARIAL REVIEW
               </span>
               <span className="font-mono text-[11px] text-secondary-olive">Counterparty's-lawyer mode</span>
             </div>

@@ -470,6 +470,13 @@ class Heimdall(Agent):
                 found.append(root)
         return found
 
+    def events_naming(self, drop_name: str, as_of: str, contract: str) -> list[str]:
+        """Visible events of a drop that name ``contract`` (printed id, counterparty, e-mail domain): the ones a
+        newly extracted contract can change the mapping of."""
+        self._build_index()
+        events, _future, _source = self.load_events(drop_name, as_of)
+        return [ev.label for ev in events if ev.parse_error is None and contract in self.candidates(ev)]
+
     def _exists(self, clause_id: str) -> bool:
         if clause_id not in self._clauses:
             self._clauses[clause_id] = self.store.get_clause(clause_id) is not None

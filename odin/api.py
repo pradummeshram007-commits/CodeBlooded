@@ -33,11 +33,12 @@ from odin.agents.heimdall import SEVERITY_RANK as HEIMDALL_SEVERITY_RANK
 from odin.agents.heimdall import SEVERITY_SCALE as HEIMDALL_SEVERITY_SCALE
 from odin.agents.heimdall import TASK_STATUSES, Heimdall, heimdall_llm
 from odin.agents.loki import FINDING_TYPES, LIKELIHOOD_SCALE, NOT_REVIEWED_KINDS, SEVERITY_SCALE, Loki
+from odin.agents.odin import Odin, PipelineRunner, default_as_of, followed_contracts
 from odin.agents.thor import Thor
 from odin.config import load_config
 from odin.ingest.loader import load_clock
-from odin.ingest.upload import ingest_file
-from odin.llm import LLMClient, llm_config_problem
+from odin.ingest.upload import UploadRejected, ingest_file
+from odin.llm import LLMClient, llm_unavailable
 from odin.state.backend import open_file_store, open_store
 from odin.state.errors import StoreError
 from odin.state.store import StateStore
@@ -182,11 +183,19 @@ def get_document_report(doc_id: str):
     }
 
 @app.post("/api/upload")
-async def upload_contract(file: UploadFile = File(...)):
+async def upload_contract(
+    file: UploadFile = File(...),
+    run_pipeline: bool = Query(True, description="hand the document to Odin: THOR -> NORNS -> LOKI -> HEIMDALL"),
+    as_of: Optional[str] = Query(None, description="clock date for the pipeline; default: the simulated clock's"),
+):
+    """Store and segment the contract, then hand it to Odin, which runs THOR -> NORNS -> LOKI -> HEIMDALL on it in
+    the background. Returns at once with the pipeline run to poll (GET /api/odin/runs/{run_id}). The same file
+    uploaded again is the same document: no copy, and THOR skips it when it is already extracted."""
     store = get_store()
     name = file.filename or "contract.txt"
     content = await file.read()
-    
+    day = parse_as_of(as_of) if as_of else None
+
     # Extract text from PDF or decode plain text
     if name.lower().endswith(".pdf"):
         text = ""
@@ -218,64 +227,39 @@ async def upload_contract(file: UploadFile = File(...)):
         doc_id = f"{stem}_{counter}"
         counter += 1
 
-    # Save to contracts directory
-    dest_path = cfg.paths.bundle_dir / "contracts" / f"{doc_id}.txt"
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
-    dest_path.write_text(text, encoding="utf-8")
+    # Ingest & segment using upload pipeline. The text is stored with the document (no copy into the dataset
+    # folder); text identical to a stored document's comes back as that document (outcome "duplicate").
+    try:
+        upload_res = ingest_file(
+            content if name.lower().endswith(".txt") else text.encode("utf-8"),
+            f"{doc_id}.txt",
+            store=store,
+            cfg=cfg,
+            extract=False,
+            title=Path(name).stem,
+        )
+    except UploadRejected as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    doc_id = upload_res.doc_id
+    doc = store.get_document(doc_id, include_text=False)
 
-    # Ingest & segment using upload pipeline
-    upload_res = ingest_file(
-        content if name.lower().endswith(".txt") else text.encode("utf-8"),
-        f"{doc_id}.txt",
-        store=store,
-        cfg=cfg,
-        extract=False,
-        title=Path(name).stem,
-    )
-
-    llm = get_llm()
-    thor = Thor(store, llm, cfg)
-    
-    # Run extraction: if LLM configured, try Thor; always ensure deterministic extraction if needed
-    doc_obj = store.get_document(doc_id)
-    clauses = store.list_clauses(doc_id)
-    extraction_status = "complete"
-
-    if llm is not None:
-        try:
-            thor.run([doc_id], force=True)
-        except Exception as exc:
-            logger.warning("Thor LLM run failed: %s", exc)
-
-    # Ensure all 8 core contract intelligence categories (parties, durations, renewals, payments, obligations, penalties, compliance, termination) are strictly extracted with verified citations
-    from odin.extract_deterministic import extract_contract_fields_deterministic
-    extract_contract_fields_deterministic(store, doc_obj, clauses, text)
-
-    # Export document report JSON so the frontend static and API queries can load it immediately
-    out_dir = Path(cfg.paths.outputs_dir) / "thor"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    report_data = thor.document_report(doc_id)
-    (out_dir / f"{doc_id}.json").write_text(json.dumps(report_data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    # Also copy to frontend public directory so any static fallback loads it seamlessly
-    frontend_data_dir = Path("frontend/public/data/thor")
-    if frontend_data_dir.exists():
-        (frontend_data_dir / f"{doc_id}.json").write_text(json.dumps(report_data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    # Invalidate cached NORNS timelines
     with _norns_lock:
         _norns_cache.clear()
     reset_heimdall()
 
+    run = None
+    if run_pipeline and cfg.odin.run_on_upload:
+        run = get_runner().submit(doc_id, as_of=day, source="upload")
+
     return {
-        "status": "success",
+        "status": "duplicate" if upload_res.outcome == "duplicate" else "success",
         "doc_id": doc_id,
         "filename": name,
-        "clauses": upload_res.clauses,
-        "extractions": len(report_data.get("extractions", [])),
-        "extraction_status": extraction_status,
-        "report": report_data,
+        "message": upload_res.message,
+        "clauses": len(store.list_clauses(doc_id)),
+        "extraction_status": doc.status if doc else None,
         "warnings": upload_res.warnings,
+        "pipeline": run.model_dump(mode="json") if run else None,
     }
 
 @app.post("/api/reextract")
@@ -335,8 +319,10 @@ _norns_cache: dict[str, Any] = {}
 _norns_lock = threading.Lock()
 
 def get_norns(contracts: list[str] | None = None):
-    """Build or retrieve a cached Norns agent instance."""
-    key = ",".join(sorted(contracts)) if contracts else "__all__"
+    """Build or retrieve a cached Norns agent instance. Without contracts: the followed ones (config.yaml's
+    norns.contracts plus every contract an Odin pipeline has processed)."""
+    contracts = contracts or followed_contracts(get_store(), cfg)
+    key = ",".join(sorted(contracts))
     with _norns_lock:
         if key in _norns_cache:
             return _norns_cache[key]
@@ -526,14 +512,12 @@ def clock_checkpoints() -> list[dict[str, Any]]:
 
 
 def llm_status(agent: str | None = None) -> dict[str, Any]:
-    """Whether an agent can call its LLM: provider, model and, when it cannot, why (never the key)."""
+    """Whether an agent can call its LLM: provider, model, how many API keys it falls back across and, when it
+    cannot, why (never a key)."""
     settings = cfg.llm_for(agent) if agent else cfg.llm
-    problem = llm_config_problem(cfg, agent)
-    if problem is None and not settings.api_key:
-        var = f"{agent.upper()}_LLM_API_KEY" if agent and agent in cfg.agent_llm else "LLM_API_KEY"
-        problem = f"no API key set ({var} in .env)"
+    problem = llm_unavailable(cfg, agent)
     return {"configured": problem is None, "provider": settings.provider, "model": settings.model or None,
-            "problem": problem}
+            "keys": len(settings.api_keys()), "problem": problem}
 
 
 def parse_as_of(value: str | None) -> str:
@@ -692,7 +676,7 @@ _heimdall_board: Heimdall | None = None
 def new_heimdall(llm: LLMClient | None) -> Heimdall:
     from odin.norns.engine import Norns
     store = get_store()
-    norns = Norns(store, None, cfg)       # Norns never gets an LLM from Heimdall
+    norns = Norns(store, None, cfg, contracts=followed_contracts(store, cfg))   # never an LLM from Heimdall
     norns.load(persist=False)
     return Heimdall(store, llm, cfg, files=open_file_store(cfg), norns=norns)
 
@@ -859,6 +843,117 @@ def heimdall_reassess(req: HeimdallReassessRequest):
     with _heimdall_lock:
         live = get_heimdall().reassess(day)
     return {"as_of": day, "alerts": len(live.alerts), "tasks": len(live.tasks), "worst_case": str(live.live)}
+
+
+# ============================================================
+# ODIN — Orchestrator: the THOR -> NORNS -> LOKI -> HEIMDALL pipeline
+# ============================================================
+
+_runner: PipelineRunner | None = None
+_runner_lock = threading.Lock()
+
+
+def pipeline_changed(_run: Any = None) -> None:
+    """A pipeline stage changed what NORNS, the dashboard and HEIMDALL's board read: drop their caches."""
+    with _norns_lock:
+        _norns_cache.clear()
+    reset_heimdall()
+
+
+def get_runner() -> PipelineRunner:
+    """One background runner per API process: pipeline runs execute one after another, in submission order.
+    Runs a previous process left queued or running are marked interrupted the first time."""
+    global _runner
+    with _runner_lock:
+        if _runner is None:
+            n = get_store().interrupt_pipeline_runs("the API server stopped before this run finished; run it again")
+            if n:
+                logger.info("Marked %d unfinished pipeline run(s) interrupted", n)
+            _runner = PipelineRunner(lambda: Odin(get_store(), cfg, files=open_file_store(cfg), on_update=pipeline_changed),
+                                     on_finish=pipeline_changed)
+        return _runner
+
+
+class PipelineRequest(BaseModel):
+    doc_id: str
+    as_of: Optional[str] = None
+    force_thor: bool = False
+    run_loki: Optional[bool] = None
+    heimdall_use_llm: Optional[bool] = None
+
+
+@app.post("/api/odin/run", status_code=202)
+def odin_run(req: PipelineRequest):
+    """Queue THOR -> NORNS -> LOKI -> HEIMDALL for a stored document. Returns the queued run to poll."""
+    store = get_store()
+    if store.get_document(req.doc_id, include_text=False) is None:
+        raise HTTPException(status_code=404, detail=f"Document {req.doc_id} not found")
+    options: dict[str, Any] = {"force_thor": req.force_thor}
+    if req.run_loki is not None:
+        options["run_loki"] = req.run_loki
+    if req.heimdall_use_llm is not None:
+        options["heimdall_use_llm"] = req.heimdall_use_llm
+    run = get_runner().submit(req.doc_id, as_of=parse_as_of(req.as_of) if req.as_of else None, options=options)
+    return run.model_dump(mode="json")
+
+
+@app.get("/api/odin/runs")
+def odin_runs(doc_id: Optional[str] = Query(None), limit: int = Query(20, ge=1, le=200)):
+    """Pipeline runs, newest first, and what the runner is doing now."""
+    runner = get_runner()
+    runs = get_store().list_pipeline_runs(doc_id, limit)
+    return {"runs": [r.model_dump(mode="json") for r in runs], "current": runner.current, "queued": runner.queued}
+
+
+@app.get("/api/odin/runs/{run_id}")
+def odin_run_status(run_id: str):
+    get_runner()   # marks runs a previous process left unfinished
+    run = get_store().get_pipeline_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Pipeline run {run_id} not found")
+    return run.model_dump(mode="json")
+
+
+@app.get("/api/odin/overview")
+def odin_overview():
+    """The orchestrator's view (FR1.2, FR1.3, NFR4): workstreams with every agent's status, the followed contracts,
+    each agent's LLM readiness and key count, the run budgets and the queue."""
+    store = get_store()
+    runner = get_runner()
+    docs = {d.doc_id: d for d in store.list_documents(include_text=False)}
+    last_runs: dict[str, Any] = {}
+    for r in store.list_pipeline_runs(limit=200):
+        last_runs.setdefault(r.doc_id, r)
+    workstreams = []
+    for ws in store.list_workstreams():
+        try:
+            notes = json.loads(ws.notes) if ws.notes else {}
+        except ValueError:
+            notes = {}
+        scope = docs.get(ws.scope)
+        workstreams.append({
+            "id": ws.id, "scope": ws.scope, "title": scope.title if scope else "Cross-contract",
+            "members": ws.members, "agent_status": ws.agent_status,
+            "odin": notes.get("odin") if isinstance(notes, dict) else None, "updated_at": ws.updated_at,
+        })
+    return {
+        "default_as_of": default_as_of(store, cfg),
+        "checkpoints": clock_checkpoints(),
+        "followed_contracts": followed_contracts(store, cfg),
+        "llm": {"thor": llm_status(), "norns": llm_status(), "loki": llm_status("loki"), "heimdall": llm_status()},
+        "budget": {"max_llm_calls": cfg.odin.max_llm_calls, "max_tokens_budget": cfg.odin.max_tokens_budget,
+                   "thor": cfg.limits.max_llm_calls, "loki": cfg.loki.max_llm_calls, "heimdall": cfg.heimdall.max_llm_calls},
+        "options": {"run_on_upload": cfg.odin.run_on_upload, "run_loki": cfg.odin.run_loki,
+                    "heimdall_use_llm": cfg.odin.heimdall_use_llm, "loki_max_docs": cfg.odin.loki_max_docs},
+        "documents": [{"doc_id": d.doc_id, "title": d.title, "kind": d.kind, "thor_status": d.status,
+                       "coverage": d.coverage,
+                       "last_run": ({"run_id": last_runs[d.doc_id].run_id, "status": last_runs[d.doc_id].status,
+                                     "as_of": last_runs[d.doc_id].as_of, "finished_at": last_runs[d.doc_id].finished_at}
+                                    if d.doc_id in last_runs else None)}
+                      for d in sorted(docs.values(), key=lambda d: d.doc_id)],
+        "workstreams": workstreams,
+        "queue": {"current": runner.current, "queued": runner.queued},
+    }
 
 
 # ========================================================

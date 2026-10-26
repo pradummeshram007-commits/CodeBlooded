@@ -6,8 +6,12 @@ from pydantic import BaseModel
 from odin.config import load_config
 from odin.llm import (
     BudgetExceeded,
+    KeyRejected,
+    LLMClient,
+    LLMError,
     LLMValidationError,
     OpenAICompatProvider,
+    ProviderResponse,
     RetryableError,
     _retry_after,
     llm_config_problem,
@@ -133,3 +137,88 @@ def test_loki_override_keeps_other_agents_and_their_cache_keys(cfg) -> None:
     assert groq.call_json("q", Answer, system="s").value == 1
     assert gemma.call_json("q", Answer, system="s").value == 2
     assert gemma.stats.calls == 1 and gemma.stats.cache_hits == 0 and len(provider.calls) == 1
+
+
+# --------------------------------------------------------------------------- API-key fallback (same model, other keys)
+
+
+class KeyProvider:
+    """One key's provider: replies in turn from ``script`` (an exception is raised, a string is the reply)."""
+
+    name, model = "fake", "fake-model"
+
+    def __init__(self, *script):
+        self.script, self.calls = list(script), 0
+
+    def settings_fingerprint(self) -> dict:
+        return {}
+
+    def complete(self, system, messages, max_tokens):
+        self.calls += 1
+        item = self.script.pop(0) if len(self.script) > 1 else self.script[0]
+        if isinstance(item, Exception):
+            raise item
+        return ProviderResponse(item, 100, 50, "end_turn", self.model)
+
+
+def keyed_llm(cfg, *providers):
+    first, *rest = providers
+    return LLMClient(settings=cfg.llm, limits=cfg.limits, cache_dir=cfg.paths.llm_cache_dir, provider=first,
+                     fallback_providers=list(rest))
+
+
+def test_next_key_takes_over_when_one_is_rate_limited_or_rejected(cfg) -> None:
+    limited = KeyProvider(RetryableError("429 rate limit", retry_after=7.0))
+    rejected = KeyProvider(KeyRejected("401 invalid api key"))
+    works = KeyProvider('{"value": 5}')
+    llm = keyed_llm(cfg, limited, rejected, works)
+    delays: list[float] = []
+    llm.sleep = delays.append
+    records: list = []
+    llm.on_call = records.append
+    assert llm.call_json("q", Answer).value == 5
+    assert (limited.calls, rejected.calls, works.calls) == (1, 1, 1) and delays == []      # no waiting
+    assert [(r.key_slot, r.key_slots, bool(r.error)) for r in records] == [(1, 3, True), (2, 3, True), (3, 3, False)]
+    assert llm.stats.calls == 1 and llm.stats.failures == 2       # failed attempts never reached the model
+    assert llm.call_json("another question", Answer).value == 5   # the key that worked is tried first from now on
+    assert (limited.calls, rejected.calls, works.calls) == (1, 1, 2)
+
+
+def test_every_key_exhausted_fails_fast_with_each_reason(cfg) -> None:
+    capped = [KeyProvider(RetryableError(f"429 tokens per day, key {n}", retry_after=5000.0)) for n in (1, 2, 3)]
+    llm = keyed_llm(cfg, *capped)
+    delays: list[float] = []
+    llm.sleep = delays.append
+    with pytest.raises(LLMError, match="every one of the 3 API keys") as info:
+        llm.call_json("q", Answer)
+    assert "key 1: provider asks to wait 5000s" in str(info.value) and "key 3:" in str(info.value)
+    assert delays == [] and [p.calls for p in capped] == [1, 1, 1]
+
+
+def test_waits_only_when_every_key_is_resting(cfg) -> None:
+    first = KeyProvider(RetryableError("429", retry_after=5.0), '{"value": 6}')
+    second = KeyProvider(RetryableError("429", retry_after=9.0), '{"value": 6}')
+    llm = keyed_llm(cfg, first, second)
+    delays: list[float] = []
+    llm.sleep = delays.append
+    assert llm.call_json("q", Answer).value == 6
+    assert len(delays) == 1 and 5.0 <= delays[0] < 9.0               # the soonest key's wait, not the longest
+    assert (first.calls, second.calls) == (2, 1)
+
+
+def test_numbered_keys_are_read_in_order_and_each_gets_its_own_client() -> None:
+    base = {"LLM_PROVIDER": "openai_compat", "LLM_MODEL": "openai/gpt-oss-20b", "LLM_BASE_URL": "https://api.groq.com/openai/v1"}
+    cfg = load_config(env={**base, "LLM_API_KEY": "k1", "LLM_API_KEY_2": "k2", "LLM_API_KEY_3": "k3"})
+    assert cfg.llm.api_keys() == ["k1", "k2", "k3"] and cfg.llm.api_key == "k1"
+    assert load_config(env={**base, "LLM_API_KEYS": "a, b\nc,a"}).llm.api_keys() == ["a", "b", "c"]
+    assert "k2" not in repr(cfg.llm)                                   # keys never show up in logs or reprs
+    llm = LLMClient.from_config(cfg)
+    assert llm.key_count == 3 and [llm._provider(n).client.api_key for n in range(3)] == ["k1", "k2", "k3"]
+    assert llm.pool is LLMClient.from_config(cfg).pool                # one pool per model and keys, process-wide
+    # Loki's own model has its own keys; the shared ones are never sent to its endpoint.
+    loki = load_config(env={**base, "LLM_API_KEY": "k1", "LLM_API_KEY_2": "k2", "LOKI_LLM_PROVIDER": "openai_compat",
+                            "LOKI_LLM_MODEL": "gemma-4-31b-it", "LOKI_LLM_BASE_URL": "https://example.test/v1",
+                            "LOKI_LLM_API_KEY": "g1", "LOKI_LLM_API_KEY_2": "g2"}).llm_for("loki")
+    assert loki.api_keys() == ["g1", "g2"]
+    assert llm_config_problem(load_config(env={**base, "LLM_API_KEY": "k1", "LLM_API_KEY_2": "<your-key>"})) == \
+        "LLM_API_KEY_2 in .env looks like a placeholder"

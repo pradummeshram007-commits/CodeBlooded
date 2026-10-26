@@ -47,6 +47,7 @@ from odin.state.models import (
     Message,
     ObligationInstance,
     ObligationRule,
+    PipelineRun,
     Resource,
     TimelineSnapshot,
     TraceEntry,
@@ -55,7 +56,7 @@ from odin.state.models import (
     utcnow,
 )
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # Every table, in dependency order (export, row counts, test cleanup).
 TABLES = (
@@ -63,6 +64,7 @@ TABLES = (
     "workstreams", "trace", "resources", "events", "ledger_entries", "holidays", "clock_checkpoints",
     "obligation_rules", "obligation_instances", "clock_state", "clock_history", "timeline_snapshots",
     "exposure_items", "writeups", "loki_findings", "heimdall_events", "heimdall_alerts", "heimdall_tasks",
+    "pipeline_runs",
 )
 
 SQLITE_SCHEMA = """
@@ -505,6 +507,27 @@ CREATE TABLE IF NOT EXISTS heimdall_tasks (
     updated_at TEXT NOT NULL,
     PRIMARY KEY (as_of, task_id)
 );
+
+-- Odin (supabase/migrations/005_odin.sql)
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL UNIQUE,
+    doc_id TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('upload','manual')),
+    status TEXT NOT NULL CHECK (status IN ('queued','running','complete','partial','failed','interrupted')),
+    current_stage TEXT,
+    stages TEXT NOT NULL DEFAULT '[]',
+    plan TEXT NOT NULL DEFAULT '{}',
+    options TEXT NOT NULL DEFAULT '{}',
+    reason TEXT,
+    llm TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    started_at TEXT,
+    finished_at TEXT,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_pipeline_runs_doc ON pipeline_runs(doc_id, created_at);
 """
 
 # Columns added after the first SQLite release; older state/odin.db files are upgraded in place.
@@ -536,6 +559,7 @@ _JSON_COLUMNS = {
     "exposure_items": ("inputs", "citations"),
     "writeups": ("meta",),
     "loki_findings": ("citations", "readings", "attack_path", "impact", "notes"),
+    "pipeline_runs": ("stages", "plan", "options", "llm"),
     "heimdall_events": ("doc_ids", "clause_ids", "fact", "exposure"),
     "heimdall_alerts": ("citation",),
     "heimdall_tasks": ("citation", "fact"),
@@ -571,6 +595,18 @@ def _json_default(value: Any) -> Any:
 
 def _dumps(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, default=_json_default)
+
+
+def _merge_notes(old: str | None, new: str | None) -> str | None:
+    """Workstream notes that are JSON objects are merged key by key (Thor rewrites its member statuses after every
+    run; Loki and Odin keep their notes under their own key). Anything else replaces the old notes."""
+    try:
+        before, after = json.loads(old) if old else None, json.loads(new) if new else None
+    except ValueError:
+        return new
+    if isinstance(before, dict) and isinstance(after, dict):
+        return json.dumps({**before, **after})
+    return new
 
 
 def _plain(value: Any) -> Any:
@@ -913,14 +949,16 @@ class StateStore:
 
     def upsert_workstream(self, ws: Workstream) -> None:
         with self.transaction():
-            existing = self._row("workstreams", self._one("SELECT agent_status FROM workstreams WHERE id=?", (ws.id,)))
+            existing = self._row("workstreams", self._one("SELECT agent_status, notes FROM workstreams WHERE id=?",
+                                                          (ws.id,)))
             status = dict(existing["agent_status"]) if existing else {}
             status.update(ws.agent_status)  # merge: one agent never erases another's status
             self._write(
                 """INSERT INTO workstreams (id, scope, members, agent_status, notes, updated_at) VALUES (?, ?, ?, ?, ?, ?)
                    ON CONFLICT(id) DO UPDATE SET scope=excluded.scope, members=excluded.members,
                    agent_status=excluded.agent_status, notes=excluded.notes, updated_at=excluded.updated_at""",
-                (ws.id, ws.scope, _dumps(ws.members), _dumps(status), ws.notes, utcnow()),
+                (ws.id, ws.scope, _dumps(ws.members), _dumps(status), _merge_notes(existing and existing["notes"], ws.notes),
+                 utcnow()),
             )
 
     def list_workstreams(self) -> list[Workstream]:
@@ -1174,6 +1212,41 @@ class StateStore:
         )
         return n > 0
 
+    # ------------------------------------------------------------------ Odin: pipeline runs
+
+    def save_pipeline_run(self, run: PipelineRun) -> None:
+        """Insert or update a pipeline run (by run_id). The orchestrator saves it as each stage starts and ends."""
+        run.updated_at = utcnow()
+        data = self._prepare("pipeline_runs", run.model_dump(exclude={"id"}))
+        cols = list(data)
+        self._write(
+            f"""INSERT INTO pipeline_runs ({', '.join(cols)}) VALUES ({', '.join('?' for _ in cols)})
+                ON CONFLICT(run_id) DO UPDATE SET
+                {', '.join(f'{c}=excluded.{c}' for c in cols if c not in ('run_id', 'created_at'))}""",
+            tuple(data.values()),
+        )
+
+    def get_pipeline_run(self, run_id: str) -> PipelineRun | None:
+        row = self._row("pipeline_runs", self._one("SELECT * FROM pipeline_runs WHERE run_id=?", (run_id,)))
+        return PipelineRun.model_validate(row) if row else None
+
+    def list_pipeline_runs(self, doc_id: str | None = None, limit: int = 50) -> list[PipelineRun]:
+        """Newest first."""
+        sql, args = "SELECT * FROM pipeline_runs WHERE 1=1", []
+        if doc_id:
+            sql += " AND doc_id=?"
+            args.append(doc_id)
+        rows = self._query(sql + " ORDER BY created_at DESC, id DESC LIMIT ?", [*args, limit])
+        return [PipelineRun.model_validate(r) for r in self._rows("pipeline_runs", rows)]
+
+    def interrupt_pipeline_runs(self, reason: str) -> int:
+        """Runs a stopped process left queued or running: they will never finish."""
+        return self._write(
+            """UPDATE pipeline_runs SET status='interrupted', reason=?, current_stage=NULL, updated_at=?
+               WHERE status IN ('queued', 'running')""",
+            (reason, utcnow()),
+        )
+
     # ------------------------------------------------------------------ summaries
 
     def document_stats(self) -> dict[str, dict[str, int]]:
@@ -1318,4 +1391,5 @@ class SQLiteStateStore(StateStore):
         return int(cur.lastrowid) if cur.rowcount else None
 
     def close(self) -> None:
-        self.conn.close()
+        with self._lock:          # never under a query on another thread (the pipeline runner's)
+            self.conn.close()

@@ -27,6 +27,9 @@ class LLMSettings(BaseModel):
     model: str = ""
     base_url: str | None = None
     api_key: str | None = Field(default=None, repr=False)
+    # More keys for the same provider and model (other people's accounts, so other quota pools), tried in this
+    # order when a key is rate-limited, out of quota or rejected. api_key is always tried first.
+    fallback_api_keys: list[str] = Field(default_factory=list, repr=False)
     temperature: float = 0.0
     # Anthropic only: output_config.effort. Empty string = don't send it.
     effort: str = "high"
@@ -51,6 +54,10 @@ class LLMSettings(BaseModel):
     max_request_tokens: int = 0        # estimated input + max_tokens per request; callers split to fit (0 = none)
     max_concurrent: int = 0            # requests in flight at once (0 = no limit, 1 = one after another)
     retry_413: bool = True             # False: a 413 (request too large) is raised at once, for the caller to split
+
+    def api_keys(self) -> list[str]:
+        """Every key for this model, in the order they are tried (empty when none is set)."""
+        return list(dict.fromkeys(k for k in [self.api_key, *self.fallback_api_keys] if k))
 
 
 class Limits(BaseModel):
@@ -126,6 +133,18 @@ class HeimdallSettings(BaseModel):
     due_month_days: int = 30              # alert "medium"; a renewal-notice deadline this close is "high"
 
 
+class OdinSettings(BaseModel):
+    """The orchestrator: after an upload it runs THOR -> NORNS -> LOKI -> HEIMDALL for the document, in one run,
+    and records every stage. Budgets are per pipeline run, across all agents (FR7.2)."""
+
+    run_on_upload: bool = True            # an upload starts the pipeline in the background
+    run_loki: bool = True                 # LOKI reviews the document (one LLM call per reviewed document)
+    loki_max_docs: int = 3                # documents LOKI reviews per run (e.g. the contracts an amendment amends)
+    heimdall_use_llm: bool = True         # events code cannot map go to the LLM (within heimdall.max_llm_calls)
+    max_llm_calls: int = 30               # real API calls per pipeline run, all agents together
+    max_tokens_budget: int = 400_000      # input + output tokens per pipeline run, all agents together
+
+
 class StateSettings(BaseModel):
     """Where shared state and uploaded files live. sqlite = local file; supabase = Postgres + Storage."""
 
@@ -174,6 +193,7 @@ class OdinConfig(BaseModel):
     norns: NornsSettings = NornsSettings()
     loki: LokiSettings = LokiSettings()
     heimdall: HeimdallSettings = HeimdallSettings()
+    odin: OdinSettings = OdinSettings()
     state: StateSettings = StateSettings()
     upload: UploadSettings = UploadSettings()
     paths: Paths = Paths()
@@ -241,6 +261,17 @@ def _env_bool(value: str) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+MAX_NUMBERED_KEYS = 9   # <PREFIX>API_KEY, <PREFIX>API_KEY_2 ... <PREFIX>API_KEY_9
+
+
+def _env_api_keys(env: dict[str, str], prefix: str) -> list[str]:
+    """The API keys for one model, in the order they are tried: <prefix>API_KEY, <prefix>API_KEY_2, _3 ..., then
+    <prefix>API_KEYS (separated by commas, spaces or new lines). Repeats and blanks are dropped."""
+    keys = [env.get(f"{prefix}API_KEY")] + [env.get(f"{prefix}API_KEY_{n}") for n in range(2, MAX_NUMBERED_KEYS + 1)]
+    keys += re.split(r"[\s,;]+", env.get(f"{prefix}API_KEYS") or "")
+    return list(dict.fromkeys(k.strip().strip('"').strip("'") for k in keys if k and k.strip().strip('"').strip("'")))
+
+
 def load_config(path: str | Path | None = None, *, env: dict[str, str] | None = None) -> OdinConfig:
     """Build the config from defaults, config.yaml and the environment."""
     if env is None:
@@ -269,10 +300,11 @@ def load_config(path: str | Path | None = None, *, env: dict[str, str] | None = 
         llm["json_mode"] = _env_bool(env["LLM_JSON_MODE"])
     if env.get("LLM_MAX_OUTPUT_TOKENS"):
         llm["max_output_tokens"] = int(env["LLM_MAX_OUTPUT_TOKENS"])
-    # Key lookup: an explicit LLM_API_KEY (alias ODIN_LLM_API_KEY) wins; otherwise the provider's usual variable.
-    explicit_key = env.get("LLM_API_KEY") or env.get("ODIN_LLM_API_KEY")
-    if explicit_key:
-        llm["api_key"] = explicit_key
+    # Key lookup: explicit keys win: LLM_API_KEY (alias ODIN_LLM_API_KEY), then LLM_API_KEY_2, _3 ... or LLM_API_KEYS
+    # as fallbacks for the same model. Otherwise the provider's usual variable.
+    keys = _env_api_keys({**env, "LLM_API_KEY": env.get("LLM_API_KEY") or env.get("ODIN_LLM_API_KEY") or ""}, "LLM_")
+    if keys:
+        llm["api_key"], llm["fallback_api_keys"] = keys[0], keys[1:]
     elif llm.get("provider") == "anthropic" and env.get("ANTHROPIC_API_KEY"):
         llm["api_key"] = env["ANTHROPIC_API_KEY"]
     elif llm.get("provider") == "openai_compat" and env.get("OPENAI_API_KEY"):
@@ -286,9 +318,12 @@ def load_config(path: str | Path | None = None, *, env: dict[str, str] | None = 
     for agent in AGENT_LLM_OVERRIDES:
         section = data[agent]
         own = {field: env[f"{agent.upper()}_LLM_{key}"] for key, field in _AGENT_LLM_ENV
-               if env.get(f"{agent.upper()}_LLM_{key}")}
-        settings = ({**llm, "base_url": None, "model": "", "api_key": None, **(section.get("llm") or {}), **own}
-                    if own else dict(llm))
+               if key != "API_KEY" and env.get(f"{agent.upper()}_LLM_{key}")}
+        agent_keys = _env_api_keys(env, f"{agent.upper()}_LLM_")
+        if agent_keys:
+            own["api_key"], own["fallback_api_keys"] = agent_keys[0], agent_keys[1:]
+        settings = ({**llm, "base_url": None, "model": "", "api_key": None, "fallback_api_keys": [],
+                     **(section.get("llm") or {}), **own} if own else dict(llm))
         host = urlsplit(settings.get("base_url") or "").hostname or ""
         for_host = (section.get("llm_for_host") or {}).get(host)
         if own or for_host:

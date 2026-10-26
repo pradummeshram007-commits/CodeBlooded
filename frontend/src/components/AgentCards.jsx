@@ -56,7 +56,13 @@ export default function AgentCards() {
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Synthesis Mode
             </span>
-            <span>ORD-001</span>
+            <button
+              onClick={() => navigate('/odin')}
+              className="text-primary-dark font-bold hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1"
+            >
+              <span>Launch ODIN</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 

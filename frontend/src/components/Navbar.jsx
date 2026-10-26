@@ -96,26 +96,32 @@ export default function Navbar() {
             Dashboard
           </button>
           <button
+            onClick={() => navigate('/odin')}
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors hidden xl:flex items-center gap-1"
+          >
+            <span>ODIN</span>
+          </button>
+          <button
             onClick={() => navigate('/thor')}
-            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors hidden xl:flex items-center gap-1"
           >
             <span>THOR</span>
           </button>
           <button
             onClick={() => navigate('/norns')}
-            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors hidden xl:flex items-center gap-1"
           >
             <span>NORNS</span>
           </button>
           <button
             onClick={() => navigate('/loki')}
-            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors hidden xl:flex items-center gap-1"
           >
             <span>LOKI</span>
           </button>
           <button
             onClick={() => navigate('/heimdall')}
-            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors hidden xl:flex items-center gap-1"
           >
             <span>HEIMDALL</span>
           </button>
@@ -179,6 +185,15 @@ export default function Navbar() {
               className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
             >
               <span>THOR — Extraction</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/odin');
+              }}
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
+            >
+              <span>ODIN — Pipeline</span>
             </button>
             <button
               onClick={() => {

@@ -765,3 +765,52 @@ class HeimdallTask(BaseModel):
     payer: str | None = None
     payee: str | None = None
     updated_at: str = Field(default_factory=utcnow)
+
+
+# --------------------------------------------------------------------------- Odin (orchestrator)
+
+PipelineStatus = Literal["queued", "running", "complete", "partial", "failed", "interrupted"]
+StageStatus = Literal["pending", "running", "complete", "partial", "failed", "skipped", "not_applicable"]
+PIPELINE_STAGES = ("thor", "norns", "loki", "heimdall")
+
+
+class PipelineStage(BaseModel):
+    """One agent's step in a pipeline run. ``skipped`` leaves the analysis incomplete (no LLM key, THOR failed,
+    budget used up); ``not_applicable`` does not (e.g. LOKI on standard terms, reviewed inside their contracts)."""
+
+    name: str                           # thor | norns | loki | heimdall
+    status: StageStatus = "pending"
+    summary: str | None = None          # one line for the stepper
+    reason: str | None = None           # why partial / failed / skipped / not applicable
+    details: dict[str, Any] = {}        # the agent's own numbers (fields, rules, findings, events, alerts ...)
+    llm_calls: int = 0                  # real API calls (cache hits are free)
+    cache_hits: int = 0
+    tokens: int = 0
+    started_at: str | None = None
+    finished_at: str | None = None
+    seconds: float | None = None
+
+
+class PipelineRun(BaseModel):
+    """One run of the pipeline for one document on one clock date: THOR -> NORNS -> LOKI -> HEIMDALL."""
+
+    id: int | None = None
+    run_id: str
+    doc_id: str
+    as_of: str
+    source: Literal["upload", "manual"] = "manual"
+    status: PipelineStatus = "queued"
+    current_stage: str | None = None
+    stages: list[PipelineStage] = Field(default_factory=lambda: [PipelineStage(name=s) for s in PIPELINE_STAGES])
+    plan: dict[str, Any] = {}           # Odin's decisions: workstream, root contract, followed contracts, LOKI's
+                                        # documents, HEIMDALL's drops
+    options: dict[str, Any] = {}        # force_thor, run_loki, heimdall_use_llm
+    reason: str | None = None           # why the run is not complete
+    llm: dict[str, Any] = {}            # totals across agents: llm_calls, cache_hits, tokens, failed_attempts
+    created_at: str = Field(default_factory=utcnow)
+    started_at: str | None = None
+    finished_at: str | None = None
+    updated_at: str = Field(default_factory=utcnow)
+
+    def stage(self, name: str) -> PipelineStage:
+        return next(s for s in self.stages if s.name == name)

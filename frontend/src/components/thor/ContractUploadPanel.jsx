@@ -1,23 +1,31 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Upload,
   FileText,
   X,
   CheckCircle2,
-  Clock,
   AlertCircle,
   Loader2,
   ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { uploadContractFile } from '../../services/api';
+import PipelineStepper, { usePipelineRun } from '../odin/PipelineStepper';
 
-export default function ContractUploadPanel({ onUploadComplete, activeDocName }) {
+export default function ContractUploadPanel({ onUploadComplete, onPipelineUpdate, activeDocName }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [uploadState, setUploadState] = useState('idle'); // idle | uploading | processing | success | error
+  const [uploadState, setUploadState] = useState('idle'); // idle | ready | uploading | success | error
   const [errorMessage, setErrorMessage] = useState('');
-  const [pipelineStep, setPipelineStep] = useState(4); // 0..5
+  const [uploadResult, setUploadResult] = useState(null);
   const fileInputRef = useRef(null);
+  // ODIN runs THOR -> NORNS -> LOKI -> HEIMDALL on the uploaded document; the stepper follows the run live.
+  const [run] = usePipelineRun(uploadResult?.pipeline?.run_id, uploadResult?.pipeline || null);
+
+  useEffect(() => {
+    if (run && onPipelineUpdate) onPipelineUpdate(run);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -63,19 +71,20 @@ export default function ContractUploadPanel({ onUploadComplete, activeDocName })
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleUploadAnother = () => {
+    handleRemoveFile();
+    setUploadResult(null);
+  };
+
   const handleUploadSubmit = async () => {
     if (!selectedFile) return;
     setUploadState('uploading');
     setErrorMessage('');
-    setPipelineStep(1);
 
     try {
-      // Simulate stepper progress during network upload
-      setTimeout(() => setPipelineStep(2), 600);
-      setTimeout(() => setPipelineStep(3), 1200);
-
+      // Stores and segments the file, then ODIN starts the pipeline in the background and the stepper follows it.
       const result = await uploadContractFile(selectedFile);
-      setPipelineStep(5);
+      setUploadResult(result);
       setUploadState('success');
 
       if (onUploadComplete) {
@@ -104,7 +113,7 @@ export default function ContractUploadPanel({ onUploadComplete, activeDocName })
             <span>Upload your contract</span>
           </h2>
           <p className="font-sans text-xs sm:text-sm text-secondary-olive mt-0.5">
-            Start with a PDF or TXT containing your agreement. THOR will extract its contractual terms and link the findings to their source clauses.
+            Start with a PDF or TXT containing your agreement. ODIN then runs the whole pipeline on it: THOR extracts the terms with clause citations, NORNS dates the obligations and exposure, LOKI attacks it as the counterparty's lawyer, and HEIMDALL maps the event feed to it.
           </p>
         </div>
 
@@ -117,7 +126,7 @@ export default function ContractUploadPanel({ onUploadComplete, activeDocName })
                 {selectedFile.name}
               </div>
               <div className="text-secondary-olive text-[10px]">
-                {formatFileSize(selectedFile.size)} · Ready to analyze
+                {formatFileSize(selectedFile.size)} · {uploadResult ? 'Uploaded' : 'Ready to analyze'}
               </div>
             </div>
             <button
@@ -187,11 +196,11 @@ export default function ContractUploadPanel({ onUploadComplete, activeDocName })
             {uploadState === 'uploading' ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-cream" />
-                <span>Extracting with THOR...</span>
+                <span>Uploading…</span>
               </>
             ) : (
               <>
-                <span>Extract Contract Intelligence</span>
+                <span>Upload &amp; run ODIN pipeline</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -207,72 +216,27 @@ export default function ContractUploadPanel({ onUploadComplete, activeDocName })
         </div>
       )}
 
-      {/* Execution Pipeline Stepper */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 font-mono text-xs">
-        <div
-          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
-            pipelineStep >= 1
-              ? 'bg-[#252E1F]/5 border-sage/40 text-primary-dark font-medium'
-              : 'bg-cream/40 border-border-subtle text-secondary-olive'
-          }`}
-        >
-          <CheckCircle2
-            className={`w-4 h-4 ${pipelineStep >= 1 ? 'text-primary' : 'text-secondary-olive/40'}`}
-          />
-          <span className="truncate">01 Reading Document</span>
+      {/* Upload result + the live ODIN pipeline */}
+      {uploadResult && (
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg bg-cream/60 border border-border-subtle font-mono text-xs">
+          <span className="flex items-center gap-2 text-dark-olive">
+            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+            {uploadResult.status === 'duplicate'
+              ? `Already stored as ${uploadResult.doc_id}: no copy made. ODIN re-runs the pipeline (THOR skips text it already extracted).`
+              : `Stored as ${uploadResult.doc_id} · ${uploadResult.clauses} clauses segmented.`}
+            {!uploadResult.pipeline && ' The pipeline is off (odin.run_on_upload in config.yaml).'}
+          </span>
+          <button onClick={handleUploadAnother} className="inline-flex items-center gap-1 text-primary font-semibold hover:underline">
+            <RotateCcw className="w-3.5 h-3.5" /> Upload another
+          </button>
         </div>
+      )}
 
-        <div
-          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
-            pipelineStep >= 2
-              ? 'bg-[#252E1F]/5 border-sage/40 text-primary-dark font-medium'
-              : 'bg-cream/40 border-border-subtle text-secondary-olive'
-          }`}
-        >
-          <CheckCircle2
-            className={`w-4 h-4 ${pipelineStep >= 2 ? 'text-primary' : 'text-secondary-olive/40'}`}
-          />
-          <span className="truncate">02 Identifying Clauses</span>
-        </div>
-
-        <div
-          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
-            pipelineStep >= 3
-              ? 'bg-[#252E1F]/5 border-sage/40 text-primary-dark font-medium'
-              : 'bg-cream/40 border-border-subtle text-secondary-olive'
-          }`}
-        >
-          <CheckCircle2
-            className={`w-4 h-4 ${pipelineStep >= 3 ? 'text-primary' : 'text-secondary-olive/40'}`}
-          />
-          <span className="truncate">03 Extracting Fields</span>
-        </div>
-
-        <div
-          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
-            pipelineStep >= 4
-              ? 'bg-[#252E1F]/5 border-sage/40 text-primary-dark font-medium'
-              : 'bg-cream/40 border-border-subtle text-secondary-olive'
-          }`}
-        >
-          <CheckCircle2
-            className={`w-4 h-4 ${pipelineStep >= 4 ? 'text-primary' : 'text-secondary-olive/40'}`}
-          />
-          <span className="truncate">04 Verifying Citations</span>
-        </div>
-
-        <div
-          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
-            pipelineStep >= 5
-              ? 'bg-accent-gold/15 border-accent-gold/40 text-dark-olive font-medium'
-              : 'bg-cream/40 border-border-subtle text-secondary-olive'
-          }`}
-        >
-          <Clock
-            className={`w-4 h-4 ${pipelineStep >= 5 ? 'text-accent-gold' : 'text-secondary-olive/40'}`}
-          />
-          <span className="truncate">05 Collision Check</span>
-        </div>
+      <div className="pt-1">
+        <span className="block font-mono text-[10px] uppercase tracking-wider text-secondary-olive font-semibold mb-2">
+          ODIN pipeline {run ? '' : '· starts when you upload'}
+        </span>
+        <PipelineStepper run={run} />
       </div>
     </section>
   );

@@ -338,6 +338,36 @@ export function reassessHeimdall(asOf) {
   return postJson(`${API_BASE}/heimdall/reassess`, { as_of: asOf });
 }
 
+// ========================================================
+// ODIN — Orchestrator (THOR -> NORNS -> LOKI -> HEIMDALL)
+// ========================================================
+
+/** Workstreams, followed contracts, each agent's LLM readiness, budgets and the run queue. */
+export function fetchOdinOverview() {
+  return requestJson(`${API_BASE}/odin/overview`);
+}
+
+/** Pipeline runs, newest first (optionally for one document). */
+export function fetchOdinRuns(docId, limit = 20) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (docId) params.set('doc_id', docId);
+  return requestJson(`${API_BASE}/odin/runs?${params}`);
+}
+
+/** One pipeline run with every stage's status, numbers and reason. */
+export function fetchOdinRun(runId) {
+  return requestJson(`${API_BASE}/odin/runs/${encodeURIComponent(runId)}`);
+}
+
+/** Queue the pipeline for a stored document. */
+export function runOdinPipeline(docId, { asOf, forceThor = false, runLoki, heimdallUseLlm } = {}) {
+  const body = { doc_id: docId, force_thor: forceThor };
+  if (asOf) body.as_of = asOf;
+  if (runLoki !== undefined) body.run_loki = runLoki;
+  if (heimdallUseLlm !== undefined) body.heimdall_use_llm = heimdallUseLlm;
+  return postJson(`${API_BASE}/odin/run`, body);
+}
+
 /** Dispatch a certified legal notice with authoritative clause citations. */
 export async function sendCertifiedNotice(payload) {
   let res;

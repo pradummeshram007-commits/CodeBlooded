@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import OdinTopNav from './common/OdinTopNav';
 import ThorHeroIntro from './thor/ThorHeroIntro';
 import ContractUploadPanel from './thor/ContractUploadPanel';
@@ -9,8 +10,11 @@ import { fetchDocuments, fetchDocumentReport, fetchSummary } from '../services/a
 import { Loader2, Hash, FileText } from 'lucide-react';
 
 export default function ThorPage() {
+  const [searchParams] = useSearchParams();
+  const linkedDoc = searchParams.get('doc');   // links from the ODIN pipeline: /thor?doc=D1
   const [documents, setDocuments] = useState([]);
-  const [selectedDocId, setSelectedDocId] = useState('A1');
+  const [selectedDocId, setSelectedDocId] = useState(linkedDoc || 'A1');
+  const thorStageRef = useRef(null);
   const [docData, setDocData] = useState(null);
   const [selectedExtraction, setSelectedExtraction] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,8 +26,8 @@ export default function ThorPage() {
       .then((docs) => {
         setDocuments(docs);
         if (docs.length > 0) {
-          // If A1 exists, default to A1 for clear demo
-          const defaultDoc = docs.find((d) => d.doc_id === 'A1') || docs[0];
+          // A linked document first, else A1 for a clear demo
+          const defaultDoc = docs.find((d) => d.doc_id === linkedDoc) || docs.find((d) => d.doc_id === 'A1') || docs[0];
           setSelectedDocId(defaultDoc.doc_id);
         }
       })
@@ -51,7 +55,7 @@ export default function ThorPage() {
   }, [selectedDocId]);
 
   const handleUploadComplete = (uploadResult) => {
-    // Add uploaded document and switch to it
+    // Add uploaded document (a re-upload of a stored file is that document) and switch to it
     if (uploadResult?.doc_id) {
       const newDoc = {
         doc_id: uploadResult.doc_id,
@@ -59,8 +63,9 @@ export default function ThorPage() {
         status: uploadResult.extraction_status,
         clause_count: uploadResult.clauses,
       };
-      setDocuments((prev) => [newDoc, ...prev]);
+      setDocuments((prev) => (prev.some((d) => d.doc_id === newDoc.doc_id) ? prev : [newDoc, ...prev]));
       setSelectedDocId(uploadResult.doc_id);
+      thorStageRef.current = null;
 
       // If document report was returned directly with extractions, set it immediately
       if (uploadResult.report) {
@@ -75,6 +80,32 @@ export default function ThorPage() {
       try {
         window.dispatchEvent(new CustomEvent('odin-doc-updated', { detail: uploadResult }));
         localStorage.setItem('odin_last_upload', Date.now().toString());
+      } catch (e) {
+        // Ignore in non-browser context
+      }
+    }
+  };
+
+  // ODIN's pipeline for the upload: refresh the extraction view when THOR's stage ends, and the documents (and
+  // every other page) when the whole run ends.
+  const handlePipelineUpdate = (run) => {
+    const thor = (run.stages || []).find((st) => st.name === 'thor');
+    const finished = thor && !['pending', 'running'].includes(thor.status);
+    if (finished && thorStageRef.current !== `${run.run_id}:${thor.status}`) {
+      thorStageRef.current = `${run.run_id}:${thor.status}`;
+      fetchDocumentReport(run.doc_id)
+        .then((data) => {
+          if (run.doc_id !== selectedDocId) return;
+          setDocData(data);
+          setSelectedExtraction(data.extractions?.[0] || null);
+        })
+        .catch(console.error);
+      fetchDocuments().then(setDocuments).catch(() => {});
+    }
+    if (['complete', 'partial', 'failed'].includes(run.status)) {
+      try {
+        window.dispatchEvent(new CustomEvent('odin-doc-updated', { detail: { docId: run.doc_id, run: run.run_id } }));
+        localStorage.setItem('odin_doc_updated', Date.now().toString());
       } catch (e) {
         // Ignore in non-browser context
       }
@@ -112,6 +143,7 @@ export default function ThorPage() {
         {/* Intake & Contract Upload Pipeline */}
         <ContractUploadPanel
           onUploadComplete={handleUploadComplete}
+          onPipelineUpdate={handlePipelineUpdate}
           activeDocName={doc?.title || selectedDocId}
         />
 

@@ -347,7 +347,7 @@ export default function HeimdallEventWorkspace() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider bg-[#E3E7D3] text-primary-dark">
-                ODIN AGENT 05 · EVENT MONITORING
+                ODIN AGENT 04 · EVENT MONITORING
               </span>
               <span className="font-mono text-[11px] text-secondary-olive">Code first · LLM only for what code cannot map</span>
             </div>

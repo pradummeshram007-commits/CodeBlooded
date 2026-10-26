@@ -142,6 +142,7 @@ class Agent:
             stop_reason=rec.stop_reason,
             input_tokens=rec.input_tokens,
             output_tokens=rec.output_tokens,
+            key_slot=f"{rec.key_slot}/{rec.key_slots}",   # which API key (position, never the key itself)
         )
 
     # ------------------------------------------------------------------ LLM
