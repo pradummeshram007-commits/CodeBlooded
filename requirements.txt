@@ -14,3 +14,5 @@ streamlit-pdf-viewer>=0.0.20
 # Step 2B: Norns (business-day calendar, month arithmetic)
 numpy>=1.26
 python-dateutil>=2.8
+# Step 4: Heimdall task board (re-reads the database every 10 s)
+streamlit-autorefresh>=1.0.1

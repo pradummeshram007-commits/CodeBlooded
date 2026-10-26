@@ -3,16 +3,18 @@
 Multi-agent system over the Quillhub contract bundle. **Step 1:** shared state, schemas,
 LLM wrapper, config/limits, ingestion and **Thor** (extraction). **Step 2A:** the shared
 state moves to **Supabase** (Postgres + private Storage), with document upload and a
-"See the contract" viewer. Norns, Loki, Heimdall, Tyr and the dashboard plug into the
-same state store.
+"See the contract" viewer. **Step 3:** **Loki** reviews each contract as the counterparty's
+lawyer. **Step 4:** **Heimdall** maps the event drops to contracts and clauses, reassesses
+exposure through Norns, raises alerts and keeps a task board. Tyr and the rest of the
+dashboard plug into the same state store.
 
 | Agent | Role | Status |
 |---|---|---|
 | Odin | orchestrator | later |
 | **Thor** | clause-cited extraction, cross-document references | **done** |
 | **Norns** | timeline, simulated clock, worst case | **done** (A1, B1 families) |
-| Loki | adversarial review, cross-contract conflicts; asks Thor via `messages` | later |
-| Heimdall | event monitoring per drop | later |
+| **Loki** | adversarial review per document (FR4.1, FR4.3); cross-contract conflicts and questions to Thor via `messages` later | **done** (per-document review) |
+| **Heimdall** | event monitoring per drop (FR5.1), alerts (FR5.3), task board + progress tracker | **done** |
 | Tyr | arbitration, drafted notices | later |
 
 ## Run it
@@ -31,7 +33,9 @@ python scripts/run_thor.py --relink --docs A3   # re-derive relations from store
 python scripts/clock.py checkpoint 1    # Norns: move the clock, recompute, store a snapshot
 python scripts/clock.py play --step 7d --until 2027-06-01
 python scripts/worst_case.py --checkpoint 2     # exposure items, chart data, writeup
-streamlit run app/Home.py               # upload + "See the contract": http://localhost:8501/Contracts
+python scripts/run_loki.py --docs A1,A2 --checkpoint 1   # Loki: adversarial review (--docs is required)
+python scripts/run_heimdall.py --drop 1 --checkpoint 1   # Heimdall: events -> facts, alerts, task board
+streamlit run app/Home.py               # upload + "See the contract" (/Contracts), task board (/Heimdall)
 
 # Local backend (STATE_BACKEND=sqlite, the default): no migrate step, same commands otherwise
 python scripts/run_thor.py --no-llm     # ingest + segment only, no API calls
@@ -109,6 +113,11 @@ scripts/db_migrate.py, scripts/seed_bundle.py, scripts/run_thor.py, scripts/cloc
 odin/effective.py      effective_clause(doc, clause, as_of): the clause version in force, following `amends` edges
 odin/norns/            calendar.py, rules.py, engine.py (compute), clock.py, worst_case.py, writeup.py, report.py
 supabase/migrations/002_norns.sql                  Norns tables
+odin/agents/loki.py    review context, one LLM call per part, code checks, findings + workstream status
+prompts/loki_review.md, scripts/run_loki.py, supabase/migrations/003_loki.sql   Loki prompt, CLI, table
+odin/agents/heimdall.py  drop model, code-first + batched LLM mapping, Norns before/after, alerts, task board
+prompts/heimdall_map.md, scripts/run_heimdall.py, supabase/migrations/004_heimdall.sql   Heimdall prompt, CLI, tables
+app/pages/2_Heimdall.py, app/heimdall_tracker.py   alert strip, Kanban, progress tracker (no LLM)
 docs/DATA_NOTES.md     numbering schemes, references, formats, day counting, traps
 tests/
 ```
@@ -216,6 +225,10 @@ in Postgres) are noted. `outputs/state_export.json` holds every table.
 | `timeline_snapshots` | `as_of`, `summary` (JSON), `chart_data` (JSON) | for the dashboard |
 | `exposure_items` | `as_of`, `scenario` (worst_case / on_time), `contract`, `category`, `amount` (null = unquantified), `formula`, `inputs`, `citations`, `source_kind`='analysis' | `scripts/worst_case.py` |
 | `writeups` | `as_of`, `label` ("AI-generated analysis" or template), `text`, `model`, `prompt_hash`, `check_passed` | |
+| `loki_findings` | `doc_id`, `as_of`, `type` (ambiguity / one_sided / hidden_liability), `title`, `exploited_by`, `citations` (JSON: doc_id, clause_id, verbatim quote, offsets), `readings` (JSON, ambiguity only), `attack_path` (JSON), `severity` + `severity_reason`, `likelihood` + `likelihood_reason`, `confidence`, `impact` (JSON: Norns exposure item id + amount, or `"unquantified"`), `status` (accepted / rejected), `rejection_reason`, `model`, `source_kind`='analysis' | Loki; one set per (doc_id, as_of), a re-run replaces it |
+| `heimdall_events` | `as_of`, `drop_name`, `line_no`, `event_id`, `raw`, `event_date`, `status` (mapped / unmapped / noise / unparseable) + `status_reason`, `type`, `doc_ids`, `clause_ids` (JSON), `fact` (JSON Norns fact), `is_noise` + `noise_reason`, `mapped_by` (code / llm), `confidence`, `potential_breach` + `breach_reason`, `exposure` (JSON: worst case before / after its fact, delta, delta per contract, changes) | Heimdall; one set per (as_of, drop), a re-run replaces it |
+| `heimdall_alerts` | `as_of`, `alert_key` (contract\|clause\|kind\|due date), `severity`, `kind`, `contract`, `clause_id`, `due_date`, `message`, `citation` (JSON), `source` (norns / event) | rewritten by every reassessment |
+| `heimdall_tasks` | `as_of`, `task_id` (Norns instance key), `title`, `contract`, `kind`, `due_date`, `amount`, `citation`, `status` (Not Complete / In Progress / Completed), `status_source` (norns / user), `norns_status`, `fact` (the user's payment_made fact) | the task board; status tags are the team's |
 
 ### Extraction values (`extractions.value` per `field_type`)
 
@@ -361,6 +374,131 @@ with the provider's message. Rejected attempts don't count against `max_llm_call
 with `--workers 1` on such tiers: parallel calls only compete for the same window. A
 reasoning model like gpt-oss spends 10–25k output tokens per call, so on an 8k/min tier
 expect about 3 minutes per call.
+
+## Loki (adversarial review agent)
+
+Loki reads one contract at a time as the counterparty's lawyer and reports ambiguous
+clauses, one-sided terms and hidden liabilities (FR4.1). Every finding has clause
+citations, an attack path, and a severity and likelihood on fixed scales (FR4.3).
+
+```bash
+python scripts/db_migrate.py                              # Supabase: adds loki_findings (003_loki.sql)
+python scripts/run_loki.py --docs A1,A2 --checkpoint 1    # or --as-of 2027-03-15
+```
+
+- **Review units.** Contracts and addenda (A1, A2, B1, ...). Amendments (A3) and standard
+  terms (STD) are not reviewed on their own: their text is reviewed inside the documents
+  they amend or that incorporate them. `--docs` is required; there is no "all" default.
+- **Context** (`Loki.build_review_context(doc_id, as_of)`, read-only):
+  - title, parties and the counterparty (the party that isn't Quillhub), from Thor's party
+    fields;
+  - every clause in force on as_of via `effective_clause()`. Amended text appears under the
+    amendment's own clause id (A3:1 replaces A2 3.2; A3:3 modifies A1 §B, shown beside it);
+  - the Standard Terms: all of them if the document incorporates STD (A1), only the cited
+    clauses if it merely references STD (A2: the Force Majeure definition);
+  - Thor's open flags and an index of its extractions as hints, one line each. An extraction
+    that cites only replaced text is left out;
+  - company/context.txt, trimmed to about 600 tokens.
+- **Split.** Each call stays under about 6,000 input tokens (`loki.max_input_tokens`,
+  estimated at `loki.chars_per_token`; Thor's logged Groq calls measured 4.3 characters per
+  token). A larger document is split by top-level section, with incorporated STD in its own
+  part(s). `run_loki.py` prints the parts and their estimated sizes.
+- **Prompt** (`prompts/loki_review.md`): the definitions, the rules (clause text is the
+  authority, Thor's output is only hints, verbatim quotes, exact clause ids, nothing
+  invented), at most 8 findings, and the scales. The scales are also code constants
+  (`SEVERITY_SCALE`, `LIKELIHOOD_SCALE`), and Loki refuses a prompt file that does not state
+  them word for word.
+- **Code checks** (no LLM). A finding that fails is stored as `rejected` with the reason,
+  never re-prompted:
+  - every citation is verified with Thor's verifier, limited to the text in force (a quote
+    from a replaced clause fails). Unverified citations are dropped, and a finding left with
+    none is rejected;
+  - a clause id in the attack path must exist in the store, and the path must name at least
+    one;
+  - every amount, percentage, duration or date in the title or attack path must appear in
+    the cited clauses (or be the as_of date). Clause ids and step numbers are ignored;
+  - an ambiguity needs at least 2 readings. Type, severity and likelihood must be on their
+    scales, titles have at most 15 words, attack paths have 2–5 steps;
+  - findings with the same type and the same set of cited clauses are merged, keeping the
+    higher severity. Then at most 8 per document are kept, most severe first;
+  - impact is the Norns `exposure_items` row at the same as_of that cites one of the
+    finding's clauses (its id and amount), otherwise `"unquantified"`. Loki never computes
+    an amount.
+- **Bookkeeping.** A re-run for the same document and as_of replaces its findings (when no
+  call succeeds, earlier findings are kept). Loki's status per document goes into the
+  workstreams that contain it (`agent_status["loki:A1"]`, plus `"loki"` for the family, with
+  the reason in `notes`). `complete` means every call succeeded and the checks ran;
+  otherwise `partial` or `failed`. Each run writes `outputs/loki/<doc_id>_<as_of>.json`.
+  Real LLM calls per process are capped by `loki.max_llm_calls` (default 5).
+
+## Heimdall (event monitoring + task board)
+
+Heimdall reads the event drops, maps each event to the contracts and clauses it affects and
+reassesses exposure through Norns (FR5.1). It raises severity-rated alerts and filters out
+noise (FR5.3), and keeps a task board with a progress tracker in Streamlit.
+
+```bash
+python scripts/db_migrate.py                              # Supabase: adds the heimdall_* tables (004_heimdall.sql)
+python scripts/run_heimdall.py --drop 1 --checkpoint 1    # or --as-of 2027-03-15; --no-llm for code mapping only
+streamlit run app/Home.py                                 # Heimdall page: /Heimdall
+```
+
+- **Drop model.** A drop is processed only once it is released: drop *k* at checkpoint *k*
+  (`heimdall.drop_release_checkpoints`). format_spec only calls drop 1 the initial analysis and
+  drop 2 the mid-cycle update. Only events dated on or before the clock date are visible. The
+  file is read from Storage (the copy `seed_bundle.py` stored), else from `bundle/events`. An
+  unparseable line is stored with `status=unparseable` and the parser's reason.
+- **Mapping, code first.** Printed contract IDs, counterparty names and e-mail domains (from
+  Thor's party fields) name the contract. Code classifies structured messages:
+  - a provider's status-page outage becomes an `outage` fact, with clauses from Norns' credit
+    rules in force on the incident date;
+  - an uptime report where every target is met is noise;
+  - an invoice or a payment confirmation is matched to Norns' payment instance by contract,
+    amount and billing month;
+  - a marketing mail is noise.
+
+  The rest goes to the LLM (`prompts/heimdall_map.md`), up to 10 events per call. Each call
+  carries the contracts, the clause ids of the contracts those events name, and the events.
+  A document or clause id the reply invents leaves the event `unmapped`, with the reason. So
+  does an invalid fact (an unknown contract, a date after the clock date, a non-positive amount).
+- **Groq limits** (`config.heimdall`): `max_tokens` 3,000, estimated input + max_tokens at most
+  7,000 per call (batches are split to fit), at most 7,500 tokens per rolling minute (Heimdall
+  waits before a call that would exceed it), and `reasoning_effort="low"` (`llm.py` sends it to
+  openai_compat providers and drops it if rejected). At most 4 real calls per process.
+- **Exposure.** Mapped events become Norns facts (`payment_made`, `outage`, `notice_sent`).
+  `norns.compute(as_of)` runs without facts, then adds one event's fact at a time in date order.
+  Each event stores the worst-case total before and after its fact, the delta, the delta per
+  contract and what changed in Norns' instances. A fact that changes no instance and no
+  exposure turns its event into noise, and so does a fact that repeats an earlier one. A new
+  credit Quillhub owes, a suspension right or an insurance-lapse breach marks the event as a
+  potential breach.
+- **Alerts** (fixed scale, `SEVERITY_SCALE`):
+  - critical: a potential breach, a suspension or termination right that is now open, or an
+    overdue payment;
+  - high: due within 7 days, or a renewal-notice deadline within 30 days;
+  - medium: due within 30 days;
+  - low: informational.
+
+  Alerts come from Norns' payments, renewals, credit-claim windows and other deadlines on the
+  clock date (within 60 days, and always for renewals), plus events that indicate a potential
+  breach. They are de-duplicated by (contract, clause, kind, due date), and each has a
+  one-line message and a clause citation. Noise is stored, hidden, with its reason.
+- **Task board.** One card per Norns instance that is overdue, due or upcoming within 60 days
+  (`task_id` = the instance key). Instances Norns marks paid or met start `Completed`
+  (`status_source=norns`) and cannot be changed. When a payment card is set to Completed, the
+  board records a `payment_made` fact on the clock date (`source="user"`) and recomputes
+  Norns, so the worst-case total updates. Moving the card back removes the fact.
+- **Page** (`app/pages/2_Heimdall.py`) shows:
+  - the clock date, the live worst-case total and the alert strip, with a "show filtered
+    noise" toggle;
+  - the Kanban (Not Complete / In Progress / Completed). Each card has its due date and days
+    left, amount, severity badge and a "See the contract" deep link. "Set status" saves the
+    tag at once;
+  - the progress tracker (`st.components.v1.html`): one row per contract, its tasks as dots.
+
+  The page re-reads the database after every change and every 10 seconds
+  (`streamlit-autorefresh`). It never calls the LLM: it constructs Heimdall without an LLM
+  client.
 
 ## For the next agents
 

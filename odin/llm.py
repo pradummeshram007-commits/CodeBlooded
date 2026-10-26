@@ -7,6 +7,8 @@
 * Disk cache keyed by a hash of (provider, model, system, messages, generation settings):
   an identical call is never sent twice, so re-runs are free and reproducible.
 * Counts real calls and tokens; raises BudgetExceeded before a call that would pass the limits.
+* Per-agent settings: ``LLMClient.from_config(cfg, agent="loki")`` uses Loki's own model when
+  LOKI_LLM_* is set (config.py); every other agent uses the shared llm section.
 
 Determinism: temperature=0 is sent wherever the provider accepts it. Current Claude models
 reject sampling parameters, so for them reproducibility comes from the cache instead.
@@ -19,6 +21,7 @@ import random
 import re
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -94,6 +97,10 @@ class LLMRefusal(LLMError):
 
 class LLMTruncated(LLMError):
     """The reply hit max_tokens; the caller should send less input per call."""
+
+
+class LLMTooLarge(LLMError):
+    """The provider refused the request as too large (413) and settings.retry_413 is off: send less per call."""
 
 
 class LLMValidationError(LLMError):
@@ -225,6 +232,10 @@ class AnthropicProvider:
         )
 
 
+# A 400 saying the model takes no system message (Gemma on the Gemini API: "Developer instruction is not enabled").
+_SYSTEM_REJECTED_RE = re.compile(r"developer instruction|system (?:instruction|message|role|prompt)")
+
+
 class OpenAICompatProvider:
     name = "openai_compat"
 
@@ -237,6 +248,9 @@ class OpenAICompatProvider:
         self.model = settings.model
         self.temperature: float | None = settings.temperature
         self.json_mode = settings.json_mode
+        self.reasoning_effort: str | None = settings.reasoning_effort or None
+        self.system_in_user = settings.system_in_user
+        self.retry_413 = settings.retry_413
         self.max_tokens_param = "max_tokens"
         self.client = openai.OpenAI(
             api_key=settings.api_key or "missing-api-key",
@@ -246,22 +260,33 @@ class OpenAICompatProvider:
         )
 
     def settings_fingerprint(self) -> dict[str, Any]:
-        return {"temperature": self.temperature, "json_mode": self.json_mode}
+        fingerprint: dict[str, Any] = {"temperature": self.temperature, "json_mode": self.json_mode}
+        if self.reasoning_effort:  # only when sent, so the keys of calls without it are unchanged
+            fingerprint["reasoning_effort"] = self.reasoning_effort
+        return fingerprint
 
     def complete(self, system: str | None, messages: list[dict[str, str]], max_tokens: int) -> ProviderResponse:
         o = self._openai
-        msgs = ([{"role": "system", "content": system}] if system else []) + messages
+        if system and self.system_in_user:
+            msgs = [{**messages[0], "content": f"{system}\n\n{messages[0]['content']}"}] + messages[1:]
+        else:
+            msgs = ([{"role": "system", "content": system}] if system else []) + messages
         kwargs: dict[str, Any] = {"model": self.model, "messages": msgs, self.max_tokens_param: max_tokens}
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
         if self.json_mode:
             kwargs["response_format"] = {"type": "json_object"}
+        if self.reasoning_effort:
+            kwargs["reasoning_effort"] = self.reasoning_effort
         try:
             resp = self.client.chat.completions.create(**kwargs)
         except o.BadRequestError as exc:
             text = str(exc).lower()
             # Adapt once to provider quirks, then retry the same request.
-            if self.json_mode and "response_format" in text:
+            if self.reasoning_effort and "reasoning_effort" in text:
+                self.reasoning_effort = None
+                return self.complete(system, messages, max_tokens)
+            if self.json_mode and ("response_format" in text or "json mode" in text):
                 self.json_mode = False
                 return self.complete(system, messages, max_tokens)
             if self.temperature is not None and "temperature" in text:
@@ -270,11 +295,19 @@ class OpenAICompatProvider:
             if self.max_tokens_param == "max_tokens" and "max_completion_tokens" in text:
                 self.max_tokens_param = "max_completion_tokens"
                 return self.complete(system, messages, max_tokens)
+            if self.reasoning_effort and ("reasoning" in text or "thinking" in text):
+                self.reasoning_effort = None
+                return self.complete(system, messages, max_tokens)
+            if system and not self.system_in_user and _SYSTEM_REJECTED_RE.search(text):
+                self.system_in_user = True
+                return self.complete(system, messages, max_tokens)
             raise LLMError(f"openai_compat bad request: {exc}") from exc
         except (o.RateLimitError, o.APIConnectionError, o.InternalServerError) as exc:
             raise RetryableError(f"openai_compat transient error: {exc}", _retry_after(exc) or _window_wait(exc)) from exc
         except o.APIStatusError as exc:
             if exc.status_code == 413:
+                if not self.retry_413:
+                    raise LLMTooLarge(f"openai_compat 413 request too large: {exc}") from exc
                 # Some providers (Groq on-demand) answer 413 when the per-minute token window is
                 # full, counting tokens already used this minute: that clears by waiting.
                 wait = _window_wait(exc)
@@ -326,6 +359,29 @@ def extract_json(text: str) -> Any:
         return json.loads(t[start : end + 1])
 
 
+_FENCED_RE = re.compile(r"```(?:json)?[ \t]*\n?(.*?)```", re.S | re.I)
+
+
+def extract_json_lenient(text: str) -> Any:
+    """The last ```json block that parses, else the last top-level JSON object in the reply: text before and
+    after it (a preamble, notes, reasoning) is ignored. Falls back to ``extract_json`` and its error."""
+    for block in reversed(_FENCED_RE.findall(text)):
+        try:
+            return json.loads(block)
+        except json.JSONDecodeError:
+            continue
+    decoder = json.JSONDecoder()
+    found: Any = None
+    i = text.find("{")
+    while i != -1:
+        try:
+            found, end = decoder.raw_decode(text, i)
+            i = text.find("{", end)
+        except json.JSONDecodeError:
+            i = text.find("{", i + 1)
+    return found if found is not None else extract_json(text)
+
+
 SCHEMA_INSTRUCTION = (
     "\n\nRespond with a single JSON object and nothing else (no prose, no code fences). "
     "It must validate against this JSON Schema:\n{schema}"
@@ -353,6 +409,15 @@ def _format_validation_error(exc: Exception, limit: int = 25) -> str:
 
 # --------------------------------------------------------------------------- client
 
+CHARS_PER_TOKEN_ESTIMATE = 4.0   # conservative: Thor's logged gpt-oss calls measured 4.3 characters per token
+TOKEN_WINDOW_MARGIN_S = 1.0      # extra wait past the 60 s window, for clock differences with the provider
+
+
+def estimate_tokens(system: str | None, messages: list[dict[str, str]]) -> int:
+    """Input tokens of a request, estimated from its length (for the tokens_per_minute cap)."""
+    chars = len(system or "") + sum(len(m.get("content") or "") for m in messages)
+    return int(chars / CHARS_PER_TOKEN_ESTIMATE) + 1
+
 
 @dataclass
 class LLMStats:
@@ -377,10 +442,16 @@ class LLMClient:
     sleep: Callable[[float], None] = time.sleep
     stats: LLMStats = field(default_factory=LLMStats)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _sent: deque[float] = field(default_factory=deque, repr=False)      # send times, for requests_per_minute
+    _window: list[list[float]] = field(default_factory=list, repr=False)  # [time, tokens] per request, tokens_per_minute
+    _rate_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     @classmethod
-    def from_config(cls, cfg: OdinConfig, **kwargs: Any) -> "LLMClient":
-        return cls(settings=cfg.llm, limits=cfg.limits, cache_dir=cfg.paths.llm_cache_dir, **kwargs)
+    def from_config(cls, cfg: OdinConfig, agent: str | None = None, **kwargs: Any) -> "LLMClient":
+        """``agent``: use that agent's own LLM settings when it has an override (e.g. LOKI_LLM_*).
+        ``kwargs`` may replace any field, e.g. ``limits``."""
+        settings = cfg.llm_for(agent) if agent else cfg.llm
+        return cls(**{"settings": settings, "limits": cfg.limits, "cache_dir": cfg.paths.llm_cache_dir, **kwargs})
 
     def _provider(self) -> Provider:
         if self.provider is None:
@@ -440,6 +511,38 @@ class LLMClient:
         if self.on_call is not None:
             self.on_call(rec)
 
+    def _throttle(self, system: str | None, messages: list[dict[str, str]], max_tokens: int) -> list[float] | None:
+        """Client-side caps, threads waiting in turn: at most settings.requests_per_minute requests, and at most
+        settings.tokens_per_minute tokens (estimated input + max_tokens), in any 60 s. Returns the request's
+        token-window entry, which ``complete`` raises to the real usage when the reply arrives."""
+        rpm, tpm = self.settings.requests_per_minute, self.settings.tokens_per_minute
+        if rpm <= 0 and tpm <= 0:
+            return None
+        with self._rate_lock:
+            now = time.monotonic()
+            if rpm > 0:
+                while self._sent and now - self._sent[0] >= 60.0:
+                    self._sent.popleft()
+                if len(self._sent) >= rpm:
+                    now = max(now, self._sent.popleft() + 60.0)
+            entry = None
+            if tpm > 0:
+                need = estimate_tokens(system, messages) + max_tokens
+                window = sorted(e for e in self._window if now - e[0] < 60.0)
+                used = sum(e[1] for e in window)
+                while window and used + need > tpm:   # wait until enough of the oldest requests leave the window
+                    t, n = window.pop(0)
+                    used -= n
+                    now = max(now, t + 60.0 + TOKEN_WINDOW_MARGIN_S)
+                entry = [now, float(need)]
+                self._window = window + [entry]
+            wait = now - time.monotonic()
+            if wait > 0:
+                self.sleep(wait)
+            if rpm > 0:
+                self._sent.append(now)
+            return entry
+
     def complete(
         self, system: str | None, messages: list[dict[str, str]], *, purpose: str = "", max_tokens: int | None = None
     ) -> ProviderResponse:
@@ -460,6 +563,7 @@ class LLMClient:
             with self._lock:  # check and reserve atomically: workers share one budget
                 self._check_budget()
                 self.stats.calls += 1
+            window_entry = self._throttle(system, messages, max_tokens)
             t0 = time.monotonic()
             try:
                 resp = provider.complete(system, messages, max_tokens)
@@ -491,6 +595,10 @@ class LLMClient:
             with self._lock:
                 self.stats.input_tokens += resp.input_tokens
                 self.stats.output_tokens += resp.output_tokens
+            if window_entry is not None:
+                with self._rate_lock:
+                    window_entry[0] = max(window_entry[0], time.monotonic())
+                    window_entry[1] = max(window_entry[1], float(resp.input_tokens + resp.output_tokens))
             self._emit(CallRecord(purpose, provider.name, resp.model, key, False, resp.input_tokens,
                                   resp.output_tokens, int((time.monotonic() - t0) * 1000), attempt, resp.stop_reason))
             self._cache_put(key, resp, purpose)
@@ -516,13 +624,14 @@ class LLMClient:
         if include_schema:
             content += SCHEMA_INSTRUCTION.format(schema=json.dumps(schema.model_json_schema(), separators=(",", ":")))
         messages: list[dict[str, str]] = [{"role": "user", "content": content}]
+        parse = extract_json_lenient if self.settings.lenient_json else extract_json
         last_error = ""
         for round_ in range(self.limits.validation_retries + 1):
             resp = self.complete(system, messages, purpose=f"{purpose}#v{round_}" if round_ else purpose, max_tokens=max_tokens)
             if resp.stop_reason == "max_tokens":
                 raise LLMTruncated(f"reply truncated at max_tokens ({purpose})")
             try:
-                return schema.model_validate(extract_json(resp.text))
+                return schema.model_validate(parse(resp.text))
             except (json.JSONDecodeError, ValidationError, ValueError) as exc:
                 last_error = _format_validation_error(exc)
                 messages = messages + [
@@ -546,15 +655,20 @@ def call_json(prompt: str, schema: type[T], **kwargs: Any) -> T:
 PLACEHOLDER_MARKS = ("<", "your-", "changeme", "xxxx", "replace-me")
 
 
-def llm_config_problem(cfg: OdinConfig) -> str | None:
-    """Catch unfilled .env templates before any API call is attempted (None = looks usable)."""
-    model, key = cfg.llm.model or "", cfg.llm.api_key or ""
+def llm_config_problem(cfg: OdinConfig, agent: str | None = None) -> str | None:
+    """Catch unfilled .env templates before any API call is attempted (None = looks usable).
+
+    ``agent``: check the settings that agent uses (its own <AGENT>_LLM_* override, when set).
+    """
+    own = cfg.agent_llm.get(agent) if agent else None
+    llm, var = (own, f"{agent.upper()}_LLM_") if own and agent else (cfg.llm, "LLM_")
+    model, key = llm.model or "", llm.api_key or ""
     if not model:
-        return f"LLM_MODEL is empty (required for provider {cfg.llm.provider})"
+        return f"{var}MODEL is empty (required for provider {llm.provider})"
     if any(m in model.lower() for m in PLACEHOLDER_MARKS):
-        return f"LLM_MODEL looks like a placeholder: {model!r}"
-    if cfg.llm.provider == "openai_compat" and not key:
-        return "no API key: set LLM_API_KEY (or OPENAI_API_KEY)"
+        return f"{var}MODEL looks like a placeholder: {model!r}"
+    if llm.provider == "openai_compat" and not key:
+        return f"no API key: set {var}API_KEY" + ("" if own else " (or OPENAI_API_KEY)")
     if key and any(key.lower().startswith(m) for m in PLACEHOLDER_MARKS):
         return "the API key in .env looks like a placeholder"
     return None

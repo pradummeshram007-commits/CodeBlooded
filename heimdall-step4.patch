@@ -1,0 +1,2348 @@
+diff --git a/README.md b/README.md
+index 5ce54de..0a10ef7 100644
+--- a/README.md
++++ b/README.md
+@@ -4,7 +4,9 @@ Multi-agent system over the Quillhub contract bundle. **Step 1:** shared state,
+ LLM wrapper, config/limits, ingestion and **Thor** (extraction). **Step 2A:** the shared
+ state moves to **Supabase** (Postgres + private Storage), with document upload and a
+ "See the contract" viewer. **Step 3:** **Loki** reviews each contract as the counterparty's
+-lawyer. Heimdall, Tyr and the dashboard plug into the same state store.
++lawyer. **Step 4:** **Heimdall** maps the event drops to contracts and clauses, reassesses
++exposure through Norns, raises alerts and keeps a task board. Tyr and the rest of the
++dashboard plug into the same state store.
+ 
+ | Agent | Role | Status |
+ |---|---|---|
+@@ -12,7 +14,7 @@ lawyer. Heimdall, Tyr and the dashboard plug into the same state store.
+ | **Thor** | clause-cited extraction, cross-document references | **done** |
+ | **Norns** | timeline, simulated clock, worst case | **done** (A1, B1 families) |
+ | **Loki** | adversarial review per document (FR4.1, FR4.3); cross-contract conflicts and questions to Thor via `messages` later | **done** (per-document review) |
+-| Heimdall | event monitoring per drop | later |
++| **Heimdall** | event monitoring per drop (FR5.1), alerts (FR5.3), task board + progress tracker | **done** |
+ | Tyr | arbitration, drafted notices | later |
+ 
+ ## Run it
+@@ -32,7 +34,8 @@ python scripts/clock.py checkpoint 1    # Norns: move the clock, recompute, stor
+ python scripts/clock.py play --step 7d --until 2027-06-01
+ python scripts/worst_case.py --checkpoint 2     # exposure items, chart data, writeup
+ python scripts/run_loki.py --docs A1,A2 --checkpoint 1   # Loki: adversarial review (--docs is required)
+-streamlit run app/Home.py               # upload + "See the contract": http://localhost:8501/Contracts
++python scripts/run_heimdall.py --drop 1 --checkpoint 1   # Heimdall: events -> facts, alerts, task board
++streamlit run app/Home.py               # upload + "See the contract" (/Contracts), task board (/Heimdall)
+ 
+ # Local backend (STATE_BACKEND=sqlite, the default): no migrate step, same commands otherwise
+ python scripts/run_thor.py --no-llm     # ingest + segment only, no API calls
+@@ -112,6 +115,9 @@ odin/norns/            calendar.py, rules.py, engine.py (compute), clock.py, wor
+ supabase/migrations/002_norns.sql                  Norns tables
+ odin/agents/loki.py    review context, one LLM call per part, code checks, findings + workstream status
+ prompts/loki_review.md, scripts/run_loki.py, supabase/migrations/003_loki.sql   Loki prompt, CLI, table
++odin/agents/heimdall.py  drop model, code-first + batched LLM mapping, Norns before/after, alerts, task board
++prompts/heimdall_map.md, scripts/run_heimdall.py, supabase/migrations/004_heimdall.sql   Heimdall prompt, CLI, tables
++app/pages/2_Heimdall.py, app/heimdall_tracker.py   alert strip, Kanban, progress tracker (no LLM)
+ docs/DATA_NOTES.md     numbering schemes, references, formats, day counting, traps
+ tests/
+ ```
+@@ -220,6 +226,9 @@ in Postgres) are noted. `outputs/state_export.json` holds every table.
+ | `exposure_items` | `as_of`, `scenario` (worst_case / on_time), `contract`, `category`, `amount` (null = unquantified), `formula`, `inputs`, `citations`, `source_kind`='analysis' | `scripts/worst_case.py` |
+ | `writeups` | `as_of`, `label` ("AI-generated analysis" or template), `text`, `model`, `prompt_hash`, `check_passed` | |
+ | `loki_findings` | `doc_id`, `as_of`, `type` (ambiguity / one_sided / hidden_liability), `title`, `exploited_by`, `citations` (JSON: doc_id, clause_id, verbatim quote, offsets), `readings` (JSON, ambiguity only), `attack_path` (JSON), `severity` + `severity_reason`, `likelihood` + `likelihood_reason`, `confidence`, `impact` (JSON: Norns exposure item id + amount, or `"unquantified"`), `status` (accepted / rejected), `rejection_reason`, `model`, `source_kind`='analysis' | Loki; one set per (doc_id, as_of), a re-run replaces it |
++| `heimdall_events` | `as_of`, `drop_name`, `line_no`, `event_id`, `raw`, `event_date`, `status` (mapped / unmapped / noise / unparseable) + `status_reason`, `type`, `doc_ids`, `clause_ids` (JSON), `fact` (JSON Norns fact), `is_noise` + `noise_reason`, `mapped_by` (code / llm), `confidence`, `potential_breach` + `breach_reason`, `exposure` (JSON: worst case before / after its fact, delta, delta per contract, changes) | Heimdall; one set per (as_of, drop), a re-run replaces it |
++| `heimdall_alerts` | `as_of`, `alert_key` (contract\|clause\|kind\|due date), `severity`, `kind`, `contract`, `clause_id`, `due_date`, `message`, `citation` (JSON), `source` (norns / event) | rewritten by every reassessment |
++| `heimdall_tasks` | `as_of`, `task_id` (Norns instance key), `title`, `contract`, `kind`, `due_date`, `amount`, `citation`, `status` (Not Complete / In Progress / Completed), `status_source` (norns / user), `norns_status`, `fact` (the user's payment_made fact) | the task board; status tags are the team's |
+ 
+ ### Extraction values (`extractions.value` per `field_type`)
+ 
+@@ -422,6 +431,75 @@ python scripts/run_loki.py --docs A1,A2 --checkpoint 1    # or --as-of 2027-03-1
+   otherwise `partial` or `failed`. Each run writes `outputs/loki/<doc_id>_<as_of>.json`.
+   Real LLM calls per process are capped by `loki.max_llm_calls` (default 5).
+ 
++## Heimdall (event monitoring + task board)
++
++Heimdall reads the event drops, maps each event to the contracts and clauses it affects and
++reassesses exposure through Norns (FR5.1). It raises severity-rated alerts and filters out
++noise (FR5.3), and keeps a task board with a progress tracker in Streamlit.
++
++```bash
++python scripts/db_migrate.py                              # Supabase: adds the heimdall_* tables (004_heimdall.sql)
++python scripts/run_heimdall.py --drop 1 --checkpoint 1    # or --as-of 2027-03-15; --no-llm for code mapping only
++streamlit run app/Home.py                                 # Heimdall page: /Heimdall
++```
++
++- **Drop model.** A drop is processed only once it is released: drop *k* at checkpoint *k*
++  (`heimdall.drop_release_checkpoints`). format_spec only calls drop 1 the initial analysis and
++  drop 2 the mid-cycle update. Only events dated on or before the clock date are visible. The
++  file is read from Storage (the copy `seed_bundle.py` stored), else from `bundle/events`. An
++  unparseable line is stored with `status=unparseable` and the parser's reason.
++- **Mapping, code first.** Printed contract IDs, counterparty names and e-mail domains (from
++  Thor's party fields) name the contract. Code classifies structured messages:
++  - a provider's status-page outage becomes an `outage` fact, with clauses from Norns' credit
++    rules in force on the incident date;
++  - an uptime report where every target is met is noise;
++  - an invoice or a payment confirmation is matched to Norns' payment instance by contract,
++    amount and billing month;
++  - a marketing mail is noise.
++
++  The rest goes to the LLM (`prompts/heimdall_map.md`), up to 10 events per call. Each call
++  carries the contracts, the clause ids of the contracts those events name, and the events.
++  A document or clause id the reply invents leaves the event `unmapped`, with the reason. So
++  does an invalid fact (an unknown contract, a date after the clock date, a non-positive amount).
++- **Groq limits** (`config.heimdall`): `max_tokens` 3,000, estimated input + max_tokens at most
++  7,000 per call (batches are split to fit), at most 7,500 tokens per rolling minute (Heimdall
++  waits before a call that would exceed it), and `reasoning_effort="low"` (`llm.py` sends it to
++  openai_compat providers and drops it if rejected). At most 4 real calls per process.
++- **Exposure.** Mapped events become Norns facts (`payment_made`, `outage`, `notice_sent`).
++  `norns.compute(as_of)` runs without facts, then adds one event's fact at a time in date order.
++  Each event stores the worst-case total before and after its fact, the delta, the delta per
++  contract and what changed in Norns' instances. A fact that changes no instance and no
++  exposure turns its event into noise, and so does a fact that repeats an earlier one. A new
++  credit Quillhub owes, a suspension right or an insurance-lapse breach marks the event as a
++  potential breach.
++- **Alerts** (fixed scale, `SEVERITY_SCALE`):
++  - critical: a potential breach, a suspension or termination right that is now open, or an
++    overdue payment;
++  - high: due within 7 days, or a renewal-notice deadline within 30 days;
++  - medium: due within 30 days;
++  - low: informational.
++
++  Alerts come from Norns' payments, renewals, credit-claim windows and other deadlines on the
++  clock date (within 60 days, and always for renewals), plus events that indicate a potential
++  breach. They are de-duplicated by (contract, clause, kind, due date), and each has a
++  one-line message and a clause citation. Noise is stored, hidden, with its reason.
++- **Task board.** One card per Norns instance that is overdue, due or upcoming within 60 days
++  (`task_id` = the instance key). Instances Norns marks paid or met start `Completed`
++  (`status_source=norns`) and cannot be changed. When a payment card is set to Completed, the
++  board records a `payment_made` fact on the clock date (`source="user"`) and recomputes
++  Norns, so the worst-case total updates. Moving the card back removes the fact.
++- **Page** (`app/pages/2_Heimdall.py`) shows:
++  - the clock date, the live worst-case total and the alert strip, with a "show filtered
++    noise" toggle;
++  - the Kanban (Not Complete / In Progress / Completed). Each card has its due date and days
++    left, amount, severity badge and a "See the contract" deep link. "Set status" saves the
++    tag at once;
++  - the progress tracker (`st.components.v1.html`): one row per contract, its tasks as dots.
++
++  The page re-reads the database after every change and every 10 seconds
++  (`streamlit-autorefresh`). It never calls the LLM: it constructs Heimdall without an LLM
++  client.
++
+ ## For the next agents
+ 
+ ```python
+diff --git a/app/heimdall_tracker.py b/app/heimdall_tracker.py
+new file mode 100644
+index 0000000..1bb9948
+--- /dev/null
++++ b/app/heimdall_tracker.py
+@@ -0,0 +1,94 @@
++"""The Heimdall progress tracker: one row per contract, its tasks as checkpoint dots on a line.
++
++    html = tracker_html(rows, dark=False)
++    components.html(html, height=tracker_height(rows))
++
++Dots: Completed = filled (with a short "cleared" animation when it just changed), In Progress = amber,
++Not Complete = empty, overdue = red outline. Clicking a dot shows one line under its row.
++"""
++from __future__ import annotations
++
++import html
++from dataclasses import dataclass, field
++
++
++@dataclass
++class Dot:
++    task_id: str
++    status: str            # Not Complete | In Progress | Completed
++    overdue: bool
++    info: str              # "A1 May fee · $8,000 · due 2 Jun 2027 · In Progress"
++    cleared: bool = False  # just changed to Completed: play the animation once
++
++
++@dataclass
++class Row:
++    label: str             # "A1 · StratoNode hosting"
++    dots: list[Dot] = field(default_factory=list)
++
++    @property
++    def done(self) -> int:
++        return sum(1 for d in self.dots if d.status == "Completed")
++
++
++_CLASS = {"Completed": "done", "In Progress": "progress", "Not Complete": "todo"}
++
++_CSS = """
++:root { --fg:#1f2937; --muted:#6b7280; --line:#d1d5db; --empty:#ffffff; --done:#16a34a; --amber:#f59e0b;
++        --red:#dc2626; --bar:#e5e7eb; }
++.dark { --fg:#e5e7eb; --muted:#9ca3af; --line:#4b5563; --empty:#0e1117; --bar:#374151; }
++body { margin:0; background:transparent; font-family:"Source Sans Pro",system-ui,sans-serif; }
++.trk { color:var(--fg); padding:2px 4px; }
++.row { margin:0 0 14px; }
++.head { display:flex; justify-content:space-between; align-items:baseline; font-size:14px; margin-bottom:4px; }
++.label { font-weight:600; }
++.count { color:var(--muted); font-size:12px; }
++.bar { height:4px; border-radius:2px; background:var(--bar); overflow:hidden; margin-bottom:8px; }
++.fill { height:100%; background:var(--done); transition:width .6s ease; }
++.line { position:relative; display:flex; justify-content:space-between; align-items:center; padding:0 2px; height:22px; }
++.line::before { content:""; position:absolute; left:8px; right:8px; top:50%; height:2px; background:var(--line); }
++.dot { position:relative; width:16px; height:16px; border-radius:50%; border:2px solid var(--muted); background:var(--empty);
++       cursor:pointer; padding:0; box-sizing:border-box; }
++.dot.done { background:var(--done); border-color:var(--done); }
++.dot.progress { background:var(--amber); border-color:var(--amber); }
++.dot.overdue { border-color:var(--red); }
++.dot.sel { outline:2px solid var(--muted); outline-offset:2px; }
++.dot.cleared { animation: fill .7s ease-out, pulse 1.1s ease-out .7s 2; }
++@keyframes fill { from { background:var(--empty); transform:scale(.6); } 60% { transform:scale(1.25); }
++                  to { background:var(--done); transform:scale(1); } }
++@keyframes pulse { from { box-shadow:0 0 0 0 rgba(22,163,74,.55); } to { box-shadow:0 0 0 10px rgba(22,163,74,0); } }
++.info { min-height:18px; font-size:13px; color:var(--muted); margin-top:6px; }
++"""
++
++_JS = """
++document.querySelectorAll('.dot').forEach(function (d) {
++  d.addEventListener('click', function () {
++    var row = d.closest('.row');
++    row.querySelector('.info').textContent = d.dataset.info;
++    row.querySelectorAll('.dot').forEach(function (x) { x.classList.toggle('sel', x === d); });
++  });
++});
++"""
++
++
++def tracker_html(rows: list[Row], *, dark: bool = False) -> str:
++    parts = []
++    for r in rows:
++        total = len(r.dots)
++        pct = round(100 * r.done / total) if total else 0
++        dots = "".join(
++            f'<button class="dot {_CLASS.get(d.status, "todo")}{" overdue" if d.overdue and d.status != "Completed" else ""}'
++            f'{" cleared" if d.cleared else ""}" title="{html.escape(d.info)}" data-info="{html.escape(d.info)}" '
++            f'aria-label="{html.escape(d.info)}"></button>' for d in r.dots)
++        parts.append(
++            f'<div class="row"><div class="head"><span class="label">{html.escape(r.label)}</span>'
++            f'<span class="count">{r.done}/{total} completed</span></div>'
++            f'<div class="bar"><div class="fill" style="width:{pct}%"></div></div>'
++            f'<div class="line">{dots}</div><div class="info" aria-live="polite"></div></div>')
++    body = "".join(parts) or '<div class="info">No tasks.</div>'
++    return (f'<!doctype html><html><head><meta charset="utf-8"><style>{_CSS}</style></head>'
++            f'<body class="{"dark" if dark else ""}"><div class="trk">{body}</div><script>{_JS}</script></body></html>')
++
++
++def tracker_height(rows: list[Row]) -> int:
++    return 24 + 78 * max(len(rows), 1)
+diff --git a/app/pages/2_Heimdall.py b/app/pages/2_Heimdall.py
+new file mode 100644
+index 0000000..2370eb7
+--- /dev/null
++++ b/app/pages/2_Heimdall.py
+@@ -0,0 +1,175 @@
++"""Heimdall: alerts, the task board and the progress tracker for one clock date.
++
++Reads heimdall_events / heimdall_alerts / heimdall_tasks (written by scripts/run_heimdall.py) and writes
++only the board's status tags. Never calls the LLM: Heimdall is constructed without an LLM client, and a
++tag change recomputes Norns (pure Python) with the users' payment facts. Re-reads the database after every
++change and every 10 seconds, so teammates see each other's changes.
++"""
++from __future__ import annotations
++
++import sys
++from datetime import date
++from decimal import Decimal
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # app/ (for ui), which adds the repo root
++
++import streamlit as st  # noqa: E402
++import streamlit.components.v1 as components  # noqa: E402
++from streamlit_autorefresh import st_autorefresh  # noqa: E402
++
++from heimdall_tracker import Dot, Row, tracker_height, tracker_html  # noqa: E402
++from ui import runtime_or_stop  # noqa: E402
++from odin.agents.heimdall import SEVERITY_RANK, TASK_STATUSES, Heimdall  # noqa: E402
++from odin.state.models import HeimdallTask  # noqa: E402
++from odin.viewer import contract_link  # noqa: E402
++
++st.set_page_config(page_title="Heimdall · Odin", page_icon="🛡️", layout="wide")
++st_autorefresh(interval=10_000, key="heimdall-autorefresh")
++rt = runtime_or_stop()
++store = rt.store
++
++SEVERITY_COLORS = {"critical": "red", "high": "orange", "medium": "yellow", "low": "blue"}
++COLUMN_ICONS = {"Not Complete": "⚪", "In Progress": "🟠", "Completed": "🟢"}
++
++
++@st.cache_resource(show_spinner="Loading Norns…")
++def _heimdall() -> Heimdall:
++    return Heimdall(rt.store, None, rt.cfg, files=rt.files)       # no LLM client: the page never calls the LLM
++
++
++def money(amount: Decimal | None) -> str:
++    if amount is None:
++        return "—"
++    sign, amount = ("-" if amount < 0 else ""), abs(amount)      # "-$7,256": st.metric reads the sign first
++    return sign + (f"${amount:,.0f}" if amount == amount.to_integral_value() else f"${amount:,.2f}")
++
++
++def long_date(iso_day: str | None) -> str:
++    if not iso_day:
++        return "no due date"
++    d = date.fromisoformat(iso_day)
++    return f"{d.day} {d:%b %Y}"
++
++
++def days_left(task: HeimdallTask, today: date) -> str:
++    if not task.due_date:
++        return ""
++    n = (date.fromisoformat(task.due_date) - today).days
++    if task.status == "Completed":
++        return "done"
++    if n < 0:
++        return f"overdue by {-n} day{'s' if n != -1 else ''}"
++    return "due today" if n == 0 else f"{n} day{'s' if n != 1 else ''} left"
++
++
++def short_title(task: HeimdallTask) -> str:
++    if task.kind == "payment" and task.period:
++        return f"{date.fromisoformat(task.period + '-01'):%b} fee"
++    if task.kind == "credit" and task.period:
++        return f"{date.fromisoformat(task.period + '-01'):%b} credit claim"
++    return task.title
++
++
++def card_severity(task: HeimdallTask, alerts_by_instance: dict[str, str], heimdall: Heimdall, today: date) -> str:
++    if task.status == "Completed":
++        return "done"
++    if task.task_id in alerts_by_instance:
++        return alerts_by_instance[task.task_id]
++    days = (date.fromisoformat(task.due_date) - today).days if task.due_date else None
++    return "critical" if days is not None and days < 0 else heimdall.severity_for(days, renewal=task.kind == "renewal")
++
++
++def set_status(heimdall: Heimdall, as_of: str, task: HeimdallTask, status: str) -> None:
++    ok, msg = heimdall.set_task_status(as_of, task.task_id, status)
++    st.session_state["flash"] = ("success" if ok else "error", msg)
++
++
++heimdall = _heimdall()
++runs = store.heimdall_runs()
++st.title("Heimdall — events, alerts and tasks")
++if not runs:
++    st.info("No Heimdall run yet. Run `python scripts/run_heimdall.py --drop 1 --checkpoint 1` first.")
++    st.stop()
++dates = sorted({a for a, _d in runs}, reverse=True)
++as_of = st.selectbox("Clock date", dates, index=0, help="Each Heimdall run is stored per clock date.") if len(dates) > 1 \
++    else dates[0]
++today = date.fromisoformat(as_of)
++kind, msg = st.session_state.pop("flash", (None, None))
++if kind:
++    (st.success if kind == "success" else st.error)(msg)
++
++# ----------------------------------------------------------------------- top: clock, worst case, alert strip
++
++live = heimdall.totals(as_of)
++alerts = store.list_heimdall_alerts(as_of)
++tasks = store.list_heimdall_tasks(as_of)
++c1, c2, c3 = st.columns([1, 1.4, 2])
++c1.metric("Clock date", long_date(as_of))
++c2.metric("Worst-case exposure", money(live.live), delta=f"{money(live.live - live.after_events)} from task tags"
++          if live.live != live.after_events else None, delta_color="inverse",
++          help=f"Norns' worst case on the clock date: {money(live.baseline)} without event facts, "
++               f"{money(live.after_events)} with them; task tags add the users' payment facts.")
++counts = {s: sum(1 for a in alerts if a.severity == s) for s in SEVERITY_RANK}
++c3.markdown("**Alerts** " + " ".join(f":{SEVERITY_COLORS[s]}-badge[{counts[s]} {s}]" for s in SEVERITY_RANK))
++
++with st.container(border=True):
++    for a in alerts:
++        st.markdown(f":{SEVERITY_COLORS[a.severity]}-badge[{a.severity}] {a.message} "
++                    f"<span style='opacity:.6'>({a.clause_id or '—'})</span>", unsafe_allow_html=True)
++    if not alerts:
++        st.caption("No alerts on this date.")
++    if st.toggle("show filtered noise", key="show-noise"):
++        for e in heimdall.event_rows(as_of):
++            if e.status == "noise":
++                st.markdown(f":gray-badge[noise] **{e.event_id}** {e.subject or ''} — {e.noise_reason}")
++
++# ----------------------------------------------------------------------- Kanban
++
++st.subheader("Task board")
++alerts_by_instance: dict[str, str] = {}
++for a in alerts:
++    if a.instance_key and SEVERITY_RANK[a.severity] > SEVERITY_RANK.get(alerts_by_instance.get(a.instance_key, ""), 0):
++        alerts_by_instance[a.instance_key] = a.severity
++columns = st.columns(3)
++for col, status in zip(columns, TASK_STATUSES):
++    mine = [t for t in tasks if t.status == status]
++    col.markdown(f"#### {COLUMN_ICONS[status]} {status} · {len(mine)}")
++    for t in mine:
++        with col.container(border=True):
++            sev = card_severity(t, alerts_by_instance, heimdall, today)
++            badge = ":gray-badge[done]" if sev == "done" else f":{SEVERITY_COLORS[sev]}-badge[{sev}]"
++            st.markdown(f"**{t.title}** {badge}")
++            st.caption(f"{t.contract} · due {long_date(t.due_date)} · {days_left(t, today)} · {money(t.amount)}")
++            cite = t.citation or {}
++            if cite.get("clause_id"):
++                link = contract_link(cite.get("doc_id") or cite["clause_id"].split(":", 1)[0], cite["clause_id"],
++                                     cite.get("quote"))
++                st.markdown(f"[See the contract]({link}) · {cite['clause_id']}")
++            if t.status_source == "norns":
++                st.caption(f"🔒 Norns marks it {t.norns_status}")
++            else:
++                with st.popover("Set status", key=f"pop-{t.task_id}"):
++                    for target in TASK_STATUSES:
++                        st.button(target, key=f"set-{t.task_id}-{target}", disabled=target == t.status,
++                                  on_click=set_status, args=(heimdall, as_of, t, target), width="stretch")
++    if not mine:
++        col.caption("—")
++
++# ----------------------------------------------------------------------- progress tracker
++
++st.subheader("Progress")
++previous = st.session_state.get("tracker-previous", {})
++rows = []
++for contract in sorted({t.contract for t in tasks}):
++    row = Row(heimdall.process_label(contract))
++    for t in sorted((x for x in tasks if x.contract == contract), key=lambda x: (x.due_date or "", x.task_id)):
++        overdue = bool(t.due_date and t.due_date < as_of and t.status != "Completed")
++        info = f"{t.contract} {short_title(t)} · {money(t.amount)} · due {long_date(t.due_date)} · {t.status}"
++        cleared = t.status == "Completed" and previous.get(t.task_id) not in (None, "Completed")
++        row.dots.append(Dot(t.task_id, t.status, overdue, info, cleared))
++    rows.append(row)
++st.session_state["tracker-previous"] = {t.task_id: t.status for t in tasks}
++dark = getattr(getattr(st.context, "theme", None), "type", None) == "dark"
++components.html(tracker_html(rows, dark=dark), height=tracker_height(rows))
++st.caption("Refreshes every 10 seconds; every tag change is saved at once and recomputes Norns' worst case.")
+diff --git a/config.yaml b/config.yaml
+index cf2e314..82babba 100644
+--- a/config.yaml
++++ b/config.yaml
+@@ -52,6 +52,18 @@ loki:                          # adversarial review agent (reads Thor's output;
+   context_tokens: 600          # company/context.txt is trimmed to about this
+   max_llm_calls: 5             # real API calls per run_loki.py process (cache hits are free)
+ 
++heimdall:                      # event monitoring + task board (code maps first; the LLM only what code cannot)
++  drop_release_checkpoints:    # a drop is released at this clock checkpoint (format_spec: initial / mid-cycle)
++    drop1: 1
++    drop2: 2
++  llm_batch_size: 10           # events per LLM call
++  max_llm_calls: 4             # real API calls per run_heimdall.py process
++  max_tokens: 3000             # output tokens per call (reasoning included)
++  max_request_tokens: 7000     # estimated input + max_tokens per call (Groq free tier)
++  tokens_per_minute: 7500      # rolling 60 s budget across calls
++  reasoning_effort: low        # sent to reasoning models; dropped if the provider rejects it
++  task_window_days: 60         # tasks: overdue, due or upcoming within this many days of the clock date
++
+ state:                         # shared state + uploaded originals
+   backend: sqlite              # sqlite | supabase   (env STATE_BACKEND)
+   bucket: contracts            # private Supabase Storage bucket (env SUPABASE_BUCKET)
+diff --git a/odin/agents/heimdall.py b/odin/agents/heimdall.py
+new file mode 100644
+index 0000000..3074e67
+--- /dev/null
++++ b/odin/agents/heimdall.py
+@@ -0,0 +1,1100 @@
++"""HEIMDALL: event monitoring and the task board.
++
++    heimdall = Heimdall(store, heimdall_llm(cfg), cfg, files=files)
++    result = heimdall.run("drop1", "2027-03-15")
++
++One run = one event drop on one clock date (as_of):
++  1. ingest (FR5.1): a drop is read only once it is released (heimdall.drop_release_checkpoints), and
++     only its events dated on or before the clock date. An unparseable line is stored with
++     status=unparseable and the reason; nothing is dropped and nothing crashes.
++  2. map, code first: printed contract ids, counterparty names and e-mail domains, invoice references,
++     amounts and dates are matched against the store and Norns' obligation instances, and structured
++     messages (a provider's status-page outage, an uptime report, an invoice, a payment confirmation, a
++     marketing mail) are classified in code. Only the rest goes to the LLM, up to 10 events per call
++     (prompts/heimdall_map.md), within the Groq limits in config.heimdall. Document and clause ids it
++     returns must exist in the store; otherwise the event is stored unmapped, with the reason.
++  3. exposure: mapped events become Norns facts. norns.compute(as_of) without facts, then adding one
++     event's fact at a time, gives the worst-case total before / after and the delta per event and per
++     contract. A fact that changes no obligation and no exposure makes its event noise.
++  4. alerts (FR5.3): Norns' deadlines, renewals and payments at the clock date, plus events that indicate
++     a potential breach, on the fixed SEVERITY_SCALE, one per (contract, clause, kind, due date).
++  5. tasks: one card per Norns obligation instance that is overdue, due or upcoming within 60 days.
++
++``reassess(as_of)`` (no LLM) redoes 3-5 from the stored events and the task board's user facts. The
++Streamlit page constructs Heimdall without an LLM client and calls it after every tag change.
++"""
++from __future__ import annotations
++
++import json
++import math
++import re
++import time
++from collections import deque
++from dataclasses import dataclass, field
++from datetime import date, datetime, timedelta
++from decimal import Decimal, InvalidOperation
++from typing import Any, Callable
++
++from pydantic import BaseModel, ConfigDict, field_validator
++
++from odin.agents.base import Agent
++from odin.config import OdinConfig
++from odin.ingest.loader import CONTRACT_ID_IN_TEXT_RE, load_clock, parse_events, read_text_exact
++from odin.llm import BudgetExceeded, CallRecord, LLMClient, LLMError, LLMTruncated
++from odin.norns.calendar import iso, money, parse_long_date, parse_month_year, to_date
++from odin.norns.engine import Inst, Norns, Timeline
++from odin.norns.worst_case import NOT_IN_TOTAL, WorstCase, worst_case
++from odin.state.errors import StoreError
++from odin.state.files import FileStore
++from odin.state.models import Event, HeimdallAlert, HeimdallEvent, HeimdallTask
++from odin.state.store import StateStore
++
++AGENT = "heimdall"
++US = "quillhub"
++
++# The fixed alert scale. Applied in build_alerts().
++SEVERITY_SCALE = {
++    "critical": "a potential breach, a suspension or termination right that is now open, or an overdue payment",
++    "high": "due within 7 days, or a renewal-notice deadline within 30 days",
++    "medium": "due within 30 days",
++    "low": "informational",
++}
++SEVERITY_RANK = {"critical": 4, "high": 3, "medium": 2, "low": 1}
++TASK_STATUSES = ("Not Complete", "In Progress", "Completed")
++NORNS_FACTS = ("payment_made", "outage", "notice_sent")
++FACT_TYPES = NORNS_FACTS + ("other",)
++NOTICE_KINDS = ("non_renewal", "insurance_lapse", "credit_request")
++NORNS_DONE = ("paid_on_time", "paid_late", "met")          # Norns' own "done": the card is Completed and locked
++BREACH_TRIGGERS = ("suspension_right", "insurance_lapse_breach", "late_interest")
++
++# --------------------------------------------------------------------------- code classification
++
++DURATION_RE = re.compile(r"\bDuration:\s*(\d+)\s*minutes\b", re.I)
++INCIDENT_START_RE = re.compile(r"\bIncident start:\s*(\d{4}-\d{2}-\d{2})", re.I)
++MAINTENANCE_RE = re.compile(r"\bscheduled maintenance\b", re.I)
++NOT_MAINTENANCE_RE = re.compile(r"\bno scheduled maintenance\b|\bnot (?:as )?scheduled maintenance\b", re.I)
++UPTIME_LINE_RE = re.compile(r"Uptime target \(([^)]+)\):\s*([\d.]+)%\s*[—–-]+\s*(MET|MISSED)\b", re.I)
++INVOICE_RE = re.compile(r"\bInvoice Number:\s*(\S+)", re.I)
++AMOUNT_RE = re.compile(r"\bAmount:\s*\$\s?([\d,]+(?:\.\d+)?)", re.I)
++DUE_DATE_RE = re.compile(r"\bDue Date:\s*([A-Z][a-z]+ \d{1,2}, \d{4})")
++PAYMENT_RE = re.compile(r"\bpayment (?:received|confirmation|confirmed)\b|\bremittance advice\b|\bhas been paid\b", re.I)
++MARKETING_SENDER_RE = re.compile(r"\b(?:marketing|newsletter|news|promo|promotions)@", re.I)
++MARKETING_TEXT_RE = re.compile(r"\bnewsletter\b|\bunsubscribe\b|\bwebinar\b|\bregister here\b", re.I)
++EMAIL_DOMAIN_RE = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
++CORP_WORDS = {"inc", "llc", "corp", "corporation", "ltd", "co", "group", "solutions", "company", "the"}
++
++
++def _norm(text: str | None) -> str:
++    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9@. ]", " ", (text or "").lower())).strip()
++
++
++def _party_key(name: str) -> str | None:
++    """The distinctive part of a company name: 'Harbor Retail Group LLC' -> 'harbor'."""
++    words = [w for w in _norm(name).replace(".", " ").split() if w not in CORP_WORDS]
++    if not words:
++        return None
++    return words[0] if len(words[0]) >= 5 or len(words) == 1 else " ".join(words[:2])
++
++
++def _is_us(name: str | None) -> bool:
++    return US in (name or "").lower()
++
++
++def _dec(value: Any) -> Decimal | None:
++    try:
++        d = Decimal(str(value).replace(",", "").replace("$", "").strip())
++    except (InvalidOperation, ValueError):
++        return None
++    return d if d.is_finite() else None
++
++
++# --------------------------------------------------------------------------- LLM reply (lenient; checked in code)
++
++
++class FactOut(BaseModel):
++    model_config = ConfigDict(extra="ignore")
++    type: str = "other"
++    contract: str | None = None
++    date: str | None = None
++    amount: Any = None
++    period: str | None = None
++    minutes: Any = None
++    single_incident_minutes: Any = None
++    notice: str | None = None
++    description: str | None = None
++
++
++class EventOut(BaseModel):
++    model_config = ConfigDict(extra="ignore")
++    event_id: str = ""
++    noise: bool = False
++    noise_reason: str = ""
++    type: str = ""
++    doc_ids: list[str] = []
++    clause_ids: list[str] = []
++    fact: FactOut | None = None
++    potential_breach: bool = False
++    breach_reason: str = ""
++    confidence: float = 0.0
++
++    @field_validator("doc_ids", "clause_ids", mode="before")
++    @classmethod
++    def _ids(cls, v: Any) -> Any:
++        return [v] if isinstance(v, str) else (v or [])
++
++    @field_validator("noise_reason", "type", "breach_reason", mode="before")
++    @classmethod
++    def _text(cls, v: Any) -> Any:
++        return "" if v is None else v
++
++    @field_validator("confidence", mode="before")
++    @classmethod
++    def _confidence(cls, v: Any) -> Any:
++        try:
++            return min(max(float(v), 0.0), 1.0)
++        except (TypeError, ValueError):
++            return 0.0
++
++
++class MapOut(BaseModel):
++    events: list[EventOut]
++
++
++# --------------------------------------------------------------------------- working types
++
++
++@dataclass
++class RawEvent:
++    drop_name: str
++    line_no: int
++    raw: str
++    event_id: str | None = None
++    timestamp: str | None = None
++    event_date: str | None = None
++    channel: str | None = None
++    sender: str | None = None
++    recipient: str | None = None
++    subject: str | None = None
++    body: str | None = None
++    parse_error: str | None = None
++
++    @property
++    def text(self) -> str:
++        return "\n".join(x for x in (self.sender, self.recipient, self.subject, self.body) if x)
++
++    @property
++    def label(self) -> str:
++        return self.event_id or f"{self.drop_name} line {self.line_no}"
++
++
++@dataclass
++class Mapping:
++    status: str                              # mapped | unmapped | noise | unparseable
++    reason: str | None = None                # why unmapped / unparseable
++    type: str | None = None
++    doc_ids: list[str] = field(default_factory=list)
++    clause_ids: list[str] = field(default_factory=list)
++    fact: dict[str, Any] | None = None
++    noise_reason: str | None = None
++    mapped_by: str | None = None
++    confidence: float | None = None
++    potential_breach: bool = False
++    breach_reason: str | None = None
++    exposure: dict[str, Any] = field(default_factory=dict)
++
++    def to_noise(self, reason: str) -> None:
++        self.status, self.noise_reason = "noise", reason
++
++
++@dataclass
++class Live:
++    """Worst-case totals on the clock date: no facts, the events' facts, and the events' plus the users' facts."""
++
++    as_of: str
++    baseline: Decimal
++    after_events: Decimal
++    live: Decimal
++    by_contract: dict[str, dict[str, str]]
++    alerts: list[HeimdallAlert] = field(default_factory=list)
++    tasks: list[HeimdallTask] = field(default_factory=list)
++
++
++@dataclass
++class RunResult:
++    drop_name: str
++    as_of: str
++    source: str
++    events: list[HeimdallEvent]
++    future: int
++    live: Live
++    llm: dict[str, Any]
++
++    def counts(self) -> dict[str, int]:
++        ev = self.events
++        return {"total": len(ev), "mapped_by_code": sum(1 for e in ev if e.mapped_by == "code" and e.status == "mapped"),
++                "mapped_by_llm": sum(1 for e in ev if e.mapped_by == "llm" and e.status == "mapped"),
++                "noise": sum(1 for e in ev if e.status == "noise"), "unmapped": sum(1 for e in ev if e.status == "unmapped"),
++                "unparseable": sum(1 for e in ev if e.status == "unparseable"), "not_yet_visible": self.future}
++
++
++class TokenWindow:
++    """Rolling 60-second token budget across calls: waits before a call that would exceed it."""
++
++    def __init__(self, per_minute: int, clock: Callable[[], float] = time.monotonic,
++                 sleep: Callable[[float], None] = time.sleep):
++        self.per_minute, self.clock, self.sleep = per_minute, clock, sleep
++        self.spent: deque[tuple[float, int]] = deque()
++        self.waited = 0.0
++
++    def used(self) -> int:
++        now = self.clock()
++        while self.spent and now - self.spent[0][0] >= 60:
++            self.spent.popleft()
++        return sum(n for _, n in self.spent)
++
++    def wait_for(self, planned: int) -> None:
++        while self.spent and self.used() + planned > self.per_minute:
++            delay = max(60 - (self.clock() - self.spent[0][0]) + 0.5, 0.5)
++            self.sleep(delay)
++            self.waited += delay
++
++    def record(self, tokens: int) -> None:
++        if tokens:
++            self.spent.append((self.clock(), tokens))
++
++
++def heimdall_llm(cfg: OdinConfig, **kwargs: Any) -> LLMClient:
++    """The shared LLM settings with Heimdall's limits: max_tokens, reasoning_effort, call cap, no re-prompts."""
++    h = cfg.heimdall
++    settings = cfg.llm.model_copy(update={"reasoning_effort": h.reasoning_effort, "max_output_tokens": h.max_tokens})
++    limits = cfg.limits.model_copy(update={"max_llm_calls": min(cfg.limits.max_llm_calls, h.max_llm_calls),
++                                           "validation_retries": 0})
++    return LLMClient(settings=settings, limits=limits, cache_dir=cfg.paths.llm_cache_dir, **kwargs)
++
++
++def _totals(wc: WorstCase) -> tuple[Decimal, dict[str, Decimal]]:
++    by: dict[str, Decimal] = {}
++    for a in wc.accruals:
++        if a.scenario == "worst_case" and a.category not in NOT_IN_TOTAL:
++            by[a.contract] = by.get(a.contract, Decimal(0)) + a.amount
++    return wc.total("worst_case"), {c: money(v) for c, v in sorted(by.items())}
++
++
++def _citation(cites: list[dict[str, Any]]) -> dict[str, Any]:
++    """The first clause citation (verified first) of a Norns instance."""
++    ranked = sorted((c for c in cites if c.get("clause_id")), key=lambda c: not c.get("verified"))
++    if not ranked:
++        return {}
++    c = ranked[0]
++    return {"doc_id": c.get("doc_id") or c["clause_id"].split(":", 1)[0], "clause_id": c["clause_id"],
++            "quote": " ".join(str(c.get("quote") or "").split())[:240] or None}
++
++
++def _fmt_money(amount: Decimal | None) -> str:
++    return f"${amount:,.2f}" if amount is not None else "no amount"
++
++
++def _one_line(text: str, limit: int = 160) -> str:
++    text = " ".join(text.split())
++    return text if len(text) <= limit else text[: limit - 1] + "…"
++
++
++class Heimdall(Agent):
++    name = AGENT
++    prompt_files = {"map": "heimdall_map.md"}
++
++    def __init__(self, store: StateStore, llm: LLMClient | None, cfg: OdinConfig, *, files: FileStore | None = None,
++                 norns: Norns | None = None, run_id: str | None = None,
++                 sleep: Callable[[float], None] = time.sleep, clock: Callable[[], float] = time.monotonic):
++        super().__init__(store, llm, cfg, run_id)
++        self.files = files
++        self.norns = norns or Norns(store, None, cfg)        # Norns never gets an LLM from Heimdall
++        self.window = TokenWindow(cfg.heimdall.tokens_per_minute, clock=clock, sleep=sleep)
++        self._calls: list[CallRecord] = []
++        self._clauses: dict[str, bool] = {}
++        self._index_ready = False
++
++    # ================================================================== public API
++
++    def run(self, drop_name: str, as_of: date | str) -> RunResult:
++        day = iso(to_date(as_of))
++        assert day is not None
++        released = self.released_drops(day)
++        if drop_name not in released:
++            when = self.release_date(drop_name)
++            raise ValueError(f"{drop_name} is not released on {day}" + (f" (released {when})" if when else
++                                                                         " (not in heimdall.drop_release_checkpoints)"))
++        self.log("run_start", f"{drop_name}@{day}", None, model=self.llm.model if self.llm else None)
++        with self.step("ingest", f"{drop_name}@{day}") as info:
++            events, future, source = self.load_events(drop_name, day)
++            info.update(output_ref=f"{len(events)} visible, {future} later", source=source)
++        self._build_index()
++
++        mappings: dict[int, Mapping] = {}
++        pending: list[RawEvent] = []
++        for ev in events:
++            if ev.parse_error:
++                mappings[ev.line_no] = Mapping("unparseable", reason=ev.parse_error)
++                continue
++            m = self.code_map(ev, day)
++            if m is None:
++                pending.append(ev)
++            else:
++                mappings[ev.line_no] = m
++        self.log("code_map", f"{drop_name}@{day}", f"{len(mappings)} by code, {len(pending)} for the LLM",
++                 by_code={e.label: mappings[e.line_no].status for e in events if e.line_no in mappings})
++        mappings.update(self.llm_map(pending, day))
++
++        with self.step("exposure", f"{drop_name}@{day}") as info:
++            info["output_ref"] = self.exposure([(ev, mappings[ev.line_no]) for ev in events], day)
++        rows = [self._row(ev, mappings[ev.line_no], day) for ev in events]
++        self.store.replace_heimdall_events(day, drop_name, rows)
++        live = self.reassess(day)
++        usage = self._usage()
++        self.log("run_end", f"{drop_name}@{day}", None, **usage)
++        return RunResult(drop_name, day, source, rows, future, live, usage)
++
++    # ================================================================== 1. ingest (drop model)
++
++    def checkpoint(self, n: int) -> str:
++        points = self.store.list_checkpoints() or load_clock(self.cfg.paths.pack_dir / "clock.json")
++        match = next((p for p in points if p.idx == n), None)
++        if match is None:
++            raise ValueError(f"checkpoint {n} does not exist (0..{max(p.idx for p in points)}; 0 = start date)")
++        return match.date
++
++    def release_date(self, drop_name: str) -> str | None:
++        idx = self.cfg.heimdall.drop_release_checkpoints.get(drop_name)
++        return self.checkpoint(idx) if idx is not None else None
++
++    def released_drops(self, as_of: str) -> list[str]:
++        return [d for d in sorted(self.cfg.heimdall.drop_release_checkpoints)
++                if (self.release_date(d) or "9999-12-31") <= as_of]
++
++    def _drop_text(self, drop_name: str) -> tuple[str, str]:
++        """The drop file: the stored copy (Supabase Storage / local file store) first, else the bundle."""
++        rel = f"events/events_{drop_name}.jsonl"
++        res = self.store.get_resource(rel)
++        if res and res.storage_path and self.files is not None:
++            try:
++                return self.files.download(res.storage_path).decode("utf-8"), f"storage:{res.storage_path}"
++            except (OSError, StoreError, UnicodeDecodeError) as exc:
++                self.log("storage_fallback", rel, None, error=f"{type(exc).__name__}: {exc}")
++        path = self.cfg.paths.bundle_dir / rel
++        if not path.exists():
++            raise FileNotFoundError(f"no stored copy and no bundle file for {rel}")
++        return read_text_exact(path), f"bundle:{rel}"
++
++    def load_events(self, drop_name: str, as_of: str) -> tuple[list[RawEvent], int, str]:
++        """Visible lines of a released drop: events dated on or before as_of, plus unparseable lines."""
++        text, source = self._drop_text(drop_name)
++        visible, future = [], 0
++        for e in parse_events(text, drop_name):
++            ev = self._raw(e)
++            if ev.parse_error is None and ev.event_date and ev.event_date > as_of:
++                future += 1
++                continue
++            visible.append(ev)
++        return visible, future, source
++
++    @staticmethod
++    def _raw(e: Event) -> RawEvent:
++        ev = RawEvent(drop_name=e.drop, line_no=e.line_no, raw=e.raw, event_id=e.event_id, timestamp=e.timestamp,
++                      channel=e.channel, sender=e.from_party, recipient=e.to_party, subject=e.subject, body=e.body,
++                      parse_error=e.parse_error)
++        if ev.parse_error is None:
++            try:
++                ev.event_date = datetime.fromisoformat(str(e.timestamp).replace("Z", "+00:00")).date().isoformat()
++            except (TypeError, ValueError):
++                ev.parse_error = f"no valid timestamp ({e.timestamp!r})"
++        return ev
++
++    # ================================================================== 2a. code mapping
++
++    def _build_index(self) -> None:
++        """Who each event could be about: printed ids, counterparty names and e-mail domains -> contract."""
++        if self._index_ready:
++            return
++        self.norns.load()
++        docs = {d.doc_id: d for d in self.store.list_documents(include_text=False)}
++        self.docs = docs
++        roots: dict[str, str] = {}
++        for c, fam in self.norns.families.items():
++            for d in fam.docs:
++                if d in docs and docs[d].kind != "standard_terms":
++                    roots.setdefault(d, c)
++        rels = self.store.list_relations()
++        for d, doc in docs.items():
++            if d in roots or doc.kind == "standard_terms":
++                continue
++            host = next((r.from_doc for r in rels if r.type == "incorporates" and r.to_doc == d and r.from_doc in docs
++                         and docs[r.from_doc].kind == "contract"), None) \
++                or next((r.to_doc for r in rels if r.type == "amends" and r.from_doc == d and r.to_doc in docs), None)
++            roots[d] = roots.get(host, host) if host else d
++        self.roots = roots
++        self.external_ids = {doc.external_id: roots.get(d, d) for d, doc in docs.items() if doc.external_id}
++        names: dict[str, tuple[str, str]] = {}
++        domains: dict[str, str] = {}
++        for d, root in roots.items():
++            for e in self.store.current_extractions(d, "thor"):
++                v = e.value if isinstance(e.value, dict) else {}
++                if e.field_type != "party" or not v.get("name") or _is_us(v["name"]):
++                    continue
++                key = _party_key(v["name"])
++                if key:
++                    names.setdefault(key, (root, v["name"]))
++                for m in EMAIL_DOMAIN_RE.finditer(" ".join(str(x) for x in v.values())):
++                    domains.setdefault(m.group(1).lower(), root)
++        for c, fam in self.norns.families.items():
++            for party in (fam.provider, fam.customer):
++                if party and not _is_us(party) and _party_key(party):
++                    names.setdefault(_party_key(party), (c, party))  # type: ignore[arg-type]
++        self.names = names
++        self.domains = domains
++        self._index_ready = True
++
++    def candidates(self, ev: RawEvent) -> list[str]:
++        """Contracts the event names: by printed contract id, counterparty name or e-mail domain."""
++        found: list[str] = []
++        for m in CONTRACT_ID_IN_TEXT_RE.finditer(ev.text):
++            root = self.external_ids.get(m.group(0))
++            if root and root not in found:
++                found.append(root)
++        flat = f" {_norm(ev.text)} "
++        for key, (root, _name) in self.names.items():
++            if f" {key} " in flat and root not in found:
++                found.append(root)
++        for m in EMAIL_DOMAIN_RE.finditer(ev.text):
++            root = self.domains.get(m.group(1).lower())
++            if root and root not in found:
++                found.append(root)
++        return found
++
++    def _exists(self, clause_id: str) -> bool:
++        if clause_id not in self._clauses:
++            self._clauses[clause_id] = self.store.get_clause(clause_id) is not None
++        return self._clauses[clause_id]
++
++    def _rule_clauses(self, contract: str, kind: str, when: date) -> list[str]:
++        """Clause ids cited by the contract's Norns rules of one kind, in force on a date."""
++        out: list[str] = []
++        for r in self.norns.rules:
++            if r.contract != contract or r.kind != kind:
++                continue
++            if (r.valid_from and to_date(r.valid_from) > when) or (r.valid_to and when >= to_date(r.valid_to)):  # type: ignore[operator]
++                continue
++            for c in r.citations:
++                cid = c.get("clause_id")
++                if cid and cid not in out and self._exists(cid):
++                    out.append(cid)
++        return out
++
++    def _docs_of(self, root: str | None, clause_ids: list[str]) -> list[str]:
++        out = [root] if root else []
++        for cid in clause_ids:
++            d = cid.split(":", 1)[0]
++            if d not in out:
++                out.append(d)
++        return out
++
++    def code_map(self, ev: RawEvent, as_of: str) -> Mapping | None:
++        """Structured messages, decided in code; None = code cannot map or classify it (it goes to the LLM)."""
++        cands = self.candidates(ev)
++        text = ev.text
++        if MARKETING_SENDER_RE.search(ev.sender or "") or (MARKETING_TEXT_RE.search(text)
++                                                           and not CONTRACT_ID_IN_TEXT_RE.search(text)):
++            return Mapping("noise", type="marketing", noise_reason=f"marketing / newsletter from {ev.sender}: no "
++                           "contract, clause, obligation or exposure", mapped_by="code", confidence=0.95)
++
++        duration, start = DURATION_RE.search(text), INCIDENT_START_RE.search(text)
++        if ev.channel == "status_log" and duration and start and len(cands) == 1 and cands[0] in self.norns.families \
++                and (NOT_MAINTENANCE_RE.search(text) or not MAINTENANCE_RE.search(text)):
++            root, minutes, when = cands[0], int(duration.group(1)), to_date(start.group(1))
++            if when is None or iso(when) > as_of:  # type: ignore[operator]
++                return None
++            clauses = self._rule_clauses(root, "credit", when)
++            fact = {"type": "outage", "date": iso(when), "contract": root, "minutes": minutes,
++                    "single_incident_minutes": minutes, "source": "event", "event_id": ev.event_id}
++            return Mapping("mapped", type="outage", doc_ids=self._docs_of(root, clauses), clause_ids=clauses, fact=fact,
++                           mapped_by="code", confidence=0.95)
++
++        targets = UPTIME_LINE_RE.findall(text)
++        if targets and "uptime report" in (ev.subject or "").lower():
++            if all(r.upper() == "MET" for _p, _t, r in targets):
++                met = ", ".join(f"{p} {t}%" for p, t, _r in targets)
++                return Mapping("noise", type="uptime_report", doc_ids=cands,
++                               noise_reason=f"uptime report: every target met ({met}); no credit, obligation or exposure "
++                                            "changes", mapped_by="code", confidence=0.95)
++            return None                              # a missed target: the LLM maps it to the contract and clause
++
++        amount = AMOUNT_RE.search(text)
++        if amount and len(cands) == 1 and cands[0] in self.norns.families and (INVOICE_RE.search(text) or PAYMENT_RE.search(text)):
++            inst = self._payment_instance(cands[0], _dec(amount.group(1)), text, as_of)
++            if inst is None:
++                return None
++            clauses = [c for c in dict.fromkeys(x.get("clause_id") for x in inst.citations) if c and self._exists(c)]
++            docs = self._docs_of(inst.contract, clauses)
++            if PAYMENT_RE.search(text):
++                fact = {"type": "payment_made", "date": ev.event_date, "contract": inst.contract,
++                        "amount": str(_dec(amount.group(1))), "period": inst.period, "source": "event",
++                        "event_id": ev.event_id}
++                return Mapping("mapped", type="payment_received", doc_ids=docs, clause_ids=clauses, fact=fact,
++                               mapped_by="code", confidence=0.9)
++            stated = DUE_DATE_RE.search(text)
++            stated_due = parse_long_date(stated.group(1)) if stated else None
++            if stated_due is not None and stated_due != inst.due:
++                # The invoice moves the due date Norns computes: an obligation change Norns has no fact type for.
++                fact = {"type": "other", "description": f"invoice states due {stated_due}; Norns computes {inst.due} for "
++                                                        f"{inst.name}", "source": "event", "event_id": ev.event_id}
++                return Mapping("mapped", type="invoice_issued", doc_ids=docs, clause_ids=clauses, fact=fact,
++                               mapped_by="code", confidence=0.9)
++            return Mapping("noise", type="invoice_issued", doc_ids=docs, clause_ids=clauses,
++                           noise_reason=f"invoice for {inst.name} ({_fmt_money(inst.amount)}), which Norns already "
++                                        f"schedules (due {inst.due}); no obligation or exposure changes",
++                           mapped_by="code", confidence=0.9)
++        return None
++
++    def _payment_instance(self, contract: str, amount: Decimal | None, text: str, as_of: str) -> Inst | None:
++        """The Norns payment instance an invoice / payment message is about: contract, amount and billing month."""
++        if amount is None:
++            return None
++        period = parse_month_year(text)
++        t = self.norns.compute(as_of)
++        hits = [i for i in t.payments() if i.contract == contract and i.amount == money(amount)
++                and (period is None or i.period == period)]
++        return hits[0] if len(hits) == 1 else None
++
++    # ================================================================== 2b. LLM mapping (batched, budgeted)
++
++    def _on_llm_call(self, rec: CallRecord) -> None:
++        self._calls.append(rec)
++        super()._on_llm_call(rec)
++
++    def _tokens(self, text: str) -> int:
++        return math.ceil(len(text) / self.cfg.heimdall.chars_per_token)
++
++    def _contracts_text(self, roots: list[str]) -> str:
++        lines = []
++        for root in roots:
++            doc = self.docs.get(root)
++            fam = self.norns.families.get(root)
++            members = sorted(d for d, r in self.roots.items() if r == root)
++            party = next((name for _k, (r, name) in self.names.items() if r == root), None)
++            role = ""
++            if fam:
++                role = " (Quillhub is the customer)" if _is_us(fam.customer) else " (Quillhub is the provider)"
++            lines.append(f"- {root}: {doc.title if doc else root}; counterparty {party or 'unknown'}{role}; printed ID "
++                         f"{doc.external_id if doc and doc.external_id else 'none'}; documents "
++                         + ", ".join(f"{d} ({self.docs[d].kind})" for d in members if d in self.docs)
++                         + ("; Norns tracks its payments and deadlines" if fam else "; outside Norns' timeline"))
++        return "\n".join(lines)
++
++    def _clauses_text(self, roots: list[str]) -> str:
++        """Clause ids the model may cite: every clause of the candidate contracts' documents, top-level sections otherwise."""
++        verbs = {"replace": "replaced", "modify": "modified", "insert": "inserted into", "delete": "deleted"}
++        amended: dict[str, str] = {}
++        for r in self.store.list_relations():
++            cite = r.citation or {}
++            if r.type == "amends" and cite.get("target_clause_id"):
++                amended[cite["target_clause_id"]] = (f" [amended: {verbs.get(cite.get('operation') or 'replace', 'replaced')} "
++                                                     f"by {r.clause_id} from {cite.get('effective_date') or '?'}]")
++        lines = []
++        for d in sorted(self.docs):
++            if self.docs[d].kind == "standard_terms":
++                continue
++            detailed = self.roots.get(d, d) in roots
++            for c in self.store.list_clauses(d):
++                if not detailed and c.level != 1:
++                    continue
++                words = re.sub(r"[=\-]{3,}", " ", c.heading or c.text).split()
++                if words and words[0].rstrip(".") == c.number:
++                    words = words[1:]                    # "2.1 Provider will ..." -> "Provider will ..."
++                lines.append(f"{c.clause_id} {_one_line(' '.join(words[:8]), 48)}{amended.get(c.clause_id, '')}")
++        return "\n".join(lines)
++
++    def _events_text(self, batch: list[RawEvent], limit: int) -> str:
++        blocks = []
++        for ev in batch:
++            body = " ".join((ev.body or "").split())
++            if len(body) > limit:
++                body = body[:limit] + " …[truncated]"
++            hint = ", ".join(self.candidates(ev)) or "none"
++            blocks.append(f"[{ev.event_id}] {ev.event_date} · {ev.channel} · from: {ev.sender} · to: {ev.recipient} · "
++                          f"subject: {ev.subject} · contracts named in it: {hint}\n{body}")
++        return "\n\n".join(blocks)
++
++    def _render(self, batch: list[RawEvent], as_of: str) -> tuple[str, str, int]:
++        tpl = self.prompt("map")
++        roots = sorted({r for ev in batch for r in self.candidates(ev)})
++        all_roots = sorted(set(self.roots.values()))
++        user = tpl.render(as_of=as_of, contracts=self._contracts_text(all_roots), clauses=self._clauses_text(roots),
++                          count=len(batch), events=self._events_text(batch, self.cfg.heimdall.event_body_chars))
++        return tpl.system, user, self._tokens(tpl.system) + self._tokens(user)
++
++    def _plan_batches(self, events: list[RawEvent], as_of: str) -> list[list[RawEvent]]:
++        h = self.cfg.heimdall
++        batches: list[list[RawEvent]] = []
++        current: list[RawEvent] = []
++        for ev in events:
++            trial = current + [ev]
++            if current and (len(trial) > h.llm_batch_size
++                            or self._render(trial, as_of)[2] + h.max_tokens > h.max_request_tokens):
++                batches.append(current)
++                current = [ev]
++            else:
++                current = trial
++        if current:
++            batches.append(current)
++        return batches
++
++    def llm_map(self, events: list[RawEvent], as_of: str) -> dict[int, Mapping]:
++        """Events code could not map or classify, in batches; every reply is checked against the store."""
++        out: dict[int, Mapping] = {}
++        if not events:
++            return out
++        if self.llm is None:
++            for ev in events:
++                out[ev.line_no] = Mapping("unmapped", reason="code could not map or classify it, and no LLM client is "
++                                                             "configured for this run")
++            return out
++        queue = self._plan_batches(events, as_of)
++        while queue:
++            batch = queue.pop(0)
++            replies, error = self._call(batch, as_of)
++            if error == "truncated" and len(batch) > 1:
++                half = len(batch) // 2
++                queue[:0] = [batch[:half], batch[half:]]
++                continue
++            for ev in batch:
++                out[ev.line_no] = self._from_llm(ev, replies.get(ev.event_id or ""), as_of) if error is None else \
++                    Mapping("unmapped", reason=f"LLM mapping failed: {error}")
++        return out
++
++    def _call(self, batch: list[RawEvent], as_of: str) -> tuple[dict[str, EventOut], str | None]:
++        h = self.cfg.heimdall
++        system, user, est = self._render(batch, as_of)
++        if est + h.max_tokens > h.max_request_tokens:
++            return {}, (f"about {est} input tokens + {h.max_tokens} max_tokens is over the {h.max_request_tokens}-token "
++                        "request limit")
++        self.window.wait_for(est + h.max_tokens)
++        purpose = f"heimdall.map:{as_of}:" + ",".join(ev.label for ev in batch)
++        start = len(self._calls)
++        try:
++            reply = self.llm.call_json(user, MapOut, system=system, purpose=purpose, include_schema=False,  # type: ignore[union-attr]
++                                       max_tokens=h.max_tokens)
++            result: tuple[dict[str, EventOut], str | None] = ({e.event_id.strip(): e for e in reply.events}, None)
++        except LLMTruncated:
++            result = ({}, "truncated")
++        except BudgetExceeded as exc:
++            result = ({}, f"BudgetExceeded: {exc}")
++        except LLMError as exc:
++            result = ({}, f"{type(exc).__name__}: {exc}")
++        for rec in self._calls[start:]:
++            if not rec.cache_hit and not rec.error:
++                self.window.record(rec.input_tokens + rec.output_tokens)
++        self.log("llm_batch", purpose, None if result[1] else f"{len(result[0])} result(s)", error=result[1],
++                 est_input_tokens=est, max_tokens=h.max_tokens, events=[ev.label for ev in batch])
++        return result
++
++    def _from_llm(self, ev: RawEvent, out: EventOut | None, as_of: str) -> Mapping:
++        if out is None:
++            return Mapping("unmapped", reason="the LLM returned no result for this event")
++        doc_ids = list(dict.fromkeys(d.strip() for d in out.doc_ids if d and d.strip()))
++        clause_ids = list(dict.fromkeys(c.strip().strip("[]") for c in out.clause_ids if c and c.strip()))
++        bad = [d for d in doc_ids if d not in self.docs] + [c for c in clause_ids if not self._exists(c)]
++        if bad:
++            return Mapping("unmapped", reason=f"the LLM named ids that do not exist in the store: {', '.join(bad)}",
++                           type=out.type or None, mapped_by="llm", confidence=out.confidence)
++        for c in clause_ids:
++            if c.split(":", 1)[0] not in doc_ids:
++                doc_ids.append(c.split(":", 1)[0])
++        base = dict(type=re.sub(r"[^a-z0-9_]+", "_", out.type.strip().lower()).strip("_") or None, doc_ids=doc_ids,
++                    clause_ids=clause_ids, mapped_by="llm", confidence=out.confidence)
++        if out.noise:
++            return Mapping("noise", noise_reason=_one_line(out.noise_reason or "the LLM marked it noise (no reason given)",
++                                                           300), **base)  # type: ignore[arg-type]
++        if not doc_ids:
++            return Mapping("noise", noise_reason="maps to no contract or clause", **base)  # type: ignore[arg-type]
++        fact, error = self._fact(out.fact, ev, as_of, doc_ids)
++        if error:
++            return Mapping("unmapped", reason=error, **base)  # type: ignore[arg-type]
++        return Mapping("mapped", fact=fact, potential_breach=out.potential_breach,
++                       breach_reason=_one_line(out.breach_reason, 300) if out.potential_breach and out.breach_reason else None,
++                       **base)  # type: ignore[arg-type]
++
++    def _fact(self, raw: FactOut | None, ev: RawEvent, as_of: str, doc_ids: list[str]) -> tuple[dict[str, Any] | None, str | None]:
++        """A Norns fact from the LLM's, checked: a known contract, an ISO date on or before as_of, valid amounts."""
++        if raw is None:
++            return {"type": "other", "description": None, "source": "event", "event_id": ev.event_id}, None
++        kind = (raw.type or "other").strip().lower()
++        if kind not in FACT_TYPES:
++            return None, f"fact type {raw.type!r} is not one of {' | '.join(FACT_TYPES)}"
++        if kind == "other":
++            return {"type": "other", "description": _one_line(raw.description or "", 200) or None, "source": "event",
++                    "event_id": ev.event_id}, None
++        contract = (raw.contract or doc_ids[0]).strip()
++        if contract not in self.docs:
++            return None, f"fact contract {contract!r} is not a document in the store"
++        contract = self.roots.get(contract, contract)
++        when = to_date(raw.date) if raw.date and re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw.date.strip()) else None
++        if raw.date and when is None:
++            return None, f"fact date {raw.date!r} is not YYYY-MM-DD"
++        when = when or to_date(ev.event_date)
++        if when is None or iso(when) > as_of:  # type: ignore[operator]
++            return None, f"fact date {iso(when)} is after the clock date {as_of}"
++        fact: dict[str, Any] = {"type": kind, "date": iso(when), "contract": contract, "source": "event",
++                                "event_id": ev.event_id}
++        period = (raw.period or "").strip() or None
++        if period and not re.fullmatch(r"\d{4}-\d{2}", period):
++            period = parse_month_year(period)
++        if kind == "payment_made":
++            amount = _dec(raw.amount)
++            if amount is None or amount <= 0:
++                return None, f"payment_made needs a positive amount (got {raw.amount!r})"
++            fact.update(amount=str(money(amount)), period=period)
++        elif kind == "outage":
++            try:
++                minutes = int(float(str(raw.minutes)))
++                single = int(float(str(raw.single_incident_minutes))) if raw.single_incident_minutes not in (None, "") else None
++            except (TypeError, ValueError):
++                return None, f"outage needs minutes as numbers (got {raw.minutes!r}, {raw.single_incident_minutes!r})"
++            if not 0 < minutes <= 44640 or (single is not None and not 0 < single <= minutes):
++                return None, f"outage minutes out of range (minutes {minutes}, single incident {single})"
++            fact.update(minutes=minutes, single_incident_minutes=single)
++        else:
++            notice = (raw.notice or "").strip().lower()
++            if notice not in NOTICE_KINDS:
++                return None, f"notice_sent needs notice: {' | '.join(NOTICE_KINDS)} (got {raw.notice!r})"
++            fact.update(notice=notice, period=period)
++        return fact, None
++
++    # ================================================================== 3. exposure (Norns before / after)
++
++    def exposure(self, pairs: list[tuple[RawEvent, Mapping]], as_of: str) -> str:
++        """One event's fact at a time, in date order: worst case before / after, delta per event and per contract."""
++        ordered = sorted(((ev, m) for ev, m in pairs if m.status == "mapped" and m.fact and m.fact["type"] in NORNS_FACTS),
++                         key=lambda p: (p[0].event_date or "", p[0].event_id or "", p[0].line_no))
++        facts: list[dict[str, Any]] = []
++        t_prev = self.norns.compute(as_of, facts)
++        wc_prev = worst_case(self.norns, t_prev)
++        first, _ = _totals(wc_prev)
++        seen: dict[tuple[Any, ...], str] = {}
++        for ev, m in ordered:
++            f = m.fact or {}
++            key = (f["type"], f.get("contract"), f.get("date"), f.get("minutes"), f.get("amount"), f.get("notice"),
++                   f.get("period"))
++            if key in seen:
++                m.to_noise(f"repeats the {f['type']} fact of {seen[key]}")
++                continue
++            t = self.norns.compute(as_of, facts + [f])
++            wc = worst_case(self.norns, t)
++            changes, breaches = self._diff(t_prev, t)
++            (before, by_before), (after, by_after) = _totals(wc_prev), _totals(wc)
++            delta = money(after - before)
++            by = {c: str(money(by_after.get(c, Decimal(0)) - by_before.get(c, Decimal(0))))
++                  for c in sorted(set(by_before) | set(by_after))
++                  if by_after.get(c, Decimal(0)) != by_before.get(c, Decimal(0))}
++            m.exposure = {"before": str(before), "after": str(after), "delta": str(delta), "by_contract": by,
++                          "changes": changes}
++            if delta == 0 and not changes:
++                m.to_noise(f"Norns: the {f['type']} fact changes no obligation instance and no worst-case exposure")
++                continue
++            facts.append(f)
++            seen[key] = ev.label
++            if breaches:                              # Norns' computed reason replaces the model's wording
++                m.potential_breach = True
++                m.breach_reason = _one_line("; ".join(breaches), 300)
++            t_prev, wc_prev = t, wc
++        last, _ = _totals(wc_prev)
++        return f"worst case {first} -> {last} with {len(facts)} fact(s)"
++
++    def _diff(self, prev: Timeline, cur: Timeline) -> tuple[list[str], list[str]]:
++        """What a fact changed in Norns' instances and triggers, and which of those changes point to a breach."""
++        changes: list[str] = []
++        breaches: list[str] = []
++        before = {i.key: i for i in prev.instances}
++        for i in cur.instances:
++            p = before.get(i.key)
++            if p is None:
++                if i.amount is not None and i.amount <= 0:
++                    continue                                  # e.g. a 0% credit: nothing owed, nothing to claim
++                cite = _citation(i.citations).get("clause_id")
++                changes.append(f"new {i.kind}: {i.name} ({i.contract}) {_fmt_money(i.amount)} due {i.due}")
++                if i.kind == "credit" and _is_us(i.payer):
++                    breaches.append(f"{i.contract}: uptime below the committed target in {i.period}; {i.payee} may "
++                                    f"claim {_fmt_money(i.amount)} by {i.due} ({cite})")
++            elif (p.status, p.paid_amount, p.amount, p.due) != (i.status, i.paid_amount, i.amount, i.due):
++                changes.append(f"{i.name} ({i.contract}): {p.status} -> {i.status}")
++        old = {(t["type"], t["instance"]) for t in prev.penalty_triggers}
++        for t in cur.penalty_triggers:
++            if (t["type"], t["instance"]) not in old:
++                changes.append(f"trigger {t['type']} ({t['contract']}): {t['description']}")
++                if t["type"] in BREACH_TRIGGERS:
++                    breaches.append(f"{t['contract']}: {t['description']}")
++        return changes, breaches
++
++    # ================================================================== reassess: facts -> totals, tasks, alerts
++
++    def event_rows(self, as_of: str) -> list[HeimdallEvent]:
++        """Events behind the clock date: per drop, the latest run on or before as_of."""
++        latest: dict[str, str] = {}
++        for run_as_of, drop_name in self.store.heimdall_runs():
++            if run_as_of <= as_of:
++                latest[drop_name] = run_as_of
++        rows: list[HeimdallEvent] = []
++        for drop_name, run_as_of in sorted(latest.items()):
++            rows += [e for e in self.store.list_heimdall_events(run_as_of, drop_name)
++                     if e.event_date is None or e.event_date <= as_of]
++        return rows
++
++    @staticmethod
++    def event_facts(rows: list[HeimdallEvent]) -> list[dict[str, Any]]:
++        return [e.fact for e in rows if e.status == "mapped" and e.fact and e.fact.get("type") in NORNS_FACTS]
++
++    def user_facts(self, as_of: str) -> list[dict[str, Any]]:
++        return [t.fact for t in self.store.list_heimdall_tasks(as_of)
++                if t.status == "Completed" and t.status_source == "user" and t.fact]
++
++    def _live(self, as_of: str, ev_facts: list[dict[str, Any]], user: list[dict[str, Any]],
++              t_e: Timeline | None = None) -> tuple[Live, Timeline]:
++        base, _ = _totals(worst_case(self.norns, self.norns.compute(as_of)))
++        t_e = t_e or self.norns.compute(as_of, ev_facts)
++        t_all = self.norns.compute(as_of, ev_facts + user)
++        wc_all = worst_case(self.norns, t_all)
++        (after, by_e), (live, by_all) = _totals(worst_case(self.norns, t_e)), _totals(wc_all)
++        by = {c: {"after_events": str(by_e.get(c, Decimal(0))), "live": str(by_all.get(c, Decimal(0)))}
++              for c in sorted(set(by_e) | set(by_all))}
++        return Live(as_of, base, after, live, by), t_all
++
++    def totals(self, as_of: str) -> Live:
++        """The worst case on the clock date: no facts, the events' facts, and the events' plus the users' (no writes)."""
++        return self._live(as_of, self.event_facts(self.event_rows(as_of)), self.user_facts(as_of))[0]
++
++    def reassess(self, as_of: str) -> Live:
++        """Recompute Norns with the stored facts and rewrite the board's tasks and alerts (no LLM)."""
++        rows = self.event_rows(as_of)
++        ev_facts = self.event_facts(rows)
++        t_e = self.norns.compute(as_of, ev_facts)
++        tasks = self.sync_tasks(as_of, t_e)
++        user = [t.fact for t in tasks if t.status == "Completed" and t.status_source == "user" and t.fact]
++        live, t_all = self._live(as_of, ev_facts, user, t_e)
++        live.alerts = self.build_alerts(as_of, t_all, rows)
++        live.tasks = tasks
++        self.store.replace_heimdall_alerts(as_of, live.alerts)
++        self.log("reassess", as_of, f"worst case {live.live}", alerts=len(live.alerts), tasks=len(tasks),
++                 user_facts=len(user))
++        return live
++
++    # ================================================================== 4. alerts
++
++    def severity_for(self, days: int | None, renewal: bool = False) -> str:
++        """The fixed scale for a deadline that many days away (overdue, breach and open rights are critical elsewhere)."""
++        h = self.cfg.heimdall
++        if days is None:
++            return "low"
++        if days <= h.due_soon_days or (renewal and days <= h.due_month_days):
++            return "high"
++        if days <= h.due_month_days:
++            return "medium"
++        return "low"
++
++    def _clause_quote(self, clause_id: str) -> str | None:
++        """The first line of a clause, verbatim (findable by plain text search)."""
++        clause = self.store.get_clause(clause_id)
++        if clause is None:
++            return None
++        return next((ln.strip() for ln in clause.text.split("\n") if len(ln.strip()) > 8), None)
++
++    def build_alerts(self, as_of: str, t: Timeline, rows: list[HeimdallEvent]) -> list[HeimdallAlert]:
++        day = to_date(as_of)
++        assert day is not None
++        window = day + timedelta(days=self.cfg.heimdall.task_window_days)
++        out: dict[str, HeimdallAlert] = {}
++
++        def add(severity: str, kind: str, contract: str | None, cite: dict[str, Any], due: date | str | None,
++                message: str, source: str = "norns", event_id: str | None = None, instance_key: str | None = None) -> None:
++            due_s = iso(to_date(due)) if due else None
++            key = f"{contract or '-'}|{cite.get('clause_id') or '-'}|{kind}|{due_s or '-'}"
++            alert = HeimdallAlert(as_of=as_of, alert_key=key, severity=severity, kind=kind, contract=contract,  # type: ignore[arg-type]
++                                  clause_id=cite.get("clause_id"), due_date=due_s, message=_one_line(message),
++                                  citation=cite, source=source, event_id=event_id, instance_key=instance_key,  # type: ignore[arg-type]
++                                  run_id=self.run_id)
++            old = out.get(key)
++            if old is None or SEVERITY_RANK[severity] > SEVERITY_RANK[old.severity]:
++                out[key] = alert
++
++        for i in t.instances:
++            if i.due is None:
++                continue
++            days = (i.due - day).days
++            cite, c = _citation(i.citations), i.contract
++            if i.kind == "payment":
++                if i.status in ("unpaid", "partial") and i.due < day:
++                    add("critical", "payment_overdue", c, cite, i.due, f"{c} {i.name}: {_fmt_money(i.outstanding)} overdue "
++                        f"since {i.due} ({i.payer} -> {i.payee})", instance_key=i.key)
++                elif i.status in ("upcoming", "partial") and i.due <= window:
++                    add(self.severity_for(days), "payment_due", c, cite, i.due, f"{c} {i.name}: {_fmt_money(i.amount)} due "
++                        f"{i.due} ({days} days; {i.payer} -> {i.payee})", instance_key=i.key)
++            elif i.kind == "renewal":
++                if i.status == "upcoming":
++                    add(self.severity_for(days, renewal=True), "renewal_notice", c, cite, i.due,
++                        f"{c} non-renewal notice deadline {i.due} ({days} days) for the term ending {i.anchor_date}",
++                        instance_key=i.key)
++                elif i.status == "missed":
++                    add("low", "renewal_locked_in", c, cite, i.due, f"{c} non-renewal deadline {i.due} passed: the "
++                        "agreement renews", instance_key=i.key)
++            elif i.kind == "credit":
++                ours = _is_us(i.payee)
++                if i.status == "upcoming" and i.due <= window:
++                    msg = (f"{c} claim the {i.period} service credit ({_fmt_money(i.amount)}) from {i.payer} by {i.due} "
++                           f"({days} days)") if ours else (f"{c} {i.payee} may claim a {_fmt_money(i.amount)} credit for "
++                                                          f"{i.period} by {i.due} ({days} days)")
++                    add(self.severity_for(days), "credit_claim", c, cite, i.due, msg, instance_key=i.key)
++                elif i.status == "missed":
++                    add("low", "credit_lost" if ours else "credit_window_closed", c, cite, i.due,
++                        f"{c} {i.period} credit ({_fmt_money(i.amount)}) not claimed by {i.due}", instance_key=i.key)
++            elif i.status in ("upcoming", "missed"):
++                if i.status == "missed":
++                    add("critical", "potential_breach", c, cite, i.due, f"{c} {i.name}: deadline {i.due} missed",
++                        instance_key=i.key)
++                elif i.due <= window:
++                    add(self.severity_for(days), "deadline", c, cite, i.due, f"{c} {i.name}: due {i.due} ({days} days)",
++                        instance_key=i.key)
++
++        for trig in t.penalty_triggers:
++            cite = _citation(trig.get("citations") or [])
++            if trig["type"] == "suspension_right" and trig.get("date") and trig["date"] <= as_of:
++                add("critical", "suspension_right_open", trig["contract"], cite, trig["date"], f"{trig['contract']}: "
++                    f"{trig['description']} (from {trig['date']})", instance_key=trig.get("instance"))
++            elif trig["type"] == "insurance_lapse_breach":
++                add("critical", "potential_breach", trig["contract"], cite, trig.get("date"),
++                    f"{trig['contract']}: {trig['description']}", instance_key=trig.get("instance"))
++        # A customer's termination right for persistent SLA failure: credits Quillhub owes in two consecutive months.
++        for c in sorted({i.contract for i in t.instances}):
++            owed = sorted({i.period for i in t.instances if i.contract == c and i.kind == "credit" and _is_us(i.payer)
++                           and i.period and (i.amount or 0) > 0})
++            pairs = [(a, b) for a, b in zip(owed, owed[1:]) if (int(b[:4]) * 12 + int(b[5:])) - (int(a[:4]) * 12 + int(a[5:])) == 1]
++            rule = next((r for r in self.norns.rules if r.contract == c and r.kind == "penalty_trigger"
++                         and "consecutive" in r.name.lower() + r.rule_id.lower()), None)
++            if pairs and rule:
++                a, b = pairs[-1]
++                add("critical", "termination_right_open", c, _citation(rule.citations), f"{b}-01",
++                    f"{c}: uptime below target in {a} and {b}; the customer may terminate for persistent failure")
++
++        self._build_index()
++        for e in rows:
++            if e.status != "mapped" or not e.potential_breach:
++                continue
++            clause = e.clause_ids[0] if e.clause_ids else None
++            cite = {"doc_id": clause.split(":", 1)[0], "clause_id": clause, "quote": self._clause_quote(clause)} if clause else {}
++            contract = (e.fact or {}).get("contract") or (self.roots.get(e.doc_ids[0], e.doc_ids[0]) if e.doc_ids else None)
++            add("critical", "potential_breach", contract, cite, e.event_date,
++                f"{e.event_id}: {e.breach_reason or 'possible breach'}", source="event", event_id=e.event_id)
++        return sorted(out.values(), key=lambda a: (-SEVERITY_RANK[a.severity], a.due_date or "9999", a.alert_key))
++
++    # ================================================================== 5. task board
++
++    def sync_tasks(self, as_of: str, t: Timeline) -> list[HeimdallTask]:
++        """One card per Norns instance overdue, due or upcoming within the window; the users' tags are kept."""
++        day = to_date(as_of)
++        assert day is not None
++        window = day + timedelta(days=self.cfg.heimdall.task_window_days)
++        existing = {x.task_id: x for x in self.store.list_heimdall_tasks(as_of)}
++        keep: list[HeimdallTask] = []
++        for i in t.instances:
++            if i.due is None:
++                continue
++            overdue = (i.status in ("unpaid", "partial") and i.due < day) or i.status == "missed"
++            if not (overdue or day <= i.due <= window):
++                continue
++            old = existing.get(i.key)
++            if i.status in NORNS_DONE:
++                status, source, fact = "Completed", "norns", None
++            elif old is not None and old.status_source == "user":
++                status, source, fact = old.status, "user", old.fact
++            else:
++                status, source, fact = "Not Complete", "user", None
++            task = HeimdallTask(as_of=as_of, task_id=i.key, title=i.name, contract=i.contract, kind=i.kind, period=i.period,
++                                due_date=iso(i.due), amount=i.amount, citation=_citation(i.citations), status=status,  # type: ignore[arg-type]
++                                status_source=source, norns_status=i.status, fact=fact, payer=i.payer, payee=i.payee)  # type: ignore[arg-type]
++            same = old is not None and old.model_dump(exclude={"updated_at"}) == task.model_dump(exclude={"updated_at"})
++            if same:
++                task.updated_at = old.updated_at  # type: ignore[union-attr]
++            else:
++                self.store.upsert_heimdall_task(task)
++            keep.append(task)
++        gone = [k for k in existing if k not in {x.task_id for x in keep}]
++        if gone:
++            self.store.delete_heimdall_tasks(as_of, gone)
++        return sorted(keep, key=lambda x: (x.due_date or "", x.task_id))
++
++    def set_task_status(self, as_of: str, task_id: str, status: str) -> tuple[bool, str]:
++        """A tag change from the board. Completing a payment records a payment_made fact (source=user) and recomputes."""
++        if status not in TASK_STATUSES:
++            raise ValueError(f"status must be one of {TASK_STATUSES}")
++        task = next((x for x in self.store.list_heimdall_tasks(as_of) if x.task_id == task_id), None)
++        if task is None:
++            return False, f"no task {task_id!r} on {as_of}"
++        if task.status_source == "norns":
++            return False, f"Norns marks this {task.norns_status}; it cannot be changed on the board"
++        fact = None
++        if task.kind == "payment" and status == "Completed":
++            inst = next((i for i in self.norns.compute(as_of, self.event_facts(self.event_rows(as_of))).instances
++                         if i.key == task_id), None)
++            amount = inst.outstanding if inst is not None and inst.outstanding > 0 else task.amount
++            fact = {"type": "payment_made", "date": as_of, "contract": task.contract, "amount": str(amount),
++                    "period": task.period, "source": "user", "task_id": task_id}
++        if not self.store.set_heimdall_task_status(as_of, task_id, status, fact):
++            return False, "the task changed meanwhile (Norns now marks it done)"
++        self.log("task_status", task_id, status, as_of=as_of, previous=task.status, fact=fact)
++        live = self.reassess(as_of)
++        return True, f"{task.title}: {task.status} -> {status}; worst case now {_fmt_money(live.live)}"
++
++    def process_label(self, contract: str) -> str:
++        """'A1 · StratoNode hosting': the contract, its counterparty, and what it is to Quillhub."""
++        self._build_index()
++        name = next((n for _k, (r, n) in self.names.items() if r == contract), None)
++        short = (name or contract).split()[0].rstrip(",.")
++        fam = self.norns.families.get(contract)
++        ctx = next(iter(self.store.list_resources("company_context")), None)
++        hosting = bool(name and ctx and ctx.text and re.search(rf"hosting provider[^.]*\b{re.escape(short)}\b", ctx.text, re.I))
++        role = "hosting" if hosting else ("customer" if fam and _is_us(fam.provider) else "supplier" if fam else "contract")
++        return f"{contract} · {short} {role}"
++
++    # ================================================================== bookkeeping
++
++    def _row(self, ev: RawEvent, m: Mapping, as_of: str) -> HeimdallEvent:
++        return HeimdallEvent(
++            as_of=as_of, drop_name=ev.drop_name, line_no=ev.line_no, event_id=ev.event_id, raw=ev.raw,
++            event_date=ev.event_date, channel=ev.channel, sender=ev.sender, recipient=ev.recipient, subject=ev.subject,
++            status=m.status, status_reason=m.reason, type=m.type, doc_ids=m.doc_ids, clause_ids=m.clause_ids,  # type: ignore[arg-type]
++            fact=m.fact, is_noise=m.status == "noise", noise_reason=m.noise_reason, mapped_by=m.mapped_by,  # type: ignore[arg-type]
++            confidence=m.confidence, potential_breach=m.potential_breach and m.status == "mapped",
++            breach_reason=m.breach_reason if m.status == "mapped" else None, exposure=m.exposure, run_id=self.run_id,
++        )
++
++    def _usage(self) -> dict[str, Any]:
++        real = [r for r in self._calls if not r.cache_hit and not r.error]
++        return {"llm_calls": len(real), "cache_hits": sum(1 for r in self._calls if r.cache_hit),
++                "failed_attempts": sum(1 for r in self._calls if r.error),
++                "input_tokens": sum(r.input_tokens for r in real), "output_tokens": sum(r.output_tokens for r in real),
++                "rate_wait_s": round(self.window.waited, 1)}
++
++    def report(self, result: RunResult) -> dict[str, Any]:
++        live = result.live
++        return {
++            "drop": result.drop_name, "as_of": result.as_of, "run_id": self.run_id, "source": result.source,
++            "counts": result.counts(), "llm": result.llm,
++            "worst_case": {"before": str(live.baseline), "after_events": str(live.after_events), "live": str(live.live),
++                           "by_contract": live.by_contract},
++            "events": [e.model_dump(mode="json") for e in result.events],
++            "alerts": [a.model_dump(mode="json") for a in live.alerts],
++            "tasks": [t.model_dump(mode="json") for t in live.tasks],
++        }
++
++    def write_output(self, result: RunResult) -> Any:
++        out_dir = self.cfg.paths.outputs_dir / "heimdall"
++        out_dir.mkdir(parents=True, exist_ok=True)
++        path = out_dir / f"{result.drop_name}_{result.as_of}.json"
++        path.write_text(json.dumps(self.report(result), ensure_ascii=False, indent=2, default=str), encoding="utf-8")
++        return path
+diff --git a/odin/config.py b/odin/config.py
+index 588dcf2..21e8f27 100644
+--- a/odin/config.py
++++ b/odin/config.py
+@@ -34,6 +34,8 @@ class LLMSettings(BaseModel):
+     fallbacks: bool = True
+     # openai_compat only: ask for response_format={"type": "json_object"}.
+     json_mode: bool = True
++    # openai_compat only: reasoning_effort for reasoning models (e.g. "low"); dropped if the provider rejects it.
++    reasoning_effort: str | None = None
+     max_output_tokens: int = 32000
+     request_timeout_s: float = 600.0
+ 
+@@ -89,6 +91,24 @@ class LokiSettings(BaseModel):
+     max_llm_calls: int = 5                # real API calls per run_loki.py process (cache hits are free)
+ 
+ 
++class HeimdallSettings(BaseModel):
++    """Event monitoring. Code maps what it can; the LLM sees only the events code cannot map or classify."""
++
++    # A drop is released at this clock checkpoint (format_spec: drop 1 = initial analysis, drop 2 = mid-cycle).
++    drop_release_checkpoints: dict[str, int] = {"drop1": 1, "drop2": 2}
++    llm_batch_size: int = 10              # events per LLM call
++    max_llm_calls: int = 4                # real API calls per run_heimdall.py process (cache hits are free)
++    max_tokens: int = 3000                # output tokens per call, reasoning included
++    max_request_tokens: int = 7000        # estimated input + max_tokens per call (Groq free tier)
++    tokens_per_minute: int = 7500         # rolling 60 s budget across calls (input + output)
++    reasoning_effort: str | None = "low"  # openai_compat reasoning models; dropped if the provider rejects it
++    chars_per_token: float = 4.0          # input estimate (Thor's logged gpt-oss calls measured 4.3)
++    event_body_chars: int = 900           # event text shown to the LLM
++    task_window_days: int = 60            # tasks: overdue, due or upcoming within this many days
++    due_soon_days: int = 7                # alert "high"
++    due_month_days: int = 30              # alert "medium"; a renewal-notice deadline this close is "high"
++
++
+ class StateSettings(BaseModel):
+     """Where shared state and uploaded files live. sqlite = local file; supabase = Postgres + Storage."""
+ 
+@@ -135,6 +155,7 @@ class OdinConfig(BaseModel):
+     thor: ThorSettings = ThorSettings()
+     norns: NornsSettings = NornsSettings()
+     loki: LokiSettings = LokiSettings()
++    heimdall: HeimdallSettings = HeimdallSettings()
+     state: StateSettings = StateSettings()
+     upload: UploadSettings = UploadSettings()
+     paths: Paths = Paths()
+diff --git a/odin/ingest/loader.py b/odin/ingest/loader.py
+index 3e4b04d..2d6e710 100644
+--- a/odin/ingest/loader.py
++++ b/odin/ingest/loader.py
+@@ -117,8 +117,13 @@ def registry(store: StateStore) -> list[dict[str, Any]]:
+ 
+ def load_events(path: Path, drop: str) -> list[Event]:
+     """Parse a JSONL drop. Malformed lines are kept with parse_error set, never dropped silently."""
++    return parse_events(read_text_exact(path), drop)
++
++
++def parse_events(text: str, drop: str) -> list[Event]:
++    """The JSONL text of a drop (from the bundle or the file store), one Event per non-empty line."""
+     events: list[Event] = []
+-    for n, line in enumerate(read_text_exact(path).splitlines(), start=1):
++    for n, line in enumerate(text.splitlines(), start=1):
+         if not line.strip():
+             continue
+         try:
+diff --git a/odin/llm.py b/odin/llm.py
+index 52f8cb5..bf4f0d0 100644
+--- a/odin/llm.py
++++ b/odin/llm.py
+@@ -237,6 +237,7 @@ class OpenAICompatProvider:
+         self.model = settings.model
+         self.temperature: float | None = settings.temperature
+         self.json_mode = settings.json_mode
++        self.reasoning_effort = settings.reasoning_effort or None
+         self.max_tokens_param = "max_tokens"
+         self.client = openai.OpenAI(
+             api_key=settings.api_key or "missing-api-key",
+@@ -246,7 +247,10 @@ class OpenAICompatProvider:
+         )
+ 
+     def settings_fingerprint(self) -> dict[str, Any]:
+-        return {"temperature": self.temperature, "json_mode": self.json_mode}
++        fp: dict[str, Any] = {"temperature": self.temperature, "json_mode": self.json_mode}
++        if self.reasoning_effort:          # only when set, so existing cache keys stay valid
++            fp["reasoning_effort"] = self.reasoning_effort
++        return fp
+ 
+     def complete(self, system: str | None, messages: list[dict[str, str]], max_tokens: int) -> ProviderResponse:
+         o = self._openai
+@@ -256,11 +260,16 @@ class OpenAICompatProvider:
+             kwargs["temperature"] = self.temperature
+         if self.json_mode:
+             kwargs["response_format"] = {"type": "json_object"}
++        if self.reasoning_effort:
++            kwargs["reasoning_effort"] = self.reasoning_effort
+         try:
+             resp = self.client.chat.completions.create(**kwargs)
+         except o.BadRequestError as exc:
+             text = str(exc).lower()
+             # Adapt once to provider quirks, then retry the same request.
++            if self.reasoning_effort and "reasoning_effort" in text:
++                self.reasoning_effort = None
++                return self.complete(system, messages, max_tokens)
+             if self.json_mode and "response_format" in text:
+                 self.json_mode = False
+                 return self.complete(system, messages, max_tokens)
+diff --git a/odin/state/models.py b/odin/state/models.py
+index 31bc239..34cf226 100644
+--- a/odin/state/models.py
++++ b/odin/state/models.py
+@@ -688,3 +688,80 @@ class LokiFinding(BaseModel):
+     rank: int = 0                       # order within the document: accepted first, most severe first
+     notes: list[str] = []               # what the code checks changed (dropped citations, merged duplicates)
+     created_at: str = Field(default_factory=utcnow)
++
++
++# --------------------------------------------------------------------------- Heimdall (event monitoring + task board)
++
++EventStatus = Literal["mapped", "unmapped", "noise", "unparseable"]
++AlertSeverity = Literal["critical", "high", "medium", "low"]
++TaskStatus = Literal["Not Complete", "In Progress", "Completed"]
++
++
++class HeimdallEvent(BaseModel):
++    """One line of an event drop as Heimdall saw it on the clock date ``as_of``."""
++
++    id: int | None = None
++    as_of: str
++    drop_name: str                      # drop1 | drop2
++    line_no: int
++    event_id: str | None = None         # E-01 ...; None when the line could not be parsed
++    raw: str
++    event_date: str | None = None       # UTC date of the timestamp
++    channel: str | None = None
++    sender: str | None = None
++    recipient: str | None = None
++    subject: str | None = None
++    status: EventStatus
++    status_reason: str | None = None    # why unmapped / unparseable
++    type: str | None = None             # outage, invoice_issued, maintenance_notice, ... (snake_case)
++    doc_ids: list[str] = []
++    clause_ids: list[str] = []
++    fact: dict[str, Any] | None = None  # the Norns fact: payment_made | outage | notice_sent | other
++    is_noise: bool = False
++    noise_reason: str | None = None
++    mapped_by: Literal["code", "llm"] | None = None
++    confidence: float | None = None
++    potential_breach: bool = False
++    breach_reason: str | None = None
++    exposure: dict[str, Any] = {}       # {before, after, delta, by_contract, changes}: worst case before / after its fact
++    run_id: str | None = None
++    created_at: str = Field(default_factory=utcnow)
++
++
++class HeimdallAlert(BaseModel):
++    id: int | None = None
++    as_of: str
++    alert_key: str                      # contract|clause|kind|due date: one alert per key
++    severity: AlertSeverity
++    kind: str                           # payment_overdue | payment_due | renewal_notice | deadline | potential_breach | ...
++    contract: str | None = None
++    clause_id: str | None = None
++    due_date: str | None = None
++    message: str                        # one line
++    citation: dict[str, Any] = {}       # {doc_id, clause_id, quote}
++    source: Literal["norns", "event"]
++    event_id: str | None = None
++    instance_key: str | None = None
++    run_id: str | None = None
++    created_at: str = Field(default_factory=utcnow)
++
++
++class HeimdallTask(BaseModel):
++    """A task-board card: one Norns obligation instance near the clock date (task_id = its instance key)."""
++
++    as_of: str
++    task_id: str
++    title: str
++    contract: str
++    kind: str
++    period: str | None = None
++    due_date: str | None = None
++    amount: Decimal | None = None
++    citation: dict[str, Any] = {}
++    status: TaskStatus = "Not Complete"
++    status_source: Literal["norns", "user"] = "user"   # norns = Norns marks it paid / met; the user cannot change it
++    norns_status: str | None = None     # Norns' own status for the instance
++    fact: dict[str, Any] | None = None  # the user's payment_made fact while the user has it Completed
++    payer: str | None = None
++    payee: str | None = None
++    updated_at: str = Field(default_factory=utcnow)
+diff --git a/odin/state/store.py b/odin/state/store.py
+index 388f112..ca6a408 100644
+--- a/odin/state/store.py
++++ b/odin/state/store.py
+@@ -38,6 +38,9 @@ from odin.state.models import (
+     ExposureItem,
+     Extraction,
+     Flag,
++    HeimdallAlert,
++    HeimdallEvent,
++    HeimdallTask,
+     Holiday,
+     LedgerEntry,
+     LokiFinding,
+@@ -52,14 +55,14 @@ from odin.state.models import (
+     utcnow,
+ )
+ 
+-SCHEMA_VERSION = 3
++SCHEMA_VERSION = 4
+ 
+ # Every table, in dependency order (export, row counts, test cleanup).
+ TABLES = (
+     "documents", "document_files", "clauses", "extractions", "citations", "flags", "doc_relations", "messages",
+     "workstreams", "trace", "resources", "events", "ledger_entries", "holidays", "clock_checkpoints",
+     "obligation_rules", "obligation_instances", "clock_state", "clock_history", "timeline_snapshots",
+-    "exposure_items", "writeups", "loki_findings",
++    "exposure_items", "writeups", "loki_findings", "heimdall_events", "heimdall_alerts", "heimdall_tasks",
+ )
+ 
+ SQLITE_SCHEMA = """
+@@ -432,6 +435,76 @@ CREATE TABLE IF NOT EXISTS loki_findings (
+     created_at TEXT NOT NULL
+ );
+ CREATE INDEX IF NOT EXISTS ix_loki_findings_doc ON loki_findings(doc_id, as_of, status);
++
++-- Heimdall (supabase/migrations/004_heimdall.sql)
++CREATE TABLE IF NOT EXISTS heimdall_events (
++    id INTEGER PRIMARY KEY AUTOINCREMENT,
++    as_of TEXT NOT NULL,
++    drop_name TEXT NOT NULL,
++    line_no INTEGER NOT NULL,
++    event_id TEXT,
++    raw TEXT NOT NULL,
++    event_date TEXT,
++    channel TEXT,
++    sender TEXT,
++    recipient TEXT,
++    subject TEXT,
++    status TEXT NOT NULL CHECK (status IN ('mapped','unmapped','noise','unparseable')),
++    status_reason TEXT,
++    type TEXT,
++    doc_ids TEXT NOT NULL DEFAULT '[]',
++    clause_ids TEXT NOT NULL DEFAULT '[]',
++    fact TEXT,
++    is_noise INTEGER NOT NULL DEFAULT 0,
++    noise_reason TEXT,
++    mapped_by TEXT CHECK (mapped_by IN ('code','llm')),
++    confidence REAL,
++    potential_breach INTEGER NOT NULL DEFAULT 0,
++    breach_reason TEXT,
++    exposure TEXT NOT NULL DEFAULT '{}',
++    run_id TEXT,
++    created_at TEXT NOT NULL,
++    UNIQUE (as_of, drop_name, line_no)
++);
++
++CREATE TABLE IF NOT EXISTS heimdall_alerts (
++    id INTEGER PRIMARY KEY AUTOINCREMENT,
++    as_of TEXT NOT NULL,
++    alert_key TEXT NOT NULL,
++    severity TEXT NOT NULL CHECK (severity IN ('critical','high','medium','low')),
++    kind TEXT NOT NULL,
++    contract TEXT,
++    clause_id TEXT,
++    due_date TEXT,
++    message TEXT NOT NULL,
++    citation TEXT NOT NULL DEFAULT '{}',
++    source TEXT NOT NULL CHECK (source IN ('norns','event')),
++    event_id TEXT,
++    instance_key TEXT,
++    run_id TEXT,
++    created_at TEXT NOT NULL,
++    UNIQUE (as_of, alert_key)
++);
++
++CREATE TABLE IF NOT EXISTS heimdall_tasks (
++    as_of TEXT NOT NULL,
++    task_id TEXT NOT NULL,
++    title TEXT NOT NULL,
++    contract TEXT NOT NULL,
++    kind TEXT NOT NULL,
++    period TEXT,
++    due_date TEXT,
++    amount TEXT,
++    citation TEXT NOT NULL DEFAULT '{}',
++    status TEXT NOT NULL CHECK (status IN ('Not Complete','In Progress','Completed')),
++    status_source TEXT NOT NULL CHECK (status_source IN ('norns','user')),
++    norns_status TEXT,
++    fact TEXT,
++    payer TEXT,
++    payee TEXT,
++    updated_at TEXT NOT NULL,
++    PRIMARY KEY (as_of, task_id)
++);
+ """
+ 
+ # Columns added after the first SQLite release; older state/odin.db files are upgraded in place.
+@@ -463,6 +536,9 @@ _JSON_COLUMNS = {
+     "exposure_items": ("inputs", "citations"),
+     "writeups": ("meta",),
+     "loki_findings": ("citations", "readings", "attack_path", "impact", "notes"),
++    "heimdall_events": ("doc_ids", "clause_ids", "fact", "exposure"),
++    "heimdall_alerts": ("citation",),
++    "heimdall_tasks": ("citation", "fact"),
+ }
+ _BOOL_COLUMNS = {
+     "extractions": ("is_current",),
+@@ -470,12 +546,14 @@ _BOOL_COLUMNS = {
+     "flags": ("evidence_verified",),
+     "doc_relations": ("verified",),
+     "writeups": ("check_passed",),
++    "heimdall_events": ("is_noise", "potential_breach"),
+ }
+ # Money columns: stored as numeric (Postgres) / text (SQLite), always read back as Decimal.
+ _DECIMAL_COLUMNS = {
+     "obligation_rules": ("amount",),
+     "obligation_instances": ("amount", "paid_amount"),
+     "exposure_items": ("amount",),
++    "heimdall_tasks": ("amount",),
+ }
+ _DOCUMENT_COLUMNS = tuple(Document.model_fields)
+ _DOCUMENT_COLUMNS_NO_TEXT = ", ".join(c for c in _DOCUMENT_COLUMNS if c != "text")
+@@ -1035,6 +1113,67 @@ class StateStore:
+         rows = self._query(sql + " ORDER BY doc_id, as_of, rank, id", args)
+         return [LokiFinding.model_validate(r) for r in self._rows("loki_findings", rows)]
+ 
++    # ------------------------------------------------------------------ Heimdall: events, alerts, task board
++
++    def replace_heimdall_events(self, as_of: str, drop_name: str, events: Iterable[HeimdallEvent]) -> int:
++        """A re-run of one drop on one clock date replaces what that run stored."""
++        with self.transaction():
++            self._write("DELETE FROM heimdall_events WHERE as_of=? AND drop_name=?", (as_of, drop_name))
++            return self._insert_many("heimdall_events", (e.model_dump(exclude={"id"}) for e in events))
++
++    def list_heimdall_events(self, as_of: str | None = None, drop_name: str | None = None) -> list[HeimdallEvent]:
++        sql, args = "SELECT * FROM heimdall_events WHERE 1=1", []
++        for col, value in (("as_of", as_of), ("drop_name", drop_name)):
++            if value:
++                sql += f" AND {col}=?"
++                args.append(value)
++        rows = self._query(sql + " ORDER BY as_of, drop_name, line_no", args)
++        return [HeimdallEvent.model_validate(r) for r in self._rows("heimdall_events", rows)]
++
++    def heimdall_runs(self) -> list[tuple[str, str]]:
++        """(as_of, drop_name) of every stored Heimdall run, oldest first."""
++        rows = self._query("SELECT DISTINCT as_of, drop_name FROM heimdall_events ORDER BY as_of, drop_name")
++        return [(str(_plain(r["as_of"])), r["drop_name"]) for r in rows]
++
++    def replace_heimdall_alerts(self, as_of: str, alerts: Iterable[HeimdallAlert]) -> int:
++        with self.transaction():
++            self._write("DELETE FROM heimdall_alerts WHERE as_of=?", (as_of,))
++            return self._insert_many("heimdall_alerts", (a.model_dump(exclude={"id"}) for a in alerts))
++
++    def list_heimdall_alerts(self, as_of: str) -> list[HeimdallAlert]:
++        rows = self._query("SELECT * FROM heimdall_alerts WHERE as_of=? ORDER BY id", (as_of,))
++        return [HeimdallAlert.model_validate(r) for r in self._rows("heimdall_alerts", rows)]
++
++    def upsert_heimdall_task(self, task: HeimdallTask) -> None:
++        data = self._prepare("heimdall_tasks", task.model_dump())
++        cols = list(data)
++        self._write(
++            f"""INSERT INTO heimdall_tasks ({', '.join(cols)}) VALUES ({', '.join('?' for _ in cols)})
++                ON CONFLICT(as_of, task_id) DO UPDATE SET
++                {', '.join(f'{c}=excluded.{c}' for c in cols if c not in ('as_of', 'task_id'))}""",
++            tuple(data.values()),
++        )
++
++    def delete_heimdall_tasks(self, as_of: str, task_ids: Iterable[str]) -> int:
++        n = 0
++        with self.transaction():
++            for task_id in task_ids:
++                n += self._write("DELETE FROM heimdall_tasks WHERE as_of=? AND task_id=?", (as_of, task_id))
++        return n
++
++    def list_heimdall_tasks(self, as_of: str) -> list[HeimdallTask]:
++        rows = self._query("SELECT * FROM heimdall_tasks WHERE as_of=? ORDER BY due_date, task_id", (as_of,))
++        return [HeimdallTask.model_validate(r) for r in self._rows("heimdall_tasks", rows)]
++
++    def set_heimdall_task_status(self, as_of: str, task_id: str, status: str, fact: dict[str, Any] | None) -> bool:
++        """A user's tag change. False when the task is Norns' (paid / met), which the user cannot change."""
++        n = self._write(
++            """UPDATE heimdall_tasks SET status=?, status_source='user', fact=?, updated_at=?
++               WHERE as_of=? AND task_id=? AND status_source <> 'norns'""",
++            (status, _dumps(fact), utcnow(), as_of, task_id),
++        )
++        return n > 0
++
+     # ------------------------------------------------------------------ summaries
+ 
+     def document_stats(self) -> dict[str, dict[str, int]]:
+diff --git a/prompts/heimdall_map.md b/prompts/heimdall_map.md
+new file mode 100644
+index 0000000..8ae1f56
+--- /dev/null
++++ b/prompts/heimdall_map.md
+@@ -0,0 +1,46 @@
++=== SYSTEM ===
++You are Heimdall, the event monitor of Quillhub Inc.'s contract war room. You read operational events
++(e-mails, system messages, status pages, phone logs) and map each one to the contracts and clauses it
++affects, so the timeline agent (Norns) can reassess deadlines and exposure.
++
++Return exactly one result per event you are given:
++- doc_ids: the documents the event affects, from the contracts list (a cover page, its SLA, an amendment).
++- clause_ids: the clauses that govern what the event triggers or changes, copied exactly from the clause
++  list. Never invent an id; leave the list empty when no listed clause applies.
++- type: a short snake_case label of what happened (e.g. outage_report, invoice_issued,
++  maintenance_notice, deliverable_submitted, renewal_hint).
++- fact: what Norns should record, one of:
++  - payment_made {contract, date, amount, period}: money actually paid under the contract.
++  - outage {contract, date, minutes, single_incident_minutes}: service downtime. date = the day it
++    started; minutes = the total downtime the event reports; single_incident_minutes = the longest
++    single incident.
++  - notice_sent {contract, date, notice, period}: a formal written notice delivered the way the contract
++    requires; notice is non_renewal | insurance_lapse | credit_request.
++  - other {description}: anything else that triggers or changes an obligation, deadline or right.
++  contract is the contract's id from the contracts list. Take numbers and dates from the event text;
++  never estimate them. Dates are YYYY-MM-DD, periods YYYY-MM.
++- noise: true when the event affects no contract, or changes no obligation, deadline, payment or
++  exposure (marketing, small talk, an informal message the contract does not treat as a notice, a report
++  that everything was within target). Give noise_reason in one sentence. The contract terms decide this,
++  not the tone of the message.
++- potential_breach: true when the event shows that a party may have breached a contract term (a missed
++  commitment, a late or missing notice, a lapse); breach_reason in one sentence, naming the clause id.
++- confidence: 0 to 1.
++
++Output one JSON object and nothing else:
++{"events": [{"event_id": "E-00", "noise": false, "noise_reason": "", "type": "outage_report",
++  "doc_ids": ["X1"], "clause_ids": ["X1:3.2"],
++  "fact": {"type": "outage", "contract": "X1", "date": "YYYY-MM-DD", "minutes": 0, "single_incident_minutes": 0},
++  "potential_breach": false, "breach_reason": "", "confidence": 0.0}]}
++
++=== USER ===
++Clock date (as_of): {{as_of}}. Only events dated on or before it are visible.
++
++Contracts (Quillhub is a party to each):
++{{contracts}}
++
++Clauses you may cite (id, label; [amended ...] marks text replaced or modified by an amendment):
++{{clauses}}
++
++Events ({{count}}):
++{{events}}
+diff --git a/requirements.txt b/requirements.txt
+index 99fe60d..ee26f48 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -14,3 +14,5 @@ streamlit-pdf-viewer>=0.0.20
+ # Step 2B: Norns (business-day calendar, month arithmetic)
+ numpy>=1.26
+ python-dateutil>=2.8
++# Step 4: Heimdall task board (re-reads the database every 10 s)
++streamlit-autorefresh>=1.0.1
+diff --git a/scripts/run_heimdall.py b/scripts/run_heimdall.py
+new file mode 100644
+index 0000000..4c5709c
+--- /dev/null
++++ b/scripts/run_heimdall.py
+@@ -0,0 +1,125 @@
++"""Run Heimdall on one released event drop, as of a checkpoint or a date.
++
++    python scripts/run_heimdall.py --drop 1 --checkpoint 1
++    python scripts/run_heimdall.py --drop 2 --as-of 2027-06-01
++    python scripts/run_heimdall.py --drop 1 --checkpoint 1 --no-llm      # code mapping only
++
++A drop is processed only once it is released (heimdall.drop_release_checkpoints in
++config.yaml) and only its events dated on or before the clock date. Code maps what it can;
++the rest goes to the LLM in batches (at most heimdall.max_llm_calls real calls per process,
++within the Groq limits in config.yaml). Writes heimdall_events / heimdall_alerts /
++heimdall_tasks, the trace and outputs/heimdall/<drop>_<as_of>.json. The Streamlit page
++(app/pages/2_Heimdall.py) shows the board; it never calls the LLM.
++"""
++from __future__ import annotations
++
++import argparse
++import sys
++from collections import Counter
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++
++from odin.agents.heimdall import SEVERITY_RANK, TASK_STATUSES, Heimdall, heimdall_llm  # noqa: E402
++from odin.agents.loki import as_of_label  # noqa: E402
++from odin.config import load_config  # noqa: E402
++from odin.llm import llm_config_problem  # noqa: E402
++from odin.state.backend import open_file_store, open_store  # noqa: E402
++from odin.state.errors import StoreError  # noqa: E402
++
++
++def table(rows: list[list[str]], headers: list[str]) -> str:
++    widths = [max(len(str(x)) for x in col) for col in zip(headers, *rows)]
++    fmt = lambda r: "  ".join(str(v).ljust(w) for v, w in zip(r, widths))  # noqa: E731
++    return "\n".join([fmt(headers), "  ".join("-" * w for w in widths)] + [fmt(r) for r in rows])
++
++
++def fact_text(fact: dict | None) -> str:
++    if not fact:
++        return "-"
++    f = dict(fact)
++    kind = f.pop("type")
++    keep = {k: v for k, v in f.items() if k not in ("source", "event_id", "contract", "date") and v not in (None, "")}
++    return f"{kind} {f.get('contract') or ''} {f.get('date') or ''} " + " ".join(f"{k}={v}" for k, v in keep.items())
++
++
++def main() -> int:
++    if hasattr(sys.stdout, "reconfigure"):
++        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
++    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--drop", required=True, help="drop number (1, 2) or name (drop1)")
++    when = ap.add_mutually_exclusive_group(required=True)
++    when.add_argument("--checkpoint", type=int, help="0 = start date, 1.. = clock.json checkpoints")
++    when.add_argument("--as-of", type=as_of_label, help="YYYY-MM-DD")
++    ap.add_argument("--no-llm", action="store_true", help="code mapping only; events code cannot map stay unmapped")
++    ap.add_argument("--config", help="path to config.yaml")
++    args = ap.parse_args()
++
++    cfg = load_config(args.config)
++    drop_name = args.drop if args.drop.startswith("drop") else f"drop{args.drop}"
++    llm = None
++    if not args.no_llm:
++        problem = llm_config_problem(cfg)
++        if problem:
++            print(f"error: {problem}\nFix .env (see .env.example), or run with --no-llm.")
++            return 2
++        llm = heimdall_llm(cfg)
++    try:
++        store = open_store(cfg)
++        files = open_file_store(cfg)
++    except StoreError as exc:
++        print(f"error: {exc}")
++        return 3
++    heimdall = Heimdall(store, llm, cfg, files=files)
++    try:
++        as_of = args.as_of or heimdall.checkpoint(args.checkpoint)
++        h = cfg.heimdall
++        print(f"State: {store.describe()}")
++        print(f"Heimdall run {heimdall.run_id}: {drop_name} as of {as_of}; "
++              + (f"provider={cfg.llm.provider} model={cfg.llm.model}, at most {llm.limits.max_llm_calls} LLM calls, "
++                 f"max_tokens {h.max_tokens}, input + max_tokens <= {h.max_request_tokens}, <= {h.tokens_per_minute} "
++                 f"tokens/min, reasoning_effort={h.reasoning_effort}" if llm else "no LLM (code mapping only)"))
++        result = heimdall.run(drop_name, as_of)
++    except (ValueError, FileNotFoundError) as exc:
++        print(f"error: {exc}")
++        return 2
++    path = heimdall.write_output(result)
++
++    c = result.counts()
++    print(f"\nEvents ({result.source}): {c['total']} visible = {c['mapped_by_code']} mapped by code + "
++          f"{c['mapped_by_llm']} mapped by LLM + {c['noise']} noise + {c['unmapped']} unmapped + "
++          f"{c['unparseable']} unparseable; {c['not_yet_visible']} dated after {as_of} (not yet visible)")
++
++    rows = [[e.event_id or f"line {e.line_no}", e.status, e.mapped_by or "-", ", ".join(e.doc_ids) or "-",
++             ", ".join(e.clause_ids) or "-", fact_text(e.fact), e.exposure.get("delta", "-")] for e in result.events]
++    print()
++    print(table(rows, ["event", "status", "by", "contracts", "clauses", "fact", "exposure delta"]))
++    for e in result.events:
++        why = e.noise_reason or e.status_reason or e.breach_reason
++        if why:
++            print(f"  {e.event_id or e.line_no}: {why}")
++
++    live = result.live
++    print(f"\nWorst case on {as_of}: {live.baseline} without facts -> {live.after_events} with the events' facts "
++          f"(live with user facts: {live.live})")
++    for contract, v in live.by_contract.items():
++        print(f"  {contract}: {v['after_events']}")
++
++    sev = Counter(a.severity for a in live.alerts)
++    print("\nAlerts: " + ", ".join(f"{s} {sev.get(s, 0)}" for s in sorted(SEVERITY_RANK, key=lambda s: -SEVERITY_RANK[s])))
++    for a in live.alerts:
++        print(f"  [{a.severity}] {a.message}  ({a.clause_id or '-'})")
++
++    cols = Counter(t.status for t in live.tasks)
++    print("\nTask board: " + ", ".join(f"{s} {cols.get(s, 0)}" for s in TASK_STATUSES))
++    u = result.llm
++    print(f"\nLLM: {u['llm_calls']} calls, {u['cache_hits']} cache hits, {u['input_tokens'] + u['output_tokens']:,} tokens "
++          f"({u['input_tokens']:,} in / {u['output_tokens']:,} out), {u['failed_attempts']} failed attempts, "
++          f"{u['rate_wait_s']} s waited for the per-minute budget")
++    print(f"Wrote {path}")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/supabase/migrations/004_heimdall.sql b/supabase/migrations/004_heimdall.sql
+new file mode 100644
+index 0000000..6502008
+--- /dev/null
++++ b/supabase/migrations/004_heimdall.sql
+@@ -0,0 +1,78 @@
++-- Heimdall (event monitoring + task board). heimdall_events: every line of a released
++-- event drop as Heimdall saw it on one clock date (as_of), with its mapping to contracts and
++-- clauses, its Norns fact and the worst-case exposure before / after that fact.
++-- heimdall_alerts: severity-rated alerts for the clock date. heimdall_tasks: the task board,
++-- one card per Norns obligation instance near the clock date, with the team's status tags.
++
++create table if not exists heimdall_events (
++    id               bigint generated by default as identity primary key,
++    as_of            date not null,                 -- the clock date of the run
++    drop_name        text not null,                 -- drop1 | drop2
++    line_no          integer not null,              -- line in the drop file
++    event_id         text,                          -- E-01 ...; null when the line could not be parsed
++    raw              text not null,
++    event_date       date,
++    channel          text,
++    sender           text,
++    recipient        text,
++    subject          text,
++    status           text not null check (status in ('mapped','unmapped','noise','unparseable')),
++    status_reason    text,
++    type             text,
++    doc_ids          jsonb not null default '[]'::jsonb,
++    clause_ids       jsonb not null default '[]'::jsonb,
++    fact             jsonb,                         -- payment_made | outage | notice_sent | other
++    is_noise         boolean not null default false,
++    noise_reason     text,
++    mapped_by        text check (mapped_by in ('code','llm')),
++    confidence       double precision,
++    potential_breach boolean not null default false,
++    breach_reason    text,
++    exposure         jsonb not null default '{}'::jsonb,   -- {before, after, delta, by_contract, changes}
++    run_id           text,
++    created_at       timestamptz not null,
++    unique (as_of, drop_name, line_no)
++);
++
++create table if not exists heimdall_alerts (
++    id               bigint generated by default as identity primary key,
++    as_of            date not null,
++    alert_key        text not null,                 -- contract|clause|kind|due date
++    severity         text not null check (severity in ('critical','high','medium','low')),
++    kind             text not null,
++    contract         text,
++    clause_id        text,
++    due_date         date,
++    message          text not null,
++    citation         jsonb not null default '{}'::jsonb,   -- {doc_id, clause_id, quote}
++    source           text not null check (source in ('norns','event')),
++    event_id         text,
++    instance_key     text,
++    run_id           text,
++    created_at       timestamptz not null,
++    unique (as_of, alert_key)
++);
++
++create table if not exists heimdall_tasks (
++    as_of            date not null,
++    task_id          text not null,                 -- the Norns obligation instance key
++    title            text not null,
++    contract         text not null,
++    kind             text not null,
++    period           text,
++    due_date         date,
++    amount           numeric(14, 2),
++    citation         jsonb not null default '{}'::jsonb,
++    status           text not null check (status in ('Not Complete','In Progress','Completed')),
++    status_source    text not null check (status_source in ('norns','user')),
++    norns_status     text,
++    fact             jsonb,                         -- the user's payment_made fact while Completed by the user
++    payer            text,
++    payee            text,
++    updated_at       timestamptz not null,
++    primary key (as_of, task_id)
++);
++
++alter table heimdall_events enable row level security;
++alter table heimdall_alerts enable row level security;
++alter table heimdall_tasks  enable row level security;
+diff --git a/tests/test_heimdall.py b/tests/test_heimdall.py
+new file mode 100644
+index 0000000..def1702
+--- /dev/null
++++ b/tests/test_heimdall.py
+@@ -0,0 +1,133 @@
++"""Heimdall on drop 1 at checkpoint 1, over Thor's committed export (scripted LLM: no real call)."""
++from __future__ import annotations
++
++import json
++from decimal import Decimal
++
++import pytest
++
++from odin.agents.heimdall import Heimdall, heimdall_llm
++from odin.config import ROOT
++from odin.ingest.loader import read_text_exact
++from odin.llm import ProviderResponse
++from odin.state.models import DocRelation
++
++AS_OF = "2027-03-15"
++TABLES = ("documents", "document_files", "clauses", "extractions", "citations", "flags", "doc_relations",
++          "workstreams", "resources", "ledger_entries", "holidays", "clock_checkpoints")
++# What Thor's step-2B code stores for A3 (the committed export predates it).
++AMENDS = (("A3:1", "A2", "A2:3.2", "replace"), ("A3:2", "A2", "A2:3.1", "replace"), ("A3:3", "A1", "A1:B", "modify"))
++
++REPLIES = {
++    "E-01": {"noise": True, "noise_reason": "advance maintenance notice; no downtime reported", "type": "maintenance_notice",
++             "doc_ids": ["A2"], "clause_ids": ["A2:1.3"]},
++    "E-02": {"type": "outage_inquiry", "doc_ids": ["B1"], "clause_ids": ["B1:3.1"], "confidence": 0.7,
++             "fact": {"type": "outage", "contract": "B1", "date": "2027-02-03", "minutes": 10, "single_incident_minutes": 5}},
++    "E-03": {"type": "deliverable_submitted", "doc_ids": ["D1"], "clause_ids": ["D1:9.9"],
++             "fact": {"type": "other", "description": "M3 submitted"}},
++    "E-05": {"type": "incident_notice", "doc_ids": ["B1"], "clause_ids": ["B1:3.1"], "potential_breach": True,
++             "breach_reason": "uptime below target", "confidence": 0.85,
++             "fact": {"type": "outage", "contract": "B1", "date": "2027-03-03", "minutes": 190, "single_incident_minutes": 190}},
++}
++
++
++class ScriptedProvider:
++    name, model = "fake", "fake-model"
++
++    def __init__(self) -> None:
++        self.calls: list[tuple[str, str, int]] = []
++
++    def settings_fingerprint(self) -> dict:
++        return {}
++
++    def complete(self, system, messages, max_tokens) -> ProviderResponse:
++        user = messages[0]["content"]
++        self.calls.append((system, user, max_tokens))
++        ids = [line[1:].split("]")[0] for line in user.splitlines() if line.startswith("[E-")]
++        events = [{"event_id": i, **REPLIES[i]} for i in ids if i in REPLIES]
++        return ProviderResponse(json.dumps({"events": events}), 2500, 400, "end_turn", self.model)
++
++
++@pytest.fixture
++def thor_state(store, cfg):
++    """Thor's committed output (outputs/state_export.json) restored into the test store."""
++    data = json.loads((ROOT / "outputs" / "state_export.json").read_text(encoding="utf-8"))
++    for doc in data["documents"]:
++        doc["text"] = read_text_exact(cfg.paths.bundle_dir / doc["path"])
++    for table in TABLES:
++        store._insert_many(table, data[table])   # test setup only: the export's rows as they are
++    clauses = {c["clause_id"]: c for c in data["clauses"]}
++    for cid, to_doc, target, op in AMENDS:
++        store.add_relation(DocRelation(from_doc="A3", to_doc=to_doc, type="amends", clause_id=cid, verified=True,
++                                       citation={"clause_id": cid, "quote": clauses[cid]["text"][:60], "verified": True,
++                                                 "target_clause_id": target, "operation": op,
++                                                 "effective_date": "2027-01-01"}))
++    return store
++
++
++def run_drop1(store, cfg) -> tuple[Heimdall, ScriptedProvider, object]:
++    provider = ScriptedProvider()
++    heimdall = Heimdall(store, heimdall_llm(cfg, provider=provider, sleep=lambda s: None), cfg, sleep=lambda s: None)
++    return heimdall, provider, heimdall.run("drop1", AS_OF)
++
++
++def test_drop_model_code_first_then_one_llm_batch(thor_state, cfg) -> None:
++    heimdall, provider, result = run_drop1(thor_state, cfg)
++    with pytest.raises(ValueError, match="not released"):
++        heimdall.run("drop2", AS_OF)                                   # drop 2 opens at checkpoint 2
++    ev = {e.event_id: e for e in result.events}
++    assert sorted(ev) == [f"E-0{n}" for n in range(1, 8)] and result.counts()["not_yet_visible"] == 3
++    assert ev["E-04"].mapped_by == "code" and ev["E-04"].fact["type"] == "outage" and ev["E-04"].fact["minutes"] == 190
++    assert ev["E-04"].clause_ids and all(thor_state.get_clause(c) for c in ev["E-04"].clause_ids)
++    assert ev["E-06"].status == ev["E-07"].status == "noise" and ev["E-06"].mapped_by == "code"
++
++    [(system, user, max_tokens)] = provider.calls                       # one batch for what code could not map
++    assert [ln[1:5] for ln in user.splitlines() if ln.startswith("[E-")] == ["E-01", "E-02", "E-03", "E-05"]
++    assert max_tokens == cfg.heimdall.max_tokens == 3000
++    assert len(system + user) / cfg.heimdall.chars_per_token + max_tokens <= cfg.heimdall.max_request_tokens
++    assert ev["E-03"].status == "unmapped" and "D1:9.9" in ev["E-03"].status_reason       # invented clause id
++    assert ev["E-01"].status == "noise" and ev["E-01"].noise_reason.startswith("advance maintenance")
++    assert ev["E-02"].status == "noise" and "changes no obligation" in ev["E-02"].noise_reason
++
++    later, _future, _src = heimdall.load_events("drop2", "2027-09-15")
++    bad = [e for e in later if e.parse_error]
++    assert len(bad) == 1 and bad[0].line_no == 8 and "Expecting value" in bad[0].parse_error
++
++
++def test_exposure_delta_and_alerts(thor_state, cfg) -> None:
++    _heimdall, _provider, result = run_drop1(thor_state, cfg)
++    ev = {e.event_id: e for e in result.events}
++    assert ev["E-04"].exposure["delta"] == "400.00" and ev["E-04"].exposure["by_contract"] == {"A1": "400.00"}
++    assert Decimal(ev["E-04"].exposure["after"]) - Decimal(ev["E-04"].exposure["before"]) == Decimal("400.00")
++    assert ev["E-05"].potential_breach and "may claim $6,000.00" in ev["E-05"].breach_reason
++    live = result.live
++    assert live.after_events - live.baseline == Decimal("400.00")
++
++    alerts = thor_state.list_heimdall_alerts(AS_OF)
++    assert len({a.alert_key for a in alerts}) == len(alerts)          # one per (contract, clause, kind, due date)
++    breach = [a for a in alerts if a.kind == "potential_breach"]
++    assert len(breach) == 1 and breach[0].severity == "critical" and breach[0].contract == "B1"
++    assert all(a.message and "\n" not in a.message and a.citation.get("clause_id") for a in alerts)
++    fee = next(a for a in alerts if a.kind == "payment_due")
++    assert fee.severity == "low" and fee.due_date == "2027-05-01"      # 47 days away: informational
++
++
++def test_task_board_tags_record_user_payment_facts(thor_state, cfg) -> None:
++    run_drop1(thor_state, cfg)
++    board = Heimdall(thor_state, None, cfg)                             # the page's Heimdall: no LLM client
++    tasks = {t.title: t for t in thor_state.list_heimdall_tasks(AS_OF) if t.contract == "A1"}
++    assert tasks["Monthly Fee March 2027"].status == "Completed" and tasks["Monthly Fee March 2027"].status_source == "norns"
++    ok, why = board.set_task_status(AS_OF, tasks["Monthly Fee March 2027"].task_id, "Not Complete")
++    assert not ok and "cannot be changed" in why
++
++    april = tasks["Monthly Fee April 2027"]
++    before = board.totals(AS_OF).live
++    assert board.set_task_status(AS_OF, april.task_id, "Completed")[0]
++    stored = next(t for t in thor_state.list_heimdall_tasks(AS_OF) if t.task_id == april.task_id)
++    assert stored.fact["type"] == "payment_made" and stored.fact["source"] == "user" and stored.fact["date"] == AS_OF
++    assert board.totals(AS_OF).live < before
++    assert not [a for a in thor_state.list_heimdall_alerts(AS_OF) if a.instance_key == april.task_id]
++
++    assert board.set_task_status(AS_OF, april.task_id, "In Progress")[0]
++    assert next(t for t in thor_state.list_heimdall_tasks(AS_OF) if t.task_id == april.task_id).fact is None
++    assert board.totals(AS_OF).live == before

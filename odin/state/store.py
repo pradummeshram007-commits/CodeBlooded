@@ -38,8 +38,12 @@ from odin.state.models import (
     ExposureItem,
     Extraction,
     Flag,
+    HeimdallAlert,
+    HeimdallEvent,
+    HeimdallTask,
     Holiday,
     LedgerEntry,
+    LokiFinding,
     Message,
     ObligationInstance,
     ObligationRule,
@@ -51,14 +55,14 @@ from odin.state.models import (
     utcnow,
 )
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 4
 
 # Every table, in dependency order (export, row counts, test cleanup).
 TABLES = (
     "documents", "document_files", "clauses", "extractions", "citations", "flags", "doc_relations", "messages",
     "workstreams", "trace", "resources", "events", "ledger_entries", "holidays", "clock_checkpoints",
     "obligation_rules", "obligation_instances", "clock_state", "clock_history", "timeline_snapshots",
-    "exposure_items", "writeups",
+    "exposure_items", "writeups", "loki_findings", "heimdall_events", "heimdall_alerts", "heimdall_tasks",
 )
 
 SQLITE_SCHEMA = """
@@ -402,6 +406,105 @@ CREATE TABLE IF NOT EXISTS writeups (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_writeups_asof ON writeups(as_of, id);
+
+-- Loki (supabase/migrations/003_loki.sql)
+CREATE TABLE IF NOT EXISTS loki_findings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    doc_id TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    run_id TEXT,
+    model TEXT,
+    source_kind TEXT NOT NULL DEFAULT 'analysis',
+    type TEXT CHECK (type IN ('ambiguity','one_sided','hidden_liability')),
+    title TEXT NOT NULL,
+    exploited_by TEXT,
+    citations TEXT NOT NULL DEFAULT '[]',
+    readings TEXT NOT NULL DEFAULT '[]',
+    attack_path TEXT NOT NULL DEFAULT '[]',
+    severity TEXT CHECK (severity IN ('critical','high','medium','low')),
+    severity_reason TEXT NOT NULL DEFAULT '',
+    likelihood TEXT CHECK (likelihood IN ('high','medium','low')),
+    likelihood_reason TEXT NOT NULL DEFAULT '',
+    confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    impact TEXT NOT NULL DEFAULT '"unquantified"',
+    status TEXT NOT NULL CHECK (status IN ('accepted','rejected')),
+    rejection_reason TEXT,
+    part TEXT,
+    rank INTEGER NOT NULL DEFAULT 0,
+    notes TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_loki_findings_doc ON loki_findings(doc_id, as_of, status);
+
+-- Heimdall (supabase/migrations/004_heimdall.sql)
+CREATE TABLE IF NOT EXISTS heimdall_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    as_of TEXT NOT NULL,
+    drop_name TEXT NOT NULL,
+    line_no INTEGER NOT NULL,
+    event_id TEXT,
+    raw TEXT NOT NULL,
+    event_date TEXT,
+    channel TEXT,
+    sender TEXT,
+    recipient TEXT,
+    subject TEXT,
+    status TEXT NOT NULL CHECK (status IN ('mapped','unmapped','noise','unparseable')),
+    status_reason TEXT,
+    type TEXT,
+    doc_ids TEXT NOT NULL DEFAULT '[]',
+    clause_ids TEXT NOT NULL DEFAULT '[]',
+    fact TEXT,
+    is_noise INTEGER NOT NULL DEFAULT 0,
+    noise_reason TEXT,
+    mapped_by TEXT CHECK (mapped_by IN ('code','llm')),
+    confidence REAL,
+    potential_breach INTEGER NOT NULL DEFAULT 0,
+    breach_reason TEXT,
+    exposure TEXT NOT NULL DEFAULT '{}',
+    run_id TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE (as_of, drop_name, line_no)
+);
+
+CREATE TABLE IF NOT EXISTS heimdall_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    as_of TEXT NOT NULL,
+    alert_key TEXT NOT NULL,
+    severity TEXT NOT NULL CHECK (severity IN ('critical','high','medium','low')),
+    kind TEXT NOT NULL,
+    contract TEXT,
+    clause_id TEXT,
+    due_date TEXT,
+    message TEXT NOT NULL,
+    citation TEXT NOT NULL DEFAULT '{}',
+    source TEXT NOT NULL CHECK (source IN ('norns','event')),
+    event_id TEXT,
+    instance_key TEXT,
+    run_id TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE (as_of, alert_key)
+);
+
+CREATE TABLE IF NOT EXISTS heimdall_tasks (
+    as_of TEXT NOT NULL,
+    task_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    contract TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    period TEXT,
+    due_date TEXT,
+    amount TEXT,
+    citation TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL CHECK (status IN ('Not Complete','In Progress','Completed')),
+    status_source TEXT NOT NULL CHECK (status_source IN ('norns','user')),
+    norns_status TEXT,
+    fact TEXT,
+    payer TEXT,
+    payee TEXT,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (as_of, task_id)
+);
 """
 
 # Columns added after the first SQLite release; older state/odin.db files are upgraded in place.
@@ -432,6 +535,10 @@ _JSON_COLUMNS = {
     "timeline_snapshots": ("summary", "chart_data"),
     "exposure_items": ("inputs", "citations"),
     "writeups": ("meta",),
+    "loki_findings": ("citations", "readings", "attack_path", "impact", "notes"),
+    "heimdall_events": ("doc_ids", "clause_ids", "fact", "exposure"),
+    "heimdall_alerts": ("citation",),
+    "heimdall_tasks": ("citation", "fact"),
 }
 _BOOL_COLUMNS = {
     "extractions": ("is_current",),
@@ -439,12 +546,14 @@ _BOOL_COLUMNS = {
     "flags": ("evidence_verified",),
     "doc_relations": ("verified",),
     "writeups": ("check_passed",),
+    "heimdall_events": ("is_noise", "potential_breach"),
 }
 # Money columns: stored as numeric (Postgres) / text (SQLite), always read back as Decimal.
 _DECIMAL_COLUMNS = {
     "obligation_rules": ("amount",),
     "obligation_instances": ("amount", "paid_amount"),
     "exposure_items": ("amount",),
+    "heimdall_tasks": ("amount",),
 }
 _DOCUMENT_COLUMNS = tuple(Document.model_fields)
 _DOCUMENT_COLUMNS_NO_TEXT = ", ".join(c for c in _DOCUMENT_COLUMNS if c != "text")
@@ -985,6 +1094,85 @@ class StateStore:
     def latest_writeup(self, as_of: str) -> Writeup | None:
         row = self._one("SELECT * FROM writeups WHERE as_of=? ORDER BY id DESC LIMIT 1", (as_of,))
         return Writeup.model_validate(self._row("writeups", row)) if row else None
+
+    # ------------------------------------------------------------------ Loki: adversarial review findings
+
+    def replace_loki_findings(self, doc_id: str, as_of: str, findings: Iterable[LokiFinding]) -> int:
+        """A re-run for the same document and as_of replaces its findings, in one transaction."""
+        with self.transaction():
+            self._write("DELETE FROM loki_findings WHERE doc_id=? AND as_of=?", (doc_id, as_of))
+            return self._insert_many("loki_findings", (f.model_dump(exclude={"id"}) for f in findings))
+
+    def list_loki_findings(self, doc_id: str | None = None, as_of: str | None = None,
+                           status: str | None = None) -> list[LokiFinding]:
+        sql, args = "SELECT * FROM loki_findings WHERE 1=1", []
+        for col, value in (("doc_id", doc_id), ("as_of", as_of), ("status", status)):
+            if value:
+                sql += f" AND {col}=?"
+                args.append(value)
+        rows = self._query(sql + " ORDER BY doc_id, as_of, rank, id", args)
+        return [LokiFinding.model_validate(r) for r in self._rows("loki_findings", rows)]
+
+    # ------------------------------------------------------------------ Heimdall: events, alerts, task board
+
+    def replace_heimdall_events(self, as_of: str, drop_name: str, events: Iterable[HeimdallEvent]) -> int:
+        """A re-run of one drop on one clock date replaces what that run stored."""
+        with self.transaction():
+            self._write("DELETE FROM heimdall_events WHERE as_of=? AND drop_name=?", (as_of, drop_name))
+            return self._insert_many("heimdall_events", (e.model_dump(exclude={"id"}) for e in events))
+
+    def list_heimdall_events(self, as_of: str | None = None, drop_name: str | None = None) -> list[HeimdallEvent]:
+        sql, args = "SELECT * FROM heimdall_events WHERE 1=1", []
+        for col, value in (("as_of", as_of), ("drop_name", drop_name)):
+            if value:
+                sql += f" AND {col}=?"
+                args.append(value)
+        rows = self._query(sql + " ORDER BY as_of, drop_name, line_no", args)
+        return [HeimdallEvent.model_validate(r) for r in self._rows("heimdall_events", rows)]
+
+    def heimdall_runs(self) -> list[tuple[str, str]]:
+        """(as_of, drop_name) of every stored Heimdall run, oldest first."""
+        rows = self._query("SELECT DISTINCT as_of, drop_name FROM heimdall_events ORDER BY as_of, drop_name")
+        return [(str(_plain(r["as_of"])), r["drop_name"]) for r in rows]
+
+    def replace_heimdall_alerts(self, as_of: str, alerts: Iterable[HeimdallAlert]) -> int:
+        with self.transaction():
+            self._write("DELETE FROM heimdall_alerts WHERE as_of=?", (as_of,))
+            return self._insert_many("heimdall_alerts", (a.model_dump(exclude={"id"}) for a in alerts))
+
+    def list_heimdall_alerts(self, as_of: str) -> list[HeimdallAlert]:
+        rows = self._query("SELECT * FROM heimdall_alerts WHERE as_of=? ORDER BY id", (as_of,))
+        return [HeimdallAlert.model_validate(r) for r in self._rows("heimdall_alerts", rows)]
+
+    def upsert_heimdall_task(self, task: HeimdallTask) -> None:
+        data = self._prepare("heimdall_tasks", task.model_dump())
+        cols = list(data)
+        self._write(
+            f"""INSERT INTO heimdall_tasks ({', '.join(cols)}) VALUES ({', '.join('?' for _ in cols)})
+                ON CONFLICT(as_of, task_id) DO UPDATE SET
+                {', '.join(f'{c}=excluded.{c}' for c in cols if c not in ('as_of', 'task_id'))}""",
+            tuple(data.values()),
+        )
+
+    def delete_heimdall_tasks(self, as_of: str, task_ids: Iterable[str]) -> int:
+        n = 0
+        with self.transaction():
+            for task_id in task_ids:
+                n += self._write("DELETE FROM heimdall_tasks WHERE as_of=? AND task_id=?", (as_of, task_id))
+        return n
+
+    def list_heimdall_tasks(self, as_of: str) -> list[HeimdallTask]:
+        rows = self._query("SELECT * FROM heimdall_tasks WHERE as_of=? ORDER BY due_date, task_id", (as_of,))
+        return [HeimdallTask.model_validate(r) for r in self._rows("heimdall_tasks", rows)]
+
+    def set_heimdall_task_status(self, as_of: str, task_id: str, status: str, fact: dict[str, Any] | None) -> bool:
+        """A user's tag change. False when the task is Norns' (paid / met), which the user cannot change."""
+        n = self._write(
+            """UPDATE heimdall_tasks SET status=?, status_source='user', fact=?, updated_at=?
+               WHERE as_of=? AND task_id=? AND status_source <> 'norns'""",
+            (status, _dumps(fact), utcnow(), as_of, task_id),
+        )
+        return n > 0
 
     # ------------------------------------------------------------------ summaries
 
