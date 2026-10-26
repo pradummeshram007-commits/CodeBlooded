@@ -131,7 +131,13 @@ export default function AgentCards() {
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Date Graph Simulation
             </span>
-            <span>TEMP-003</span>
+            <button
+              onClick={() => navigate('/norns')}
+              className="text-primary-dark font-bold hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1"
+            >
+              <span>Launch NORNS</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -163,7 +169,13 @@ export default function AgentCards() {
               <span className="w-1.5 h-1.5 rounded-full bg-accent-gold" />
               Conflict Spotter
             </span>
-            <span>ADV-004</span>
+            <button
+              onClick={() => navigate('/loki')}
+              className="text-primary-dark font-bold hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1"
+            >
+              <span>Launch LOKI</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -195,7 +207,13 @@ export default function AgentCards() {
               <span className="w-1.5 h-1.5 rounded-full bg-sage" />
               Dynamic Watchdog
             </span>
-            <span>EVT-005</span>
+            <button
+              onClick={() => navigate('/heimdall')}
+              className="text-primary-dark font-bold hover:underline flex items-center gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1"
+            >
+              <span>Launch HEIMDALL</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 

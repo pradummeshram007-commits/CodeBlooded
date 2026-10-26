@@ -24,15 +24,22 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from odin.agents.heimdall import SEVERITY_RANK as HEIMDALL_SEVERITY_RANK
+from odin.agents.heimdall import SEVERITY_SCALE as HEIMDALL_SEVERITY_SCALE
+from odin.agents.heimdall import TASK_STATUSES, Heimdall, heimdall_llm
+from odin.agents.loki import FINDING_TYPES, LIKELIHOOD_SCALE, NOT_REVIEWED_KINDS, SEVERITY_SCALE, Loki
 from odin.agents.thor import Thor
 from odin.config import load_config
+from odin.ingest.loader import load_clock
 from odin.ingest.upload import ingest_file
-from odin.llm import LLMClient
-from odin.state.backend import open_store
+from odin.llm import LLMClient, llm_config_problem
+from odin.state.backend import open_file_store, open_store
+from odin.state.errors import StoreError
 from odin.state.store import StateStore
 
 app = FastAPI(title="ODIN / THOR API", version="2.4.0")
@@ -48,6 +55,12 @@ app.add_middleware(
 
 logger = logging.getLogger("odin.api")
 logging.basicConfig(level=logging.INFO)
+
+
+@app.exception_handler(StoreError)
+async def store_error(_request: Request, exc: StoreError):
+    """The state store is unreachable or misconfigured: a readable 503 instead of a bare 500."""
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 cfg = load_config()
 
@@ -252,6 +265,7 @@ async def upload_contract(file: UploadFile = File(...)):
     # Invalidate cached NORNS timelines
     with _norns_lock:
         _norns_cache.clear()
+    reset_heimdall()
 
     return {
         "status": "success",
@@ -295,7 +309,8 @@ def run_reextract(req: ReextractRequest):
         
         with _norns_lock:
             _norns_cache.clear()
-        
+        reset_heimdall()
+
         return {
             "status": "success",
             "doc_id": req.doc_id,
@@ -500,6 +515,352 @@ def norns_worst_case(
         }
 
 
+# ============================================================
+# Shared — simulated clock and LLM readiness (Loki, Heimdall)
+# ============================================================
+
+def clock_checkpoints() -> list[dict[str, Any]]:
+    """The simulated clock's dates: the store's checkpoints, else clock.json."""
+    points = get_store().list_checkpoints() or load_clock(cfg.paths.pack_dir / "clock.json")
+    return [{"idx": p.idx, "date": p.date, "label": "Start" if p.idx == 0 else f"Checkpoint {p.idx}"} for p in points]
+
+
+def llm_status(agent: str | None = None) -> dict[str, Any]:
+    """Whether an agent can call its LLM: provider, model and, when it cannot, why (never the key)."""
+    settings = cfg.llm_for(agent) if agent else cfg.llm
+    problem = llm_config_problem(cfg, agent)
+    if problem is None and not settings.api_key:
+        var = f"{agent.upper()}_LLM_API_KEY" if agent and agent in cfg.agent_llm else "LLM_API_KEY"
+        problem = f"no API key set ({var} in .env)"
+    return {"configured": problem is None, "provider": settings.provider, "model": settings.model or None,
+            "problem": problem}
+
+
+def parse_as_of(value: str | None) -> str:
+    try:
+        return date.fromisoformat(str(value)).isoformat()
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date: {value!r} (expected YYYY-MM-DD)")
+
+
+# ============================================================
+# LOKI — Adversarial Review API
+# ============================================================
+
+_loki_run_lock = threading.Lock()   # one review at a time; each run has its own LLM call budget
+
+
+def agent_notes(store: StateStore, agent: str) -> dict[str, dict[str, Any]]:
+    """An agent's per-document entries in the workstreams' notes: {doc_id: {status, as_of, reason, ...}}."""
+    out: dict[str, dict[str, Any]] = {}
+    for ws in store.list_workstreams():
+        try:
+            notes = json.loads(ws.notes) if ws.notes else {}
+        except ValueError:
+            continue
+        if isinstance(notes, dict) and isinstance(notes.get(agent), dict):
+            out.update(notes[agent])
+    return out
+
+
+def ensure_exposure_items(day: str) -> None:
+    """Norns' exposure items for the date, which Loki copies as each finding's impact. Stored when missing, as
+    scripts/worst_case.py --no-writeup does (no LLM); without them every impact is "unquantified"."""
+    store = get_store()
+    if store.list_exposure_items(day):
+        return
+    try:
+        from odin.norns.worst_case import worst_case as compute_worst_case
+        norns = get_norns()
+        wc = compute_worst_case(norns, norns.compute(date.fromisoformat(day)))
+        store.replace_exposure_items(day, wc.items())
+    except Exception as exc:
+        logger.warning("Norns exposure items for %s not stored (Loki impacts stay unquantified): %s", day, exc)
+
+
+@app.get("/api/loki/documents")
+def loki_documents():
+    """Documents Loki can review, the last review of each and the dates with stored findings."""
+    store = get_store()
+    relations = store.list_relations()
+    last = agent_notes(store, "loki")
+    reviewed: dict[str, dict[str, dict[str, int]]] = {}
+    for f in store.list_loki_findings():
+        counts = reviewed.setdefault(f.doc_id, {}).setdefault(f.as_of, {"accepted": 0, "rejected": 0})
+        counts[f.status] += 1
+    documents = []
+    for d in store.list_documents(include_text=False):
+        reviewable = d.kind not in NOT_REVIEWED_KINDS
+        # Amendments and standard terms are reviewed inside the documents they amend / that incorporate them.
+        inside = [] if reviewable else sorted({
+            r.to_doc if d.kind == "amendment" else r.from_doc for r in relations
+            if (r.type == "amends" and r.from_doc == d.doc_id) or (r.type == "incorporates" and r.to_doc == d.doc_id)
+        })
+        documents.append({
+            "doc_id": d.doc_id,
+            "title": d.title,
+            "kind": d.kind,
+            "thor_status": d.status,
+            "coverage": d.coverage,
+            "reviewable": reviewable,
+            "reviewed_inside": inside,
+            "last_review": last.get(d.doc_id),
+            "reviews": [{"as_of": a, **c} for a, c in sorted(reviewed.get(d.doc_id, {}).items(), reverse=True)],
+        })
+    return {
+        "documents": documents,
+        "checkpoints": clock_checkpoints(),
+        "llm": llm_status("loki"),
+        "max_llm_calls": min(cfg.limits.max_llm_calls, cfg.loki.max_llm_calls),
+        "scales": {"types": FINDING_TYPES, "severity": SEVERITY_SCALE, "likelihood": LIKELIHOOD_SCALE},
+    }
+
+
+@app.get("/api/loki/findings")
+def loki_findings(
+    doc_id: str = Query(..., description="The reviewed document"),
+    as_of: Optional[str] = Query(None, description="YYYY-MM-DD; defaults to the latest date reviewed"),
+):
+    """Loki's findings for one document on one date: accepted (ranked, most severe first) and rejected."""
+    store = get_store()
+    doc = store.get_document(doc_id, include_text=False)
+    if doc is None:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+    findings = store.list_loki_findings(doc_id)
+    dates = sorted({f.as_of for f in findings}, reverse=True)
+    day = parse_as_of(as_of) if as_of else (dates[0] if dates else None)
+    rows = [f for f in findings if f.as_of == day]
+    accepted = [f for f in rows if f.status == "accepted"]
+    return {
+        "doc_id": doc_id,
+        "title": doc.title,
+        "kind": doc.kind,
+        "as_of": day,
+        "available_as_of": dates,
+        "last_review": agent_notes(store, "loki").get(doc_id),
+        "summary": {
+            "accepted": len(accepted),
+            "rejected": len(rows) - len(accepted),
+            "by_type": {t: sum(1 for f in accepted if f.type == t) for t in FINDING_TYPES},
+            "by_severity": {s: sum(1 for f in accepted if f.severity == s) for s in SEVERITY_SCALE},
+            "counterparty": next((f.exploited_by for f in rows if f.exploited_by), None),
+        },
+        "findings": [f.model_dump(mode="json") for f in rows],
+    }
+
+
+class LokiReviewRequest(BaseModel):
+    doc_ids: list[str]
+    as_of: str
+
+
+@app.post("/api/loki/review")
+def loki_review(req: LokiReviewRequest):
+    """Run Loki on the named documents as of a date: one LLM call per document (per part when it is split)."""
+    day = parse_as_of(req.as_of)
+    doc_ids = list(dict.fromkeys(d.strip() for d in req.doc_ids if d and d.strip()))
+    if not doc_ids:
+        raise HTTPException(status_code=400, detail="Name at least one document to review")
+    store = get_store()
+    missing = [d for d in doc_ids if store.get_document(d, include_text=False) is None]
+    if missing:
+        raise HTTPException(status_code=404, detail=f"Not in the store: {', '.join(missing)}")
+    status = llm_status("loki")
+    if not status["configured"]:
+        raise HTTPException(status_code=503, detail=f"Loki needs an LLM: {status['problem']}. Set it in .env and restart the API.")
+    if not _loki_run_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="A Loki review is already running; wait for it to finish.")
+    try:
+        ensure_exposure_items(day)
+        limits = cfg.limits.model_copy(update={"max_llm_calls": min(cfg.limits.max_llm_calls, cfg.loki.max_llm_calls)})
+        loki = Loki(store, LLMClient.from_config(cfg, agent="loki", limits=limits), cfg)
+        reviews = loki.run(doc_ids, day, parallel=4)
+    finally:
+        _loki_run_lock.release()
+    return {"as_of": day, "run_id": loki.run_id, "reviews": [loki.report(r) for r in reviews]}
+
+
+# ============================================================
+# HEIMDALL — Event Monitoring & Task Board API
+# ============================================================
+
+_heimdall_lock = threading.RLock()        # guards the board's Heimdall (its Norns is not thread-safe)
+_heimdall_run_lock = threading.Lock()     # one drop run at a time
+_heimdall_board: Heimdall | None = None
+
+
+def new_heimdall(llm: LLMClient | None) -> Heimdall:
+    from odin.norns.engine import Norns
+    store = get_store()
+    norns = Norns(store, None, cfg)       # Norns never gets an LLM from Heimdall
+    norns.load(persist=False)
+    return Heimdall(store, llm, cfg, files=open_file_store(cfg), norns=norns)
+
+
+def get_heimdall() -> Heimdall:
+    """The board's Heimdall: no LLM client, so reads, task tags and reassessments never call the LLM."""
+    global _heimdall_board
+    with _heimdall_lock:
+        if _heimdall_board is None:
+            _heimdall_board = new_heimdall(None)
+        return _heimdall_board
+
+
+def reset_heimdall() -> None:
+    """Thor's facts changed: the next board read rebuilds Norns' rules and Heimdall's contract index."""
+    global _heimdall_board
+    with _heimdall_lock:
+        _heimdall_board = None
+
+
+def event_counts(events: list[Any]) -> dict[str, int]:
+    return {
+        "total": len(events),
+        "mapped_by_code": sum(1 for e in events if e.status == "mapped" and e.mapped_by == "code"),
+        "mapped_by_llm": sum(1 for e in events if e.status == "mapped" and e.mapped_by == "llm"),
+        "noise": sum(1 for e in events if e.status == "noise"),
+        "unmapped": sum(1 for e in events if e.status == "unmapped"),
+        "unparseable": sum(1 for e in events if e.status == "unparseable"),
+        "potential_breach": sum(1 for e in events if e.potential_breach),
+    }
+
+
+@app.get("/api/heimdall/overview")
+def heimdall_overview():
+    """The event drops, the clock checkpoint that releases each, and the stored runs."""
+    store = get_store()
+    checkpoints = clock_checkpoints()
+    dates = {p["idx"]: p["date"] for p in checkpoints}
+    runs = store.heimdall_runs()
+    drops = [
+        {"name": name, "release_checkpoint": idx, "release_date": dates.get(idx),
+         "runs": sorted({a for a, d in runs if d == name}, reverse=True)}
+        for name, idx in sorted(cfg.heimdall.drop_release_checkpoints.items())
+    ]
+    return {
+        "checkpoints": checkpoints,
+        "drops": drops,
+        "run_dates": sorted({a for a, _d in runs}, reverse=True),
+        "llm": llm_status(),
+        "max_llm_calls": min(cfg.limits.max_llm_calls, cfg.heimdall.max_llm_calls),
+        "severity_scale": HEIMDALL_SEVERITY_SCALE,
+        "task_statuses": list(TASK_STATUSES),
+    }
+
+
+@app.get("/api/heimdall/board")
+def heimdall_board(as_of: Optional[str] = Query(None, description="YYYY-MM-DD; defaults to the latest run date")):
+    """One clock date: worst-case exposure, alerts, the events behind the date and the task board (no LLM)."""
+    store = get_store()
+    run_dates = sorted({a for a, _d in store.heimdall_runs()}, reverse=True)
+    day = parse_as_of(as_of) if as_of else (run_dates[0] if run_dates else None)
+    if day is None:
+        return {"as_of": None, "run_dates": [], "worst_case": None, "counts": event_counts([]), "alerts": [],
+                "events": [], "tasks": [], "process_labels": {}}
+    today = date.fromisoformat(day)
+    with _heimdall_lock:
+        h = get_heimdall()
+        live = h.totals(day)
+        events = h.event_rows(day)
+        alerts = store.list_heimdall_alerts(day)
+        tasks = store.list_heimdall_tasks(day)
+        labels = {c: h.process_label(c) for c in sorted({t.contract for t in tasks})}
+
+        # A card's badge, as on the Streamlit board: done, else its most severe alert, else the fixed scale by days left.
+        by_instance: dict[str, str] = {}
+        for a in alerts:
+            if a.instance_key and HEIMDALL_SEVERITY_RANK[a.severity] > HEIMDALL_SEVERITY_RANK.get(by_instance.get(a.instance_key, ""), 0):
+                by_instance[a.instance_key] = a.severity
+        cards = []
+        for t in tasks:
+            days = (date.fromisoformat(t.due_date) - today).days if t.due_date else None
+            if t.status == "Completed":
+                severity = "done"
+            elif t.task_id in by_instance:
+                severity = by_instance[t.task_id]
+            else:
+                severity = "critical" if days is not None and days < 0 else h.severity_for(days, renewal=t.kind == "renewal")
+            cards.append({**t.model_dump(mode="json"), "severity": severity, "days_left": days})
+    return {
+        "as_of": day,
+        "run_dates": run_dates,
+        "worst_case": {"baseline": str(live.baseline), "after_events": str(live.after_events), "live": str(live.live),
+                       "by_contract": live.by_contract},
+        "counts": event_counts(events),
+        "alerts": [a.model_dump(mode="json") for a in alerts],
+        "events": [e.model_dump(mode="json") for e in events],
+        "tasks": cards,
+        "process_labels": labels,
+    }
+
+
+class HeimdallRunRequest(BaseModel):
+    drop: str
+    as_of: str
+    use_llm: bool = True
+
+
+@app.post("/api/heimdall/run")
+def heimdall_run(req: HeimdallRunRequest):
+    """Process one released drop on a clock date. Code maps what it can; with use_llm the rest goes to the LLM
+    in batches (at most heimdall.max_llm_calls calls), otherwise it stays unmapped."""
+    day = parse_as_of(req.as_of)
+    drop = req.drop if req.drop.startswith("drop") else f"drop{req.drop}"
+    llm = None
+    if req.use_llm:
+        status = llm_status()
+        if not status["configured"]:
+            raise HTTPException(status_code=503, detail=f"Heimdall's LLM mapping needs an LLM: {status['problem']}. "
+                                                        "Run with code mapping only, or set .env and restart the API.")
+        llm = heimdall_llm(cfg)
+    if not _heimdall_run_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="A Heimdall run is already in progress; wait for it to finish.")
+    try:
+        h = new_heimdall(llm)
+        try:
+            result = h.run(drop, day)
+        except (ValueError, FileNotFoundError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        path = h.write_output(result)
+        report = h.report(result)
+    finally:
+        _heimdall_run_lock.release()
+    return {**report, "output_path": str(path)}
+
+
+class HeimdallTaskRequest(BaseModel):
+    as_of: str
+    task_id: str
+    status: str
+
+
+@app.post("/api/heimdall/tasks/status")
+def heimdall_task_status(req: HeimdallTaskRequest):
+    """A tag change on the task board. Completing a payment records a payment_made fact and recomputes Norns."""
+    day = parse_as_of(req.as_of)
+    with _heimdall_lock:
+        try:
+            ok, message = get_heimdall().set_task_status(day, req.task_id, req.status)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+    if not ok:
+        raise HTTPException(status_code=409, detail=message)
+    return {"ok": True, "message": message}
+
+
+class HeimdallReassessRequest(BaseModel):
+    as_of: str
+
+
+@app.post("/api/heimdall/reassess")
+def heimdall_reassess(req: HeimdallReassessRequest):
+    """Rebuild the date's alerts and tasks from the stored events and the board's payment facts (no LLM)."""
+    day = parse_as_of(req.as_of)
+    with _heimdall_lock:
+        live = get_heimdall().reassess(day)
+    return {"as_of": day, "alerts": len(live.alerts), "tasks": len(live.tasks), "worst_case": str(live.live)}
+
+
 # ========================================================
 # DASHBOARD — Live Contract Command Center API
 # ========================================================
@@ -680,6 +1041,60 @@ Dispatched by ODIN Certified E-Notice Engine
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+
+
+def loki_activity(store: StateStore) -> dict[str, Any] | None:
+    """The dashboard's LOKI step from stored findings (each document's latest review); None before any review."""
+    latest: dict[str, str] = {}
+    findings = store.list_loki_findings(status="accepted")
+    for f in findings:
+        latest[f.doc_id] = max(latest.get(f.doc_id, f.as_of), f.as_of)
+    current = [f for f in findings if f.as_of == latest[f.doc_id]]
+    if not current:
+        return None
+    order = list(SEVERITY_SCALE)
+    top = min(current, key=lambda f: (order.index(f.severity) if f.severity in order else len(order), -f.confidence))
+    clauses = ", ".join(sorted({c.clause_id for c in top.citations if c.clause_id}))
+    critical = sum(1 for f in current if f.severity == "critical")
+    return {
+        "step": "01",
+        "agent": "LOKI",
+        "role": "Challenge",
+        "severity_label": f"{critical} Critical" if critical else f"{(top.severity or 'open').title()} Severity",
+        "severity_class": "bg-[#FBEBEB] text-odin-red border-l-odin-red",
+        "text_class": "text-odin-red",
+        "summary": f"{len(current)} accepted finding(s) across {len(latest)} contract(s). Most severe: {top.title} "
+                   f"({top.doc_id}, {clauses}).",
+        "details": f"{top.exploited_by or 'The counterparty'} could argue: " + " → ".join(top.attack_path)
+                   + f" Likelihood {top.likelihood}: {top.likelihood_reason}",
+        "link": f"/loki?doc={top.doc_id}",
+    }
+
+
+def heimdall_activity(store: StateStore) -> dict[str, Any] | None:
+    """The dashboard's HEIMDALL step from the latest run date's events and alerts; None before any run."""
+    runs = store.heimdall_runs()
+    if not runs:
+        return None
+    day = max(a for a, _d in runs)
+    events = store.list_heimdall_events(day)
+    alerts = store.list_heimdall_alerts(day)
+    counts = event_counts(events)
+    critical = [a for a in alerts if a.severity == "critical"]
+    top = critical[0] if critical else (alerts[0] if alerts else None)
+    return {
+        "step": "02",
+        "agent": "HEIMDALL",
+        "role": "Verification",
+        "severity_label": f"{len(critical)} Critical" if critical else f"{len(alerts)} Alert(s)",
+        "severity_class": "bg-[#F4ECDB] text-odin-darkamber border-l-odin-amber",
+        "text_class": "text-odin-darkamber",
+        "summary": f"{counts['total']} event(s) checked on {day}: {counts['mapped_by_code'] + counts['mapped_by_llm']} "
+                   f"mapped to contracts, {counts['noise']} filtered as noise, {counts['unmapped']} unmapped.",
+        "details": (f"Top alert [{top.severity}]: {top.message}" + (f" ({top.clause_id})" if top.clause_id else ""))
+                   if top else "No alerts on this date.",
+        "link": f"/heimdall?as_of={day}",
+    }
 
 
 @app.get("/api/dashboard")
@@ -1246,12 +1661,16 @@ def get_dashboard_data(as_of: Optional[str] = Query(None)):
     flag_clause = sample_flag.clause_id if (sample_flag and sample_flag.clause_id) else "Section 2.2"
     flag_desc = sample_flag.description if sample_flag else "Cross-reference link reconciliation"
 
+    # Loki's and Heimdall's stored results replace the flag-based text once those agents have run.
+    loki_step = loki_activity(store)
+    heimdall_step = heimdall_activity(store)
+
     agent_activity = {
         "pipeline_status": "TRIPARTITE CONSENSUS",
         "sync_note": "Consensus protocol synchronized.",
         "approval_note": "Human approval req.",
         "steps": [
-            {
+            loki_step or {
                 "step": "01",
                 "agent": "LOKI",
                 "role": "Challenge",
@@ -1261,7 +1680,7 @@ def get_dashboard_data(as_of: Optional[str] = Query(None)):
                 "summary": f"Flagged clause discrepancy in {flag_doc} ({flag_clause}). Severity code: {sample_flag.type if sample_flag else 'COLLISION'}.",
                 "details": f"Loki identified an authoritative store flag on {flag_doc} ({flag_clause}): {flag_desc}. Potential contractual exposure flagged for verification.",
             },
-            {
+            heimdall_step or {
                 "step": "02",
                 "agent": "HEIMDALL",
                 "role": "Verification",

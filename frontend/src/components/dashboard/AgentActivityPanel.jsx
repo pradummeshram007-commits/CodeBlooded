@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AgentActivityPanel({ activityData }) {
+  const navigate = useNavigate();
   const [expandedStep, setExpandedStep] = useState(null);
 
   const data = activityData || {
@@ -92,6 +94,17 @@ export default function AgentActivityPanel({ activityData }) {
                   <div className="mt-2 pt-2 border-t border-odin-border-subtle font-mono text-[11px] text-odin-dark bg-[#FCFAF3] p-2 rounded">
                     <strong className="block text-odin-forest mb-0.5">Evidence Chain:</strong>
                     {stepItem.details}
+                    {stepItem.link && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(stepItem.link);
+                        }}
+                        className="mt-1.5 block font-semibold text-odin-forest hover:underline"
+                      >
+                        Open {stepItem.agent} ↗
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

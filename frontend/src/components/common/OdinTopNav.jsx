@@ -39,7 +39,7 @@ export default function OdinTopNav({
         </div>
 
         {/* Navigation Links (Desktop/Tablet) */}
-        <nav className="hidden lg:flex items-center gap-1 font-mono text-xs">
+        <nav className="hidden lg:flex items-center gap-1 font-mono text-xs whitespace-nowrap">
           <button
             onClick={() => navigate('/')}
             className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 cursor-pointer ${
@@ -74,7 +74,7 @@ export default function OdinTopNav({
             }`}
           >
             <span className="material-symbols-outlined text-xs text-odin-amber">bolt</span>
-            THOR — Extraction
+            THOR<span className="hidden 2xl:inline"> — Extraction</span>
           </button>
 
           <button
@@ -86,7 +86,31 @@ export default function OdinTopNav({
             }`}
           >
             <span className="material-symbols-outlined text-xs text-odin-palesage">schedule</span>
-            NORNS — Timeline
+            NORNS<span className="hidden 2xl:inline"> — Timeline</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/loki')}
+            className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer ${
+              activePage === 'loki'
+                ? 'bg-[#3D4B33] text-white font-semibold shadow-sm border border-odin-sage/30'
+                : 'text-odin-cream/80 hover:text-white hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-amber">gavel</span>
+            LOKI<span className="hidden 2xl:inline"> — Review</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/heimdall')}
+            className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 cursor-pointer ${
+              activePage === 'heimdall'
+                ? 'bg-[#3D4B33] text-white font-semibold shadow-sm border border-odin-sage/30'
+                : 'text-odin-cream/80 hover:text-white hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-palesage">radar</span>
+            HEIMDALL<span className="hidden 2xl:inline"> — Events</span>
           </button>
 
           <button
@@ -97,7 +121,7 @@ export default function OdinTopNav({
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }, 100);
             }}
-            className="px-2.5 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors cursor-pointer"
+            className="hidden 2xl:block px-2.5 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors cursor-pointer whitespace-nowrap"
           >
             Agent Activity
           </button>
@@ -110,7 +134,7 @@ export default function OdinTopNav({
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }, 100);
             }}
-            className="px-2.5 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors cursor-pointer"
+            className="hidden 2xl:block px-2.5 py-1.5 rounded text-odin-cream/80 hover:text-white hover:bg-[#38452F] transition-colors cursor-pointer whitespace-nowrap"
           >
             Actions &amp; Notices
           </button>
@@ -120,7 +144,7 @@ export default function OdinTopNav({
       {/* Right utility controls */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Search Input */}
-        <div className="relative hidden xl:block w-52 lg:w-64">
+        <div className="relative hidden 2xl:block w-52 lg:w-64">
           <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-odin-sage text-sm">
             search
           </span>
@@ -231,6 +255,30 @@ export default function OdinTopNav({
           >
             <span className="material-symbols-outlined text-xs text-odin-palesage">schedule</span>
             NORNS — Obligations &amp; Timeline
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/loki');
+            }}
+            className={`w-full text-left px-3 py-2 rounded transition-colors flex items-center gap-1.5 ${
+              activePage === 'loki' ? 'bg-[#3D4B33] text-white font-bold' : 'text-odin-cream/90 hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-amber">gavel</span>
+            LOKI — Adversarial Review
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/heimdall');
+            }}
+            className={`w-full text-left px-3 py-2 rounded transition-colors flex items-center gap-1.5 ${
+              activePage === 'heimdall' ? 'bg-[#3D4B33] text-white font-bold' : 'text-odin-cream/90 hover:bg-[#38452F]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-xs text-odin-palesage">radar</span>
+            HEIMDALL — Events &amp; Task Board
           </button>
           <div className="pt-2 border-t border-odin-sage/20 flex flex-col gap-2">
             <button

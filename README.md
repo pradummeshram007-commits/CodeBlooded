@@ -36,6 +36,8 @@ python scripts/worst_case.py --checkpoint 2     # exposure items, chart data, wr
 python scripts/run_loki.py --docs A1,A2 --checkpoint 1   # Loki: adversarial review (--docs is required)
 python scripts/run_heimdall.py --drop 1 --checkpoint 1   # Heimdall: events -> facts, alerts, task board
 streamlit run app/Home.py               # upload + "See the contract" (/Contracts), task board (/Heimdall)
+python backend/run.py                   # FastAPI for the React app: http://localhost:8000/docs
+npm run dev                             # React app: http://localhost:3000 (/dashboard, /thor, /norns, /loki, /heimdall)
 
 # Local backend (STATE_BACKEND=sqlite, the default): no migrate step, same commands otherwise
 python scripts/run_thor.py --no-llm     # ingest + segment only, no API calls

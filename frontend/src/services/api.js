@@ -248,6 +248,96 @@ export async function fetchDashboard(asOf) {
   return null;
 }
 
+// ========================================================
+// LOKI & HEIMDALL — shared request helper
+// ========================================================
+
+const BACKEND_DOWN =
+  'ODIN API backend unreachable. Start it with: python backend/run.py (or uvicorn odin.api:app --port 8000)';
+
+/**
+ * JSON request that throws an Error carrying the backend's `detail` message,
+ * so the pages can show exactly why a run was refused (no LLM key, drop not released, ...).
+ */
+async function requestJson(url, options = {}) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (err) {
+    throw new Error(BACKEND_DOWN);
+  }
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    throw new Error(BACKEND_DOWN);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || {});
+    throw new Error(detail || `Request failed with HTTP ${res.status}`);
+  }
+  return data;
+}
+
+function postJson(url, body) {
+  return requestJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+// ========================================================
+// LOKI — Adversarial Review API
+// ========================================================
+
+/** Reviewable documents, last review per document, clock checkpoints, LLM readiness and the fixed scales. */
+export function fetchLokiDocuments() {
+  return requestJson(`${API_BASE}/loki/documents`);
+}
+
+/** Loki's stored findings for one document; asOf defaults to the latest date reviewed. */
+export function fetchLokiFindings(docId, asOf) {
+  const params = new URLSearchParams({ doc_id: docId });
+  if (asOf) params.set('as_of', asOf);
+  return requestJson(`${API_BASE}/loki/findings?${params}`);
+}
+
+/** Run Loki on the given documents as of a date (one LLM call per document). */
+export function runLokiReview(docIds, asOf) {
+  return postJson(`${API_BASE}/loki/review`, { doc_ids: docIds, as_of: asOf });
+}
+
+// ========================================================
+// HEIMDALL — Event Monitoring & Task Board API
+// ========================================================
+
+/** Event drops with their release dates, stored runs, checkpoints and LLM readiness. */
+export function fetchHeimdallOverview() {
+  return requestJson(`${API_BASE}/heimdall/overview`);
+}
+
+/** Exposure, alerts, events and the task board for one clock date (defaults to the latest run). */
+export function fetchHeimdallBoard(asOf) {
+  const params = new URLSearchParams();
+  if (asOf) params.set('as_of', asOf);
+  return requestJson(`${API_BASE}/heimdall/board?${params}`);
+}
+
+/** Process one released drop on a clock date; useLlm sends what code cannot map to the LLM. */
+export function runHeimdallDrop(drop, asOf, useLlm) {
+  return postJson(`${API_BASE}/heimdall/run`, { drop, as_of: asOf, use_llm: useLlm });
+}
+
+/** Move a task-board card (Not Complete / In Progress / Completed). */
+export function setHeimdallTaskStatus(asOf, taskId, status) {
+  return postJson(`${API_BASE}/heimdall/tasks/status`, { as_of: asOf, task_id: taskId, status });
+}
+
+/** Rebuild a date's alerts and tasks from the stored events (no LLM). */
+export function reassessHeimdall(asOf) {
+  return postJson(`${API_BASE}/heimdall/reassess`, { as_of: asOf });
+}
+
 /** Dispatch a certified legal notice with authoritative clause citations. */
 export async function sendCertifiedNotice(payload) {
   let res;

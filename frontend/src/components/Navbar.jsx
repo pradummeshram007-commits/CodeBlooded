@@ -107,6 +107,18 @@ export default function Navbar() {
           >
             <span>NORNS</span>
           </button>
+          <button
+            onClick={() => navigate('/loki')}
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+          >
+            <span>LOKI</span>
+          </button>
+          <button
+            onClick={() => navigate('/heimdall')}
+            className="font-mono text-xs font-medium text-secondary-olive hover:text-dark-olive transition-colors flex items-center gap-1"
+          >
+            <span>HEIMDALL</span>
+          </button>
         </nav>
 
         {/* Action Button */}
@@ -176,6 +188,24 @@ export default function Navbar() {
               className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
             >
               <span>NORNS — Timeline</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/loki');
+              }}
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
+            >
+              <span>LOKI — Review</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/heimdall');
+              }}
+              className="w-full text-center flex items-center justify-center gap-2 font-mono text-xs py-2 rounded-lg bg-ivory border border-border-subtle text-dark-olive font-semibold hover:bg-cream"
+            >
+              <span>HEIMDALL — Events</span>
             </button>
           </div>
         </div>
