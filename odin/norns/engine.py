@@ -209,7 +209,7 @@ class Norns(Agent):
         self.rules = rules
         return rules
 
-    def load(self, rebuild: bool = False, persist: bool = False) -> None:
+    def load(self, rebuild: bool = False, persist: bool = True) -> None:
         if self._loaded and not rebuild:
             return
         self.calendar = BusinessCalendar(self.store.list_holidays())

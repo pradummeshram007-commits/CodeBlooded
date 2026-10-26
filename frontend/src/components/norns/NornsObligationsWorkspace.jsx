@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle, ArrowUpRight, Calendar, ChevronDown, ChevronLeft, ChevronRight,
   Clock, FileText, Filter, Loader2, RefreshCw, Search, TrendingUp, X, Zap,
@@ -498,12 +499,16 @@ function WorstCasePanel({ wc, isOpen, onToggle, selectedDocId }) {
 // ─── main page ───────────────────────────────────────────────────────────────
 
 export default function NornsObligationsWorkspace() {
+  const [searchParams] = useSearchParams();
   const today = new Date().toISOString().split('T')[0];
+  // Links from the dashboard and HEIMDALL carry ?as_of=YYYY-MM-DD&doc_id=A1; offsets move from that date.
+  const linkedAsOf = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('as_of') || '') ? searchParams.get('as_of') : null;
+  const baseDate = linkedAsOf || today;
 
   // State
   const [documents, setDocuments] = useState([]);
-  const [selectedDocId, setSelectedDocId] = useState(null);
-  const [asOf, setAsOf] = useState(today);
+  const [selectedDocId, setSelectedDocId] = useState(searchParams.get('doc_id') || null);
+  const [asOf, setAsOf] = useState(baseDate);
   const [dateOffset, setDateOffset] = useState(0);
   const [timeline, setTimeline] = useState(null);
   const [obligations, setObligations] = useState([]);
@@ -526,12 +531,12 @@ export default function NornsObligationsWorkspace() {
       .catch((e) => console.warn('docs:', e));
   }, []);
 
-  // Compute asOf from offset
+  // Compute asOf from offset (in UTC, so the date does not shift by a day east or west of Greenwich)
   useEffect(() => {
-    const d = new Date(today + 'T00:00:00');
-    d.setDate(d.getDate() + dateOffset);
+    const d = new Date(baseDate + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + dateOffset);
     setAsOf(d.toISOString().split('T')[0]);
-  }, [dateOffset, today]);
+  }, [dateOffset, baseDate]);
 
   // Debounced load timeline & obligations whenever asOf / doc changes
   useEffect(() => {
@@ -646,7 +651,7 @@ export default function NornsObligationsWorkspace() {
                 className="px-2 py-0.5 rounded border font-bold"
                 style={{ background: '#FCFAF3', borderColor: '#DCDCCB', color: '#303B28' }}
               >
-                {asOf} {dateOffset !== 0 ? `(T${dateOffset > 0 ? '+' : ''}${dateOffset}d)` : '(Today)'}
+                {asOf} {dateOffset !== 0 ? `(T${dateOffset > 0 ? '+' : ''}${dateOffset}d)` : linkedAsOf ? '(Linked date)' : '(Today)'}
               </span>
             </div>
             <div className="h-4 w-px hidden sm:block" style={{ background: '#DCDCCB' }} />
@@ -663,7 +668,7 @@ export default function NornsObligationsWorkspace() {
                     fontWeight: dateOffset === offset ? 600 : 400,
                   }}
                 >
-                  {offset === 0 ? 'Today' : offset < 0 ? `Past ${Math.abs(offset)}d` : `Next ${offset}d`}
+                  {offset === 0 ? (linkedAsOf ? 'Linked date' : 'Today') : offset < 0 ? `Past ${Math.abs(offset)}d` : `Next ${offset}d`}
                 </button>
               ))}
             </div>
